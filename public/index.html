@@ -1,0 +1,325 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1" />
+  <title>영월드 — Youngworld</title>
+  <link rel="stylesheet" href="/style.css" />
+</head>
+<body>
+  <!-- Phaser 게임이 그려지는 곳 -->
+  <div id="game"></div>
+
+  <!-- 화면 위에 떠 있는 버튼들(HUD) -->
+  <div id="hud">
+    <button id="logout-button" class="hud-btn" title="로그아웃">🚪</button>
+    <button id="admin-button" class="hud-btn" title="영월드 관리센터">🛠️</button>
+    <button id="me-button" class="hud-btn" title="내 설정">⚙️</button>
+    <button id="phone-button" class="hud-btn" title="우편함">📮<span id="phone-badge" class="badge hidden">0</span></button>
+  </div>
+
+  <!-- 알림 토스트 -->
+  <div id="toast-stack"></div>
+
+  <!-- ================= 인트로(가장 먼저 뜨는 환영 애니메이션) ================= -->
+  <div id="intro-screen">
+    <canvas id="intro-canvas" aria-hidden="true"></canvas>
+    <div class="intro-moon" aria-hidden="true"></div>
+    <div class="intro-stars" aria-hidden="true"></div>
+    <div class="intro-inner">
+      <div class="intro-emojis"><span class="ie1">🏝️</span><span class="ie2">⛰️</span></div>
+      <h1 class="intro-title">Welcome to<br />Youngworld!</h1>
+      <p class="intro-sub">영월드에 오신 걸 환영해요</p>
+      <p class="intro-prompt">▶ 클릭하거나 아무 키나 누르세요</p>
+    </div>
+    <div class="intro-scanlines" aria-hidden="true"></div>
+  </div>
+
+  <!-- ================= 로그인 패널 ================= -->
+  <div id="login-panel" class="panel-overlay hidden">
+    <!-- CSS로 그리는 배경 장식(구름/언덕) -->
+    <div class="lg-scenery" aria-hidden="true">
+      <span class="lg-cloud lg-cloud-1"></span>
+      <span class="lg-cloud lg-cloud-2"></span>
+      <span class="lg-cloud lg-cloud-3"></span>
+      <span class="lg-hill lg-hill-back"></span>
+      <span class="lg-hill lg-hill-front"></span>
+    </div>
+
+    <div class="lg-board">
+      <div class="lg-title-wrap">
+        <h1 class="lg-title">Youngworld<br />입장하기</h1>
+        <p class="lg-sub">AI와 함께하는 진로 멘토링</p>
+      </div>
+
+      <div id="login-form">
+        <p class="lg-pick-label">✦ 캐릭터를 골라 입장하세요 ✦</p>
+        <!-- 캐릭터 카드가 login.js 에서 채워진다 -->
+        <div id="login-cards" class="lg-cards" role="listbox" aria-label="캐릭터 선택"></div>
+
+        <div id="login-pw-row" class="lg-pw-row">
+          <label class="lg-field">🔑 비밀번호(숫자)
+            <input id="login-pw" type="password" inputmode="numeric" placeholder="처음엔 1234" />
+          </label>
+        </div>
+
+        <button id="login-btn" class="lg-btn">🚪 입장하기</button>
+        <p id="login-msg" class="msg lg-msg"></p>
+      </div>
+
+      <div id="setpw-form" class="hidden">
+        <p class="lg-notice">🌱 처음 오셨네요! 새 비밀번호(숫자 4자리 이상)를 정해주세요.</p>
+        <label class="lg-field">새 비밀번호
+          <input id="setpw-input" type="password" inputmode="numeric" placeholder="숫자 4자리 이상" />
+        </label>
+        <button id="setpw-btn" class="lg-btn">🌟 저장하고 입장</button>
+        <p id="setpw-msg" class="msg lg-msg"></p>
+      </div>
+    </div>
+  </div>
+
+  <!-- ================= 내 설정 팝업(게임 메뉴 창, 픽셀) ================= -->
+  <div id="me-panel" class="pix-overlay hidden">
+    <div class="pix-window">
+      <div class="pix-titlebar">
+        <span class="pix-title">⚙ 설정</span>
+        <button id="me-close" class="pix-x" title="닫기">✕</button>
+      </div>
+
+      <!-- 상위 탭. 설문/미션은 안에서 서브탭으로 만들기↔결과.
+           미션 탭은 모두 보이되, "만들기"는 선생님만(학생은 결과만). -->
+      <div class="pix-tabs" role="tablist">
+        <button class="pix-tab selected" data-tab="profile">내 정보</button>
+        <button class="pix-tab" data-tab="msg">쪽지</button>
+        <button class="pix-tab" data-tab="survey">설문</button>
+        <button class="pix-tab" data-tab="mission">미션</button>
+      </div>
+
+      <div class="pix-body">
+        <!-- 탭: 내 정보(닉네임 변경) -->
+        <section class="pix-pane" data-pane="profile">
+          <div class="pix-avatar-row">
+            <span id="me-avatar-dot" class="pix-avatar-dot">🙂</span>
+            <div class="pix-avatar-meta">
+              <span id="me-role" class="pix-role">학생</span>
+              <span class="pix-hint">이름을 바꾸면 맵의 이름표도 바로 바뀌어요</span>
+            </div>
+          </div>
+          <label class="pix-field">닉네임 (1~12자)
+            <input id="me-nick" class="pix-input" type="text" maxlength="12" placeholder="새 닉네임" />
+          </label>
+          <button id="me-nick-save" class="pix-btn primary">💾 이름 저장</button>
+
+          <div class="svd-divider"></div>
+          <label class="pix-field">기존 비밀번호(숫자)
+            <input id="me-pw-old" class="pix-input" type="password" inputmode="numeric" placeholder="지금 비밀번호" />
+          </label>
+          <label class="pix-field">새 비밀번호(숫자 4자리 이상)
+            <input id="me-pw-new" class="pix-input" type="password" inputmode="numeric" placeholder="새 비밀번호" />
+          </label>
+          <button id="me-pw-save" class="pix-btn">🔒 비밀번호 변경</button>
+        </section>
+
+        <!-- 탭: 쪽지 쓰기 -->
+        <section class="pix-pane hidden" data-pane="msg">
+          <label class="pix-field">받는 사람
+            <select id="me-msg-to" class="pix-input"></select>
+          </label>
+          <label class="pix-field">내용
+            <textarea id="me-msg-body" class="pix-input" rows="4" placeholder="친구에게 보낼 쪽지를 적어요"></textarea>
+          </label>
+          <button id="me-msg-send" class="pix-btn primary">✉ 쪽지 보내기</button>
+        </section>
+
+        <!-- 탭: 설문 (서브탭: 만들기 / 현황) -->
+        <section class="pix-pane hidden" data-pane="survey">
+          <div class="pix-subtabs">
+            <button class="pix-subtab selected" data-group="survey" data-subtab="make">만들기</button>
+            <button class="pix-subtab" data-group="survey" data-subtab="status">결과</button>
+          </div>
+
+          <div class="pix-subpane" data-subpane="survey-make">
+            <label class="pix-field">대상
+              <select id="me-vote-target" class="pix-input">
+                <option value="all">전체(게스트 제외)</option>
+                <option value="individual">개인</option>
+              </select>
+            </label>
+            <label class="pix-field">공개 여부
+              <select id="me-survey-public" class="pix-input">
+                <option value="public">공개 (설문 현황에 표시)</option>
+                <option value="private">비공개 (나만 결과 보기)</option>
+              </select>
+            </label>
+            <label class="pix-field" id="me-vote-to-row" style="display:none">받는 사람
+              <select id="me-vote-to" class="pix-input"></select>
+            </label>
+            <label class="pix-field">제목(선택)
+              <input id="me-vote-title" class="pix-input" type="text" placeholder="예: 다음 간식 정하기" />
+            </label>
+            <div id="me-survey-questions"></div>
+            <button id="me-survey-add" class="pix-btn">＋ 질문 추가</button>
+            <button id="me-survey-send" class="pix-btn primary">📋 설문 올리기</button>
+          </div>
+
+          <div class="pix-subpane hidden" data-subpane="survey-status">
+            <div id="me-poll-list"></div>
+          </div>
+        </section>
+
+        <!-- 탭: 미션 (서브탭: 만들기[선생님] / 결과[모두, 자기 것만]) -->
+        <section class="pix-pane hidden" data-pane="mission">
+          <div class="pix-subtabs" id="me-mission-subtabs">
+            <button class="pix-subtab selected admin-only" data-group="mission" data-subtab="make">만들기</button>
+            <button class="pix-subtab" data-group="mission" data-subtab="status">결과</button>
+          </div>
+
+          <div class="pix-subpane admin-only" data-subpane="mission-make">
+            <label class="pix-field">대상
+              <select id="me-mission-target" class="pix-input">
+                <option value="all">전체(게스트 제외)</option>
+                <option value="individual">개인</option>
+              </select>
+            </label>
+            <label class="pix-field" id="me-mission-to-row" style="display:none">받는 사람
+              <select id="me-mission-to" class="pix-input"></select>
+            </label>
+            <label class="pix-field">제목(선택)
+              <input id="me-mission-title" class="pix-input" type="text" placeholder="예: 이번 주 과제" />
+            </label>
+            <label class="pix-field">해야 할 일
+              <textarea id="me-mission-task" class="pix-input" rows="4" placeholder="무엇을 해야 하나요?"></textarea>
+            </label>
+            <label class="pix-field">기한
+              <input id="me-mission-due" class="pix-input" type="date" />
+            </label>
+            <button id="me-mission-send" class="pix-btn primary">📋 미션 내기</button>
+          </div>
+
+          <div class="pix-subpane hidden" data-subpane="mission-status">
+            <div id="me-mission-list"></div>
+          </div>
+        </section>
+
+        <p id="me-msg-line" class="pix-line"></p>
+      </div>
+    </div>
+  </div>
+
+  <!-- ================= 우편함(쪽지·설문·미션, 픽셀) ================= -->
+  <div id="phone-panel" class="pix-overlay hidden">
+    <div class="pix-window">
+      <div class="pix-titlebar">
+        <span class="pix-title">📮 우편함</span>
+        <button id="phone-close" class="pix-x" title="닫기">✕</button>
+      </div>
+      <div id="phone-list" class="pix-body"></div>
+    </div>
+  </div>
+
+  <!-- ================= 작품 갤러리(픽셀) ================= -->
+  <div id="gallery-modal" class="pix-overlay hidden">
+    <div class="pix-window gal-window">
+      <div class="pix-titlebar">
+        <span class="pix-title">🖼️ 작품 갤러리</span>
+        <button id="gallery-close" class="pix-x" title="닫기">✕</button>
+      </div>
+
+      <!-- 학생 네비게이션(◀ 닉네임 ▶) -->
+      <div class="gal-nav">
+        <button id="gallery-prev" class="pix-btn gal-nav-btn" title="이전 학생">◀</button>
+        <div class="gal-student">
+          <span id="gallery-dot" class="gal-dot"></span>
+          <span id="gallery-name" class="gal-name">-</span>
+        </div>
+        <button id="gallery-next" class="pix-btn gal-nav-btn" title="다음 학생">▶</button>
+      </div>
+
+      <div class="pix-body">
+        <!-- 4개 카테고리 2x2 카드(JS가 채움) -->
+        <div id="gallery-grid" class="gal-grid"></div>
+        <p id="gallery-line" class="pix-line"></p>
+      </div>
+    </div>
+  </div>
+
+  <!-- ================= 교실 책장(How-to 문서) 팝업 ================= -->
+  <div id="guide-panel" class="pix-overlay hidden">
+    <div class="pix-window">
+      <div class="pix-titlebar">
+        <span class="pix-title">📚 책장</span>
+        <button id="guide-close" class="pix-x" title="닫기">✕</button>
+      </div>
+      <div id="guide-list" class="pix-body"></div>
+    </div>
+  </div>
+
+  <!-- ================= 영월드 관리센터 패널 ================= -->
+  <div id="admin-panel" class="side-panel hidden">
+    <div class="side-head">
+      <b>🛠️ 영월드 관리센터</b>
+      <button id="admin-close" class="x">✕</button>
+    </div>
+    <div class="side-body">
+      <section class="adm-sec">
+        <h3>아바타 추가</h3>
+        <label>이름<input id="adm-new-nick" type="text" placeholder="새 학생 이름" /></label>
+        <label>역할
+          <select id="adm-new-role">
+            <option value="student">학생</option>
+            <option value="guest">게스트</option>
+          </select>
+        </label>
+        <button id="adm-addavatar-btn">추가 (초기 비번 1234)</button>
+      </section>
+
+      <section class="adm-sec">
+        <h3>아바타 삭제</h3>
+        <label>삭제할 아바타
+          <select id="adm-del-nick"></select>
+        </label>
+        <button id="adm-delavatar-btn">삭제</button>
+      </section>
+
+      <section class="adm-sec">
+        <h3>강의자료 게시(칠판)</h3>
+        <label>제목<input id="adm-mat-title" type="text" placeholder="자료 제목" /></label>
+        <label>주소(URL)<input id="adm-mat-url" type="text" placeholder="/lectures/파일.html" /></label>
+        <label>회차<input id="adm-mat-session" type="number" min="1" max="4" placeholder="1~4" /></label>
+        <button id="adm-material-btn">칠판에 붙이기</button>
+      </section>
+
+      <section class="adm-sec">
+        <h3>책장 문서 추가(안내)</h3>
+        <label>제목<input id="adm-guide-title" type="text" placeholder="예: Notion 가입하는 법" /></label>
+        <label>주소(URL)<input id="adm-guide-url" type="text" placeholder="/guides/파일.html" /></label>
+        <button id="adm-guide-btn">책장에 꽂기</button>
+      </section>
+
+      <section class="adm-sec">
+        <h3>책장 문서 삭제</h3>
+        <label>삭제할 문서
+          <select id="adm-guide-del"></select>
+        </label>
+        <button id="adm-guide-del-btn">삭제</button>
+      </section>
+    </div>
+  </div>
+
+  <!-- ================= 강의자료/작품 전체화면 모달 ================= -->
+  <div id="ppt-modal" class="modal hidden">
+    <div class="modal-bar">
+      <b id="ppt-title"></b>
+      <button id="ppt-close" class="x">✕ 닫기 (Esc)</button>
+    </div>
+    <iframe id="ppt-frame" title="자료 보기"></iframe>
+  </div>
+
+  <!-- Phaser(전역 window.Phaser) -->
+  <script src="/vendor/phaser.min.js"></script>
+  <!-- Socket.io 클라이언트(서버가 자동 제공, 전역 window.io) -->
+  <script src="/socket.io/socket.io.js"></script>
+  <!-- 앱 코드(ES 모듈) -->
+  <script type="module" src="/js/main.js"></script>
+</body>
+</html>
