@@ -1,0 +1,284 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<title>강의계획서 — AI와 함께하는 진로 탐색</title>
+<style>
+  :root{
+    --ink:#1f2430;
+    --muted:#5b6472;
+    --accent:#e8590c;
+    --accent-soft:#fff4e6;
+    --accent-2:#0ca678;
+    --line:#e3e7ee;
+    --bg-soft:#f7f8fb;
+  }
+  *{box-sizing:border-box;}
+  @page{ size:A4; margin:16mm 15mm; }
+  html,body{ margin:0; padding:0; }
+  body{
+    font-family:"Apple SD Gothic Neo","Pretendard","Noto Sans KR",-apple-system,BlinkMacSystemFont,"Malgun Gothic",sans-serif;
+    color:var(--ink);
+    font-size:10.5pt;
+    line-height:1.6;
+    -webkit-print-color-adjust:exact;
+    print-color-adjust:exact;
+  }
+
+  /* ---- Header ---- */
+  header.doc{
+    border-bottom:3px solid var(--accent);
+    padding-bottom:14px;
+    margin-bottom:22px;
+  }
+  .eyebrow{
+    color:var(--accent);
+    font-size:9pt;
+    font-weight:700;
+    letter-spacing:.18em;
+    margin:0 0 6px;
+  }
+  h1.title{
+    margin:0;
+    font-size:21pt;
+    font-weight:800;
+    letter-spacing:-.01em;
+    line-height:1.25;
+  }
+  .subtitle{ margin:8px 0 0; color:var(--muted); font-size:10.5pt; }
+
+  /* ---- Section ---- */
+  section{ margin:0 0 20px; page-break-inside:avoid; }
+  h2.sec{
+    display:flex; align-items:center; gap:9px;
+    font-size:13pt; font-weight:800; margin:0 0 11px;
+  }
+  h2.sec .num{
+    display:inline-flex; align-items:center; justify-content:center;
+    width:23px; height:23px; border-radius:7px;
+    background:var(--accent); color:#fff; font-size:10pt; font-weight:800;
+  }
+
+  /* ---- Concept callout ---- */
+  .concept{
+    background:var(--accent-soft);
+    border-left:4px solid var(--accent);
+    border-radius:8px;
+    padding:13px 16px;
+    margin-top:10px;
+    font-size:10.5pt;
+    line-height:1.7;
+  }
+  .concept em{ color:var(--accent); font-style:normal; font-weight:700; }
+
+  /* ---- Tables ---- */
+  table{ width:100%; border-collapse:collapse; font-size:10pt; }
+  .kv td{ padding:7px 12px; border-bottom:1px solid var(--line); vertical-align:top; }
+  .kv td.k{ width:130px; color:var(--muted); font-weight:700; background:var(--bg-soft); }
+  table.grid{ border:1px solid var(--line); border-radius:8px; overflow:hidden; }
+  table.grid th{
+    background:var(--accent); color:#fff; font-weight:700;
+    text-align:left; padding:8px 12px; font-size:9.5pt;
+  }
+  table.grid td{ padding:8px 12px; border-top:1px solid var(--line); vertical-align:top; }
+  table.grid tr:nth-child(even) td{ background:var(--bg-soft); }
+  .sched th:nth-child(1),.sched td:nth-child(1){ width:70px; }
+  .sched th:nth-child(2),.sched td:nth-child(2){ width:110px; }
+
+  /* ---- Lists ---- */
+  ul.clean,ol.clean{ margin:8px 0 0; padding-left:20px; }
+  ul.clean li,ol.clean li{ margin:4px 0; }
+  ul.sub{ margin:3px 0 3px; padding-left:18px; }
+  ul.sub li{ margin:2px 0; color:var(--muted); }
+
+  .note{ color:var(--muted); font-size:9pt; margin:7px 0 0; padding-left:2px; }
+
+  /* ---- Schedule helper box ---- */
+  .timebox{
+    margin-top:12px; background:var(--bg-soft);
+    border:1px solid var(--line); border-radius:8px; padding:11px 15px;
+  }
+  .timebox b{ color:var(--accent); }
+
+  /* ---- Curriculum cards ---- */
+  .cards{ display:flex; flex-direction:column; gap:11px; }
+  .card{
+    border:1px solid var(--line); border-radius:10px; overflow:hidden;
+    page-break-inside:avoid;
+  }
+  .card .head{
+    background:var(--accent-soft);
+    padding:9px 15px; border-bottom:1px solid var(--line);
+    display:flex; align-items:baseline; gap:10px;
+  }
+  .card .head .badge{
+    background:var(--accent); color:#fff; font-weight:800; font-size:9pt;
+    padding:2px 9px; border-radius:20px; white-space:nowrap;
+  }
+  .card .head .ttl{ font-weight:800; font-size:11pt; }
+  .card .body{ padding:11px 16px; }
+  .row{ display:flex; gap:10px; margin:5px 0; }
+  .row .lab{
+    flex:0 0 46px; color:var(--accent); font-weight:700; font-size:9.5pt;
+    padding-top:1px;
+  }
+  .row .val{ flex:1; }
+  .row .val ul{ margin:2px 0 0; padding-left:16px; }
+  .row .val ul li{ margin:1px 0; }
+  strong{ color:var(--ink); }
+
+  /* ---- Outcome chips ---- */
+  .chips{ display:flex; flex-wrap:wrap; gap:7px; margin-top:10px; }
+  .chip{
+    background:#fff; border:1px solid var(--accent); color:var(--accent);
+    border-radius:20px; padding:4px 12px; font-size:9pt; font-weight:600;
+  }
+  .footer{ margin-top:8px; color:var(--muted); font-size:8.5pt; text-align:right; }
+</style>
+</head>
+<body>
+
+<header class="doc">
+  <p class="eyebrow">강 의 계 획 서</p>
+  <h1 class="title">AI와 함께하는 진로 탐색 — 나를 설계하는 시간</h1>
+  <p class="subtitle">중·고등학생 대상 · 진로 멘토링 4회차 · 현직 개발자 멘토</p>
+</header>
+
+<section>
+  <h2 class="sec"><span class="num">1</span>강의 개요</h2>
+  <table class="kv">
+    <tr><td class="k">강의명</td><td>AI와 함께하는 진로 탐색 — 나를 설계하는 시간</td></tr>
+    <tr><td class="k">강사</td><td>[박수빈] (현직 카카오 개발자)</td></tr>
+    <tr><td class="k">대상</td><td>중·고등학생 5명</td></tr>
+    <tr><td class="k">회차</td><td>총 4회 (회당 2시간)</td></tr>
+    <tr><td class="k">운영 형태</td><td>소그룹 멘토링 + 실습 (개인 노트북 사용 권장)</td></tr>
+  </table>
+  <div class="concept">
+    진로가 막막한 건 정보가 부족해서가 아니라 '나'를 충분히 들여다보지 못했기 때문이다.
+    이 수업은 AI를 <em>나를 탐색하고 미래를 그리는 도구</em>로 삼아 막연한 꿈을 구체적인 계획으로 만들어간다.
+    현직 개발자 멘토가 자신이 진로를 찾아온 과정과 AI 활용법을 더해 탐색의 깊이를 키운다.
+  </div>
+</section>
+
+<section>
+  <h2 class="sec"><span class="num">2</span>선발 대상 및 기준 (5명)</h2>
+  <p style="margin:0 0 4px;">수업의 혜택을 가장 크게 받을 학생 + 끝까지 완주할 학생 모집</p>
+  <ul class="clean">
+    <li><strong>1순위 — 진로 탐색 필요성</strong> : 진로가 아직 막막하거나 미결정이고, AI에 호기심이 있는 학생</li>
+    <li><strong>2순위 — 참여 의지·자기주도성</strong> : 4회 전 일정 참석 가능하고, 능동적으로 참여할 의지가 있는 학생</li>
+  </ul>
+  <p style="margin:10px 0 2px;"><strong>선발 방법</strong> — 간단한 지원서로 접수</p>
+  <ol class="clean">
+    <li>지원 동기 한 줄</li>
+    <li>내 미래에 대한 자유로운 생각·고민 (구체적이지 않아도 됨)</li>
+    <li>4회 전 일정 참석 가능 여부 (Y/N)</li>
+  </ol>
+  <p class="note">→ 동기·성실성과 '진로가 막연한 정도'를 함께 보고 5명 선발.</p>
+</section>
+
+<section>
+  <h2 class="sec"><span class="num">3</span>일정 <span style="font-size:9pt;font-weight:600;color:var(--muted);">(회당 2시간)</span></h2>
+  <table class="grid sched">
+    <tr><th>회차</th><th>날짜</th><th>시간</th></tr>
+    <tr><td>1회차</td><td>7월 21일</td><td>14:00 – 16:00</td></tr>
+    <tr><td>2회차</td><td>7월 22일</td><td>13:00 – 15:00</td></tr>
+    <tr><td>3회차</td><td>7월 28일</td><td>13:00 – 15:00</td></tr>
+    <tr><td>4회차</td><td>7월 29일</td><td>13:00 – 15:00</td></tr>
+  </table>
+  <p class="note">※ 7월 21일은 시간 확인 후 확정 필요</p>
+  <div class="timebox">
+    <b>회차 공통 시간 운영 (120분)</b>
+    <ul class="clean" style="margin-top:5px;">
+      <li>시연 30분 (멘토 이야기 + 라이브 AI 시연)</li>
+      <li>실습 (미니 프로젝트 개인 진행) 30분</li>
+      <li>결과 공유 30분</li>
+      <li>버퍼 30분 — 미완성 부분 개인 코칭 / 진로 상담 / 회고(오늘 알게 된 내용·다음에 해보고 싶은 것)</li>
+    </ul>
+  </div>
+</section>
+
+<section>
+  <h2 class="sec"><span class="num">4</span>회차별 커리큘럼</h2>
+  <div class="cards">
+
+    <div class="card">
+      <div class="head"><span class="badge">1회차</span><span class="ttl">나는 누구인가 (자기소개)</span></div>
+      <div class="body">
+        <div class="row"><div class="lab">목표</div><div class="val">AI를 활용하여 효과적으로 나를 소개하기</div></div>
+        <div class="row"><div class="lab">시연</div><div class="val">멘토 자기소개</div></div>
+        <div class="row"><div class="lab">실습</div><div class="val">학생이 AI와 대화하며 좋아하는 것·즐거웠던 경험·잘하는 것 정리 → 나를 표현하는 발표자료 만들기 (형태 자유)</div></div>
+        <div class="row"><div class="lab">공유</div><div class="val">결과물로 만든 자료를 활용한 자기소개</div></div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="head"><span class="badge">2회차</span><span class="ttl">나의 꿈은?</span></div>
+      <div class="body">
+        <div class="row"><div class="lab">목표</div><div class="val">“직업 ≠ 꿈” 알기, “어떤 삶을 살고 싶은가?”를 그려보기</div></div>
+        <div class="row"><div class="lab">시연</div><div class="val"><ul><li>멘토가 목표했던 바와 꿈을 이뤄나가는 과정 공유</li><li>AI로 이미지·영상·음악까지 만들 수 있음을 라이브로 보여주기</li></ul></div></div>
+        <div class="row"><div class="lab">실습</div><div class="val">AI의 다양한 생성 기능(이미지·영상·음악 등)을 자유롭게 활용해 <strong>내 꿈을 표현</strong>하기 (매체·형태 자유)</div></div>
+        <div class="row"><div class="lab">공유</div><div class="val">각자 표현한 결과물 발표</div></div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="head"><span class="badge">3회차</span><span class="ttl">5년 뒤 나의 미래</span></div>
+      <div class="body">
+        <div class="row"><div class="lab">목표</div><div class="val">5년 뒤 나의 미래를 그려보고 ‘퀘스트’로 쪼개기 + 퀘스트를 깨는 미니 게임 개발</div></div>
+        <div class="row"><div class="lab">시연</div><div class="val"><ul><li>내 꿈을 이루기 위해 노력하는 5년 뒤 나의 모습을 상상할 수 있도록 가이드</li><li>멘토가 미리 구현해둔 미니 게임 소개</li></ul></div></div>
+        <div class="row"><div class="lab">실습</div><div class="val">학생이 5년 목표를 퀘스트로 분해 → AI를 활용해 <strong>5년간의 퀘스트를 깨는 미니게임</strong> 만들기 (멘토가 게임 틀 미리 제작, 학생이 완성)</div></div>
+        <div class="row"><div class="lab">공유</div><div class="val">서로의 게임 플레이</div></div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="head"><span class="badge">4회차</span><span class="ttl">10년 뒤 나의 미래</span></div>
+      <div class="body">
+        <div class="row"><div class="lab">목표</div><div class="val">10년 뒤 그려보기, 5~10년 계획, 진학 경로 연결, 전체 회고</div></div>
+        <div class="row"><div class="lab">시연</div><div class="val"><ul><li>멘토의 인생 그래프 공유</li><li>AI 웹툰 생성 시연</li></ul></div></div>
+        <div class="row"><div class="lab">실습</div><div class="val">AI를 활용해 <strong>내 꿈을 이루는 만화</strong> 생성</div></div>
+        <div class="row"><div class="lab">공유</div><div class="val">만화 발표 + “4주 전의 나 vs 지금의 나” 회고</div></div>
+      </div>
+    </div>
+
+  </div>
+</section>
+
+<section>
+  <h2 class="sec"><span class="num">5</span>예산 (AI 사용료)</h2>
+  <p style="margin:0 0 9px;">편성 요청액 : <strong>1인 35,000원 × 5명 = 170,000원 (17만원)</strong></p>
+  <table class="grid">
+    <tr><th style="width:170px;">용도</th><th style="width:230px;">내역</th><th>비고</th></tr>
+    <tr><td>프리미엄 AI 구독</td><td>1인 1개월 (Claude Pro·ChatGPT Plus 등) ≈ 30,000원</td><td>고급 대화·생성형·코딩 전반에 사용</td></tr>
+    <tr><td>이미지/영상·음악 생성 크레딧</td><td>1인 소액 또는 공용 크레딧</td><td>2·4회차 멀티모달 실습용</td></tr>
+  </table>
+  <p class="note">※ 영상 생성(예: Veo·Sora류)은 단가가 높음. 예산이 빠듯하면 2회차는 이미지+음악 중심으로 하거나 공용 크레딧을 활용 권장.</p>
+  <p class="note">※ 게임 틀·프롬프트 등 사전 준비는 멘토가 처리하므로, 예산은 순수하게 학생 AI 사용료에 집중.</p>
+</section>
+
+<section>
+  <h2 class="sec"><span class="num">6</span>준비물 / 운영 환경</h2>
+  <ul class="clean">
+    <li><strong>학생</strong> : 각자 노트북 (3대 지원 가능), 인터넷, AI 계정</li>
+    <li><strong>멘토 사전 준비</strong> : AI 실습 환경, 회사 내 강의 일정 공유 (회사 프로필 사용 가능)</li>
+    <li><strong>안전장치</strong> : 빈 화면에서 막막하게 시작하지 않도록 실습은 멘토가 준비한 프롬프트·템플릿에서 시작</li>
+  </ul>
+</section>
+
+<section>
+  <h2 class="sec"><span class="num">7</span>기대 효과</h2>
+  <ul class="clean">
+    <li><strong>진로</strong> : 막연한 꿈을 구체적 미래 계획과 실행 단계로 쪼개보기</li>
+    <li><strong>AI 리터러시</strong> : AI를 활용하여 <em>나를 탐색하는 도구</em>로 쓰는 법 체득</li>
+  </ul>
+  <p style="margin:11px 0 3px;"><strong>산출물</strong></p>
+  <div class="chips">
+    <span class="chip">나 소개 발표자료</span>
+    <span class="chip">AI로 표현한 내 꿈 (이미지·영상·음악)</span>
+    <span class="chip">5년 퀘스트 미니게임</span>
+    <span class="chip">꿈을 이루는 4컷 만화</span>
+  </div>
+</section>
+
+</body>
+</html>
