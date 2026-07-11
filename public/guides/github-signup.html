@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>GitHub 가입하는 법</title>
+<style>
+  :root{ --ink:#1f2430; --muted:#5b6472; --accent:#e8590c; --soft:#fff4e6; --line:#e3e7ee; --bg:#f7f8fb; }
+  *{ box-sizing:border-box; }
+  html,body{ margin:0; padding:0; background:var(--bg); }
+  body{ font-family:"Apple SD Gothic Neo","Pretendard","Noto Sans KR",-apple-system,"Malgun Gothic",sans-serif; color:var(--ink); line-height:1.7; }
+  .wrap{ max-width:760px; margin:0 auto; padding:32px 22px 60px; }
+  .badge{ display:inline-block; background:#24292f; color:#fff; font-weight:800; font-size:13px; padding:5px 12px; border-radius:20px; }
+  h1{ font-size:28px; margin:14px 0 4px; }
+  .sub{ color:var(--muted); margin:0 0 24px; font-size:15px; }
+  ol{ padding-left:0; list-style:none; counter-reset:step; }
+  ol > li{ counter-increment:step; position:relative; padding:16px 16px 16px 58px; margin:12px 0; background:#fff; border:1px solid var(--line); border-radius:12px; }
+  ol > li::before{ content:counter(step); position:absolute; left:16px; top:16px; width:28px; height:28px; background:var(--accent); color:#fff; font-weight:800; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:15px; }
+  li b{ color:var(--accent); }
+  .tip{ background:var(--soft); border-left:4px solid var(--accent); padding:12px 16px; border-radius:8px; margin:22px 0; font-size:14px; }
+  a{ color:#0969da; word-break:break-all; }
+  code{ background:#eef1f6; padding:2px 6px; border-radius:5px; font-size:.92em; }
+</style>
+</head>
+<body>
+  <div class="wrap">
+    <span class="badge">🐙 GitHub</span>
+    <h1>GitHub 가입하는 법</h1>
+    <p class="sub">코드를 저장하고 친구들과 공유하는 개발자들의 공간이에요.</p>
+
+    <ol>
+      <li><b>github.com</b> 에 접속해요. 주소창에 <a href="https://github.com">https://github.com</a> 을 입력합니다.</li>
+      <li>오른쪽 위 <b>Sign up</b>(가입) 버튼을 눌러요.</li>
+      <li><b>이메일 주소</b>를 입력해요. 평소 쓰는 이메일이면 돼요.</li>
+      <li><b>비밀번호</b>를 정해요. 남들이 모를 만한 걸로 만들어요.</li>
+      <li><b>사용자 이름(Username)</b>을 정해요. 전 세계에서 하나뿐인 이름이라, 원하는 게 이미 있으면 숫자를 붙여봐요. (예: <code>yeongwol_soo</code>)</li>
+      <li>이메일로 온 <b>인증 코드</b>를 입력하면 가입 완료!</li>
+    </ol>
+
+    <div class="tip">💡 <b>학교/부모님 이메일</b>로 가입해도 괜찮아요. 사용자 이름은 나중에 바꿀 수 있지만, 되도록 오래 쓸 이름으로 정해요.</div>
+  </div>
+</body>
+</html>
