@@ -1,0 +1,25 @@
+# =====================================================================
+# youngworld.service — systemd 유닛 (Node 서버를 자동 실행/재시작)
+# 설치: sudo cp deploy/youngworld.service /etc/systemd/system/
+#       sudo systemctl daemon-reload && sudo systemctl enable --now youngworld
+# 경로/사용자는 실제 환경에 맞게 바꾸세요(예: ubuntu 사용자, /home/ubuntu/youngworld).
+# =====================================================================
+
+[Unit]
+Description=Youngworld (Node + Socket.io) game server
+After=network.target
+
+[Service]
+Type=simple
+User=ubuntu
+WorkingDirectory=/home/ubuntu/youngworld
+ExecStart=/usr/bin/node server/index.js
+Restart=on-failure
+RestartSec=3
+# 프로덕션: 외부는 Caddy(443)로만 접근하고 Node 는 로컬에서만 열리게.
+Environment=NODE_ENV=production
+Environment=HOST=127.0.0.1
+Environment=PORT=3000
+
+[Install]
+WantedBy=multi-user.target

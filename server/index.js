@@ -19,6 +19,8 @@ ensureSeed();
 Sessions.purgeExpired(); // 만료된 로그인 세션 정리
 
 const app = express();
+// 리버스 프록시(Caddy/Nginx) 뒤에서 실제 클라이언트 IP를 신뢰(로그인 rate limit용).
+app.set('trust proxy', 1);
 app.use(express.json());
 
 // 로그인/비밀번호 HTTP API (/api/...)
@@ -31,12 +33,15 @@ const server = http.createServer(app);
 const io = new Server(server);
 setupSockets(io);
 
-// 0.0.0.0 으로 열어야 같은 Wi-Fi 의 다른 노트북에서 접속할 수 있다.
+// 바인드 주소:
+//   - 교실/LAN: 0.0.0.0 (같은 Wi-Fi 의 다른 기기가 직접 접속)  ← 기본
+//   - 프로덕션(Caddy 뒤): HOST=127.0.0.1 로 두면 외부는 Caddy(443)로만 접근
 const PORT = process.env.PORT || 3000;
-server.listen(PORT, '0.0.0.0', () => {
+const HOST = process.env.HOST || '0.0.0.0';
+server.listen(PORT, HOST, () => {
   console.log('=================================================');
   console.log('  영월드 서버 시작!');
-  console.log(`  내 컴퓨터:   http://localhost:${PORT}`);
+  console.log(`  바인드:   http://${HOST}:${PORT}`);
   console.log('  같은 Wi-Fi 의 다른 기기: http://<내 IP>:' + PORT);
   console.log('  (내 IP 확인 - mac:  ipconfig getifaddr en0)');
   console.log('=================================================');
