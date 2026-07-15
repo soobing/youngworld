@@ -8,9 +8,9 @@ echo "=== youngworld setup start: $(date) ==="
 export DEBIAN_FRONTEND=noninteractive
 apt-get update -y
 
-# Node 20
+# Node 20 + 빌드툴 + sqlite3 CLI(배포 시 DB 백업용)
 curl -fsSL https://deb.nodesource.com/setup_20.x | bash -
-apt-get install -y nodejs build-essential python3 git
+apt-get install -y nodejs build-essential python3 git sqlite3
 
 # 앱 배포 (ubuntu 사용자 홈)
 cd /home/ubuntu

@@ -17,9 +17,18 @@ echo "▶ [1/5] DB 백업"
 mkdir -p "$BACKUP_DIR"
 if [ -f youngworld.db ]; then
   TS="$(date +%Y%m%d-%H%M%S)"
-  # SQLite .backup: WAL까지 반영된 일관성 있는 스냅샷(단순 cp보다 안전)
-  sqlite3 youngworld.db ".backup '$BACKUP_DIR/youngworld-$TS.db'"
-  echo "  백업: $BACKUP_DIR/youngworld-$TS.db"
+  DEST="$BACKUP_DIR/youngworld-$TS.db"
+  if command -v sqlite3 >/dev/null 2>&1; then
+    # SQLite .backup: WAL까지 반영된 일관성 있는 스냅샷(단순 cp보다 안전)
+    sqlite3 youngworld.db ".backup '$DEST'"
+  else
+    # sqlite3 CLI 가 없으면 파일 복사로 폴백(안전을 위해 WAL/SHM 도 함께 복사)
+    echo "  (sqlite3 CLI 없음 → 파일 복사로 백업)"
+    cp youngworld.db "$DEST"
+    [ -f youngworld.db-wal ] && cp youngworld.db-wal "$DEST-wal" || true
+    [ -f youngworld.db-shm ] && cp youngworld.db-shm "$DEST-shm" || true
+  fi
+  echo "  백업: $DEST"
   # 오래된 백업 정리
   ls -1t "$BACKUP_DIR"/youngworld-*.db 2>/dev/null | tail -n +$((KEEP_BACKUPS + 1)) | xargs -r rm -f
 else
