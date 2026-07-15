@@ -1,0 +1,32 @@
+# =====================================================================
+# main 브랜치에 push(=PR 머지)되면 Lightsail 서버로 자동 배포.
+# 서버측 deploy.sh가 [DB 백업 → git pull → npm ci → 재시작 → 헬스체크/롤백]을 수행.
+#
+# 필요한 GitHub Secrets (Settings → Secrets and variables → Actions):
+#   SSH_HOST  = 43.202.132.145        (서버 고정 IP 또는 도메인)
+#   SSH_USER  = ubuntu
+#   SSH_KEY   = 배포용 개인키 전체(-----BEGIN ... END-----)
+# =====================================================================
+name: Deploy to Lightsail
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:        # 수동 실행 버튼도 제공
+
+concurrency:
+  group: deploy-production   # 배포 중복 방지: 새 배포가 오면 이전 것 취소
+  cancel-in-progress: true
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: SSH 접속 후 배포 스크립트 실행
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_USER }}
+          key: ${{ secrets.SSH_KEY }}
+          command_timeout: 10m
+          script: bash /home/ubuntu/youngworld/deploy/deploy.sh
