@@ -13,8 +13,9 @@ const RULES = {
     'scene:enter',
     'phone:markRead',
     'phone:respond',
-    // 자기 설정(닉네임) + 친구끼리 쪽지/투표/답장
+    // 자기 설정(닉네임·색상) + 친구끼리 쪽지/투표/답장
     'me:setNickname',
+    'me:setColor',
     'peer:send',
     'peer:survey',
     'phone:reply',

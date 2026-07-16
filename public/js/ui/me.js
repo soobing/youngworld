@@ -72,16 +72,34 @@ export function initMe() {
   // 액션 버튼들.
   document.getElementById('me-nick-save').addEventListener('click', saveNickname);
   document.getElementById('me-pw-save').addEventListener('click', changePassword);
+
+  // 아바타 색상: 고르는 동안 도트 미리보기, 확정(change)되면 서버에 저장.
+  const colorInput = document.getElementById('me-color');
+  if (colorInput) {
+    colorInput.addEventListener('input', () => {
+      document.getElementById('me-avatar-dot').style.background = colorInput.value;
+    });
+    colorInput.addEventListener('change', () => send('me:setColor', { color: colorInput.value }));
+  }
   document.getElementById('me-msg-send').addEventListener('click', sendPeerMessage);
   document.getElementById('me-survey-add').addEventListener('click', () => addSurveyQuestionBlock());
   document.getElementById('me-survey-send').addEventListener('click', sendSurvey);
   document.getElementById('me-mission-send').addEventListener('click', sendMission);
 
-  // 닉네임 변경 성공.
-  onNet('me:updated', ({ nickname }) => {
-    state.me.nickname = nickname;
-    line(`이름이 "${nickname}" 으로 바뀌었어요!`, 'ok');
-    document.getElementById('me-role').textContent = roleLabel();
+  // 닉네임/색상 변경 성공.
+  onNet('me:updated', (d) => {
+    if (d.nickname !== undefined) {
+      state.me.nickname = d.nickname;
+      line(`이름이 "${d.nickname}" 으로 바뀌었어요!`, 'ok');
+      document.getElementById('me-role').textContent = roleLabel();
+    }
+    if (d.color !== undefined) {
+      state.me.color = d.color;
+      document.getElementById('me-avatar-dot').style.background = d.color;
+      const ci = document.getElementById('me-color');
+      if (ci) ci.value = d.color;
+      line('아바타 색을 바꿨어요! 🎨', 'ok');
+    }
   });
 
   // 쪽지/설문/미션/답장 전송 완료.
@@ -148,6 +166,7 @@ export async function openMePanel(prefill = {}) {
   document.getElementById('me-nick').value = state.me.nickname;
   document.getElementById('me-role').textContent = roleLabel();
   document.getElementById('me-avatar-dot').style.background = state.me.color || '#8ee07a';
+  document.getElementById('me-color').value = state.me.color || '#8ee07a';
   line('', '');
 
   // 설문 빌더가 비어있으면(방어적으로) 기본 1개 블록을 채운다.

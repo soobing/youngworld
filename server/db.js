@@ -100,6 +100,10 @@ const Avatars = {
       return false;
     }
   },
+  // 아바타 색상 변경(#rrggbb).
+  setColor(id, color) {
+    db.prepare('UPDATE avatars SET color = ? WHERE id = ?').run(color, id);
+  },
   // 마지막 위치/씬 저장(접속 종료·씬 전환 시에만 호출. 매 이동마다 저장하지 않음)
   savePosition(id, x, y, scene) {
     db.prepare('UPDATE avatars SET last_x = ?, last_y = ?, last_scene = ? WHERE id = ?').run(

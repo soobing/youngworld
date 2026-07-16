@@ -64,7 +64,7 @@ export function connect(token, onReady) {
   const passthrough = [
     'player:joined', 'player:moved', 'player:left', 'scene:ready',
     'phone:new', 'phone:alarm', 'phone:answered',
-    'player:renamed', 'me:updated', 'peer:sent',
+    'player:renamed', 'player:recolored', 'me:updated', 'peer:sent',
     'survey:mine', 'survey:changed',
     'mission:mine', 'mission:received', 'mission:changed', 'mission:remind',
     'blackboard:update', 'gallery:update', 'guides:update', 'admin:done', 'error',

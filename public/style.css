@@ -508,6 +508,13 @@ button.primary:hover { background: #d9480f; }
   box-shadow: 0 0 0 3px #2b2340, inset 3px 3px 0 0 #d8b98a, inset -3px -3px 0 0 #ffffff;
 }
 textarea.pix-input { resize: vertical; }
+/* 내 아바타 색상: 라벨 옆 픽셀풍 색 스와치 */
+.me-color-field { display: flex; align-items: center; gap: 12px; }
+.me-color-field input[type="color"] {
+  width: 52px; height: 38px; margin-top: 0; padding: 3px; cursor: pointer; flex: none;
+  background: #fffdf5; border: 0; image-rendering: pixelated;
+  box-shadow: 0 0 0 3px #2b2340, inset 3px 3px 0 0 #d8b98a, inset -3px -3px 0 0 #ffffff;
+}
 /* select 는 입력창보다 작고 덜 튀게(전반적으로 크다는 피드백 반영) */
 select.pix-input { padding: 6px 8px; font-size: 12px; margin-top: 5px; }
 .pix-input:focus {

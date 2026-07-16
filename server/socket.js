@@ -315,6 +315,22 @@ function setup(io) {
       io.emit('player:renamed', { id: avatar.id, nickname: name });
     });
 
+    // 자기 아바타 색상 변경(#rrggbb 형식만 허용).
+    socket.on('me:setColor', ({ color }) => {
+      if (deny('me:setColor')) return;
+      const hex = String(color || '').trim().toLowerCase();
+      if (!/^#[0-9a-f]{6}$/.test(hex)) {
+        socket.emit('error', { code: 'BAD_COLOR', message: '색상 형식이 올바르지 않아요.' });
+        return;
+      }
+      Avatars.setColor(avatar.id, hex);
+      avatar.color = hex;
+      player.color = hex;
+      socket.emit('me:updated', { color: hex });
+      // 접속중인 모두에게 아바타 색 갱신(미니미 틴트).
+      io.emit('player:recolored', { id: avatar.id, color: hex });
+    });
+
     // 쪽지(sms) 보내기 — 개인 또는 전체(게스트 제외).
     socket.on('peer:send', ({ recipientNickname, body, target }) => {
       if (deny('peer:send')) return;

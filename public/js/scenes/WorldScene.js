@@ -105,6 +105,7 @@ export class WorldScene extends Phaser.Scene {
       'player:left': ({ id }) => this.removeOther(id),
       'scene:ready': (d) => this.onSceneReady(d),
       'player:renamed': ({ id, nickname }) => this.onRenamed(id, nickname),
+      'player:recolored': ({ id, color }) => this.onRecolored(id, color),
       // 쪽지/미션 상태가 바뀌면 머리 위 알림을 갱신.
       'phone:new': () => this.updateMailIndicator(),
       'phone:alarm': () => this.updateMailIndicator(),
@@ -217,6 +218,17 @@ export class WorldScene extends Phaser.Scene {
     }
     const o = this.others.get(id);
     if (o) { o.nickname = nickname; o.label.setText(nickname); }
+  }
+
+  // 색상 변경 실시간 반영(나 또는 다른 사람의 아바타 틴트).
+  onRecolored(id, color) {
+    if (id === state.me.id) {
+      state.me.color = color;
+      if (this.me) this.me.setTint(colorToHex(color));
+      return;
+    }
+    const o = this.others.get(id);
+    if (o) o.sprite.setTint(colorToHex(color));
   }
 
   // 머리 위 알림: 💌(안읽은 쪽지/설문) + 📋/⏰(미완료 미션). 둘 다면 나란히.
