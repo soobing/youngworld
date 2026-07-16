@@ -388,14 +388,16 @@ function setup(io) {
     // -----------------------------------------------------------------
     // 선생님(admin) 전용 액션들
     // -----------------------------------------------------------------
-    socket.on('admin:addAvatar', ({ nickname, role: newRole, color }) => {
+    socket.on('admin:addAvatar', ({ nickname, role: newRole, color, password }) => {
       if (deny('admin:addAvatar')) return;
       if (!nickname || !['student', 'guest'].includes(newRole)) return;
       if (Avatars.byNickname(nickname)) {
         socket.emit('error', { code: 'DUP_NICK', message: '이미 있는 이름입니다.' });
         return;
       }
-      Avatars.create({ nickname, role: newRole, color });
+      // 선생님이 지정한 초기 비번(예: 생년월일). 비우면 undefined → DB 가 기본 '1234' 사용.
+      const pw = typeof password === 'string' && password.trim() ? password.trim() : undefined;
+      Avatars.create({ nickname, role: newRole, color, password: pw });
       socket.emit('admin:done', { action: 'addAvatar', nickname });
     });
 
