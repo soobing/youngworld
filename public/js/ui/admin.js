@@ -78,13 +78,14 @@ async function fillDeletable() {
   if (prev) sel.value = prev;
 }
 
-// 아바타 추가. 초기 비밀번호를 선생님이 지정할 수 있다(비우면 서버가 1234 로).
+// 아바타 추가. 초기 비밀번호·기본 색상을 선생님이 지정할 수 있다(비번 비우면 서버가 1234 로).
 function addAvatar() {
   const nickname = document.getElementById('adm-new-nick').value.trim();
   const role = document.getElementById('adm-new-role').value;
   const password = document.getElementById('adm-new-pw').value.trim();
+  const color = document.getElementById('adm-new-color').value;
   if (!nickname) return;
-  send('admin:addAvatar', { nickname, role, password });
+  send('admin:addAvatar', { nickname, role, password, color });
   document.getElementById('adm-new-nick').value = '';
   document.getElementById('adm-new-pw').value = '';
   setTimeout(fillDeletable, 300); // 목록 갱신
