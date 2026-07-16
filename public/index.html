@@ -10,7 +10,8 @@
   <!-- Phaser 게임이 그려지는 곳 -->
   <div id="game"></div>
 
-  <!-- 화면 위에 떠 있는 버튼들(HUD) -->
+  <!-- 화면 위에 떠 있는 버튼들(HUD). 모바일에선 우측 상단 ☰ 하나로 접힌다. -->
+  <button id="hud-toggle" class="hud-btn" aria-label="메뉴 열기" aria-expanded="false" title="메뉴">☰<span id="hud-toggle-badge" class="badge hidden">0</span></button>
   <div id="hud">
     <button id="logout-button" class="hud-btn" title="로그아웃">🚪</button>
     <button id="admin-button" class="hud-btn" title="영월드 관리센터">🛠️</button>
@@ -20,6 +21,14 @@
 
   <!-- 알림 토스트 -->
   <div id="toast-stack"></div>
+
+  <!-- 모바일 이동 D-패드 (터치 기기에서만 표시) -->
+  <div id="touch-dpad" aria-hidden="true">
+    <button class="dpad-btn dpad-up"    data-dir="up"    aria-label="위로">▲</button>
+    <button class="dpad-btn dpad-left"  data-dir="left"  aria-label="왼쪽">◀</button>
+    <button class="dpad-btn dpad-right" data-dir="right" aria-label="오른쪽">▶</button>
+    <button class="dpad-btn dpad-down"  data-dir="down"  aria-label="아래로">▼</button>
+  </div>
 
   <!-- ================= 인트로(가장 먼저 뜨는 환영 애니메이션) ================= -->
   <div id="intro-screen">

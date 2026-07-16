@@ -18,6 +18,9 @@ export const state = {
 
   uiOpen: false,      // HTML 패널(로그인/핸드폰/admin/PPT)이 열려 있으면 true → 게임 입력 차단
   game: null,         // Phaser.Game 인스턴스
+
+  // 모바일 D-패드 눌림 상태. WorldScene 이 키보드와 함께 읽어 이동에 반영한다.
+  touch: { up: false, down: false, left: false, right: false },
 };
 
 // 게스트/선생님 여부 편의 함수.

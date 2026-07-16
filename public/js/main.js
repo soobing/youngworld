@@ -16,6 +16,7 @@ import { initGuide } from './ui/guide.js';
 import { initAdmin } from './ui/admin.js';
 import { initPPT } from './ui/ppt.js';
 import { showIntro } from './ui/intro.js';
+import { initTouch, isTouchDevice } from './ui/touch.js';
 
 let uiReady = false;
 
@@ -25,6 +26,8 @@ function startGame() {
 
   // Phaser 게임은 딱 한 번만 만든다.
   if (!state.game) {
+    // 화면 맞춤: PC 는 FIT(전체가 다 보임, 여백 생김), 모바일은 ENVELOP(잘리더라도 꽉 채움).
+    const scaleMode = isTouchDevice() ? Phaser.Scale.ENVELOP : Phaser.Scale.FIT;
     state.game = new Phaser.Game({
       type: Phaser.AUTO,
       parent: 'game',
@@ -34,7 +37,7 @@ function startGame() {
       pixelArt: true,      // 픽셀을 뭉개지 않고 또렷하게(NEAREST 필터)
       roundPixels: true,
       physics: { default: 'arcade', arcade: { debug: false } },
-      scale: { mode: Phaser.Scale.FIT, autoCenter: Phaser.Scale.CENTER_BOTH },
+      scale: { mode: scaleMode, autoCenter: Phaser.Scale.CENTER_BOTH },
       scene: [BootScene, IslandScene, ClassroomScene],
     });
   }
@@ -47,6 +50,7 @@ function startGame() {
     initGallery();
     initGuide();
     initAdmin();
+    initTouch();   // 모바일 이동 D-패드(터치 기기에서만)
   }
 }
 

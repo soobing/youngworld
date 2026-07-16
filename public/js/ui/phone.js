@@ -117,12 +117,16 @@ function updateBadge() {
   setBadge(unreadCount());
 }
 function setBadge(n) {
-  const b = document.getElementById('phone-badge');
-  if (n > 0) {
-    b.textContent = n;
-    b.classList.remove('hidden');
-  } else {
-    b.classList.add('hidden');
+  // 우편함 버튼 + (모바일에서 접힌) ☰ 버튼 양쪽에 미확인 개수를 표시.
+  for (const id of ['phone-badge', 'hud-toggle-badge']) {
+    const b = document.getElementById(id);
+    if (!b) continue;
+    if (n > 0) {
+      b.textContent = n;
+      b.classList.remove('hidden');
+    } else {
+      b.classList.add('hidden');
+    }
   }
 }
 

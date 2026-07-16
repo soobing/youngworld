@@ -13,6 +13,7 @@ import { state, isGuest } from '../state.js';
 import { send, onNet, offNet } from '../net.js';
 import { TILE } from './BootScene.js';
 import { openMePanel } from '../ui/me.js';
+import { isTouchDevice } from '../ui/touch.js';
 import { openMailbox } from '../ui/phone.js';
 
 const SPEED = 180;         // 이동 속도(px/s)
@@ -58,18 +59,35 @@ export class WorldScene extends Phaser.Scene {
     this.mailBob = 0;
     this.updateMailIndicator();
 
-    // 이제 아바타가 있으니 문(overlap)을 연결한다.
+    // 이제 아바타가 있으니 문(overlap)을 연결한다. (탭 입장과 fired 플래그 공유)
     for (const d of this.doors) {
-      let fired = false;
       this.physics.add.overlap(this.me, d.zone, () => {
-        if (fired || state.uiOpen) return;
-        fired = true;
+        if (d.fired || state.uiOpen) return;
+        d.fired = true;
         d.onEnter();
       });
     }
 
     // 카메라: 지도가 화면보다 크면 나를 따라감.
     this.cameras.main.startFollow(this.me, true, 0.15, 0.15);
+
+    // 모바일은 화면을 꽉 채우느라(ENVELOP) 많이 확대돼 한 번에 보이는 범위가 좁다.
+    // 카메라를 살짝 줌아웃해 지도를 넓게 보여준다. fitZoom = 화면 밖으로 안 넘치는 최소 줌.
+    if (isTouchDevice()) {
+      const cam = this.cameras.main;
+      const fitZoom = Math.max(this.scale.width / this.worldW, this.scale.height / this.worldH);
+      const zoom = Math.max(0.9, fitZoom);
+      cam.setZoom(zoom);
+
+      // 아바타를 항상 화면 중앙에 두고 사방으로 따라가도록 카메라 경계를 반 화면씩 넓힌다.
+      // 이렇게 하면 지도가 화면과 비슷한 크기여도(교실 800x608) 카메라가 팬(pan)할 여유가
+      // 생겨 아바타를 따라가고, 세로화면에서 가장자리에 가도 아바타가 잘리거나 화면 밖으로
+      // 나가지 않는다. 지도 밖은 배경색(하늘·바다 톤)이 자연스럽게 보인다.
+      const padX = this.scale.width / zoom / 2;
+      const padY = this.scale.height / zoom / 2;
+      cam.setBounds(-padX, -padY, this.worldW + padX * 2, this.worldH + padY * 2);
+      cam.centerOn(this.me.x, this.me.y); // 초반 화면을 아바타 중심으로 맞춘다.
+    }
 
     // 키보드 입력(방향키 + WASD).
     this.cursors = this.input.keyboard.createCursorKeys();
@@ -139,16 +157,30 @@ export class WorldScene extends Phaser.Scene {
     // 월드 경계를 지도 크기에 맞춘다.
     const w = grid[0].length * TILE;
     const h = grid.length * TILE;
+    this.worldW = w;
+    this.worldH = h;
     this.physics.world.setBounds(0, 0, w, h);
     this.cameras.main.setBounds(0, 0, w, h);
   }
 
-  // door 존을 등록한다. 밟으면 onEnter 실행(씬 이동 등).
+  // door 존을 등록한다. 밟으면(overlap) 또는 탭하면 onEnter 실행(씬 이동 등).
   // 실제 overlap 연결은 아바타 생성 후 create() 에서 한다.
   makeDoor(x, y, w, h, onEnter) {
     const zone = this.add.zone(x, y, w, h);
     this.physics.add.existing(zone, true); // 정적 바디
-    this.doors.push({ zone, onEnter });
+    const door = { zone, onEnter, fired: false };
+
+    // 모바일 대응: 문을 "탭"하면 걸어가지 않아도 바로 입장.
+    // 투명 사각형을 문 위에 얹어 클릭/터치를 받는다(PC 에서도 클릭하면 입장 — 추가 편의).
+    const hit = this.add.rectangle(x, y, w, h).setInteractive({ useHandCursor: true });
+    hit.setFillStyle(0xffffff, 0.001).setDepth(400);
+    hit.on('pointerdown', () => {
+      if (state.uiOpen || door.fired) return;
+      door.fired = true;
+      door.onEnter();
+    });
+
+    this.doors.push(door);
     return zone;
   }
 
@@ -237,10 +269,12 @@ export class WorldScene extends Phaser.Scene {
     if (state.uiOpen) {
       this.me.setVelocity(0, 0);
     } else {
-      const left = this.cursors.left.isDown || this.wasd.A.isDown;
-      const right = this.cursors.right.isDown || this.wasd.D.isDown;
-      const up = this.cursors.up.isDown || this.wasd.W.isDown;
-      const down = this.cursors.down.isDown || this.wasd.S.isDown;
+      // 키보드(PC) 또는 화면 D-패드(모바일, state.touch) 어느 쪽이든 이동.
+      const t = state.touch;
+      const left = this.cursors.left.isDown || this.wasd.A.isDown || t.left;
+      const right = this.cursors.right.isDown || this.wasd.D.isDown || t.right;
+      const up = this.cursors.up.isDown || this.wasd.W.isDown || t.up;
+      const down = this.cursors.down.isDown || this.wasd.S.isDown || t.down;
 
       let vx = 0, vy = 0, dir = state.me.dir || 'down';
       if (left) { vx = -SPEED; dir = 'left'; }
