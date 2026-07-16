@@ -26,9 +26,9 @@ export function initLogin(readyCb) {
   fetch('/api/avatars')
     .then((r) => r.json())
     .then((list) => {
-      // 카드 순서: 선생님 → 게스트 → 학생(원래 id 순).
-      // 2열 그리드라 [선생님·게스트] / [학생1·학생2] / [학생3·학생4] / [학생5] 로 배치된다.
-      const rank = (a) => (a.role === 'admin' ? 0 : a.role === 'guest' ? 1 : 2);
+      // 카드 순서: 학생(원래 id 순) → 선생님 → 게스트.
+      // 학생들이 가장 먼저 보이도록(제일 자주 로그인) 학생을 0순위로 둔다.
+      const rank = (a) => (a.role === 'student' ? 0 : a.role === 'admin' ? 1 : 2);
       list.sort((x, y) => rank(x) - rank(y)); // 안정 정렬 → 학생끼리는 원래 순서 유지
 
       const box = document.getElementById('login-cards');
