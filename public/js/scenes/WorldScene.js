@@ -58,12 +58,11 @@ export class WorldScene extends Phaser.Scene {
     this.mailBob = 0;
     this.updateMailIndicator();
 
-    // 이제 아바타가 있으니 문(overlap)을 연결한다.
+    // 이제 아바타가 있으니 문(overlap)을 연결한다. (탭 입장과 fired 플래그 공유)
     for (const d of this.doors) {
-      let fired = false;
       this.physics.add.overlap(this.me, d.zone, () => {
-        if (fired || state.uiOpen) return;
-        fired = true;
+        if (d.fired || state.uiOpen) return;
+        d.fired = true;
         d.onEnter();
       });
     }
@@ -143,12 +142,24 @@ export class WorldScene extends Phaser.Scene {
     this.cameras.main.setBounds(0, 0, w, h);
   }
 
-  // door 존을 등록한다. 밟으면 onEnter 실행(씬 이동 등).
+  // door 존을 등록한다. 밟으면(overlap) 또는 탭하면 onEnter 실행(씬 이동 등).
   // 실제 overlap 연결은 아바타 생성 후 create() 에서 한다.
   makeDoor(x, y, w, h, onEnter) {
     const zone = this.add.zone(x, y, w, h);
     this.physics.add.existing(zone, true); // 정적 바디
-    this.doors.push({ zone, onEnter });
+    const door = { zone, onEnter, fired: false };
+
+    // 모바일 대응: 문을 "탭"하면 걸어가지 않아도 바로 입장.
+    // 투명 사각형을 문 위에 얹어 클릭/터치를 받는다(PC 에서도 클릭하면 입장 — 추가 편의).
+    const hit = this.add.rectangle(x, y, w, h).setInteractive({ useHandCursor: true });
+    hit.setFillStyle(0xffffff, 0.001).setDepth(400);
+    hit.on('pointerdown', () => {
+      if (state.uiOpen || door.fired) return;
+      door.fired = true;
+      door.onEnter();
+    });
+
+    this.doors.push(door);
     return zone;
   }
 
@@ -237,10 +248,12 @@ export class WorldScene extends Phaser.Scene {
     if (state.uiOpen) {
       this.me.setVelocity(0, 0);
     } else {
-      const left = this.cursors.left.isDown || this.wasd.A.isDown;
-      const right = this.cursors.right.isDown || this.wasd.D.isDown;
-      const up = this.cursors.up.isDown || this.wasd.W.isDown;
-      const down = this.cursors.down.isDown || this.wasd.S.isDown;
+      // 키보드(PC) 또는 화면 D-패드(모바일, state.touch) 어느 쪽이든 이동.
+      const t = state.touch;
+      const left = this.cursors.left.isDown || this.wasd.A.isDown || t.left;
+      const right = this.cursors.right.isDown || this.wasd.D.isDown || t.right;
+      const up = this.cursors.up.isDown || this.wasd.W.isDown || t.up;
+      const down = this.cursors.down.isDown || this.wasd.S.isDown || t.down;
 
       let vx = 0, vy = 0, dir = state.me.dir || 'down';
       if (left) { vx = -SPEED; dir = 'left'; }

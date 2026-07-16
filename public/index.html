@@ -21,6 +21,14 @@
   <!-- 알림 토스트 -->
   <div id="toast-stack"></div>
 
+  <!-- 모바일 이동 D-패드 (터치 기기에서만 표시) -->
+  <div id="touch-dpad" aria-hidden="true">
+    <button class="dpad-btn dpad-up"    data-dir="up"    aria-label="위로">▲</button>
+    <button class="dpad-btn dpad-left"  data-dir="left"  aria-label="왼쪽">◀</button>
+    <button class="dpad-btn dpad-right" data-dir="right" aria-label="오른쪽">▶</button>
+    <button class="dpad-btn dpad-down"  data-dir="down"  aria-label="아래로">▼</button>
+  </div>
+
   <!-- ================= 인트로(가장 먼저 뜨는 환영 애니메이션) ================= -->
   <div id="intro-screen">
     <canvas id="intro-canvas" aria-hidden="true"></canvas>

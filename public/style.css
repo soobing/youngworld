@@ -36,6 +36,29 @@ html, body {
   background: #e03131; color: #fff; border-radius: 10px;
   font-size: 12px; line-height: 20px; text-align: center; font-weight: 700;
 }
+/* ---------------- 모바일 이동 D-패드 (터치 기기에서만) ---------------- */
+#touch-dpad { display: none; }               /* 기본 숨김 */
+body.touch #touch-dpad {                     /* 터치 기기에서만 표시 */
+  display: grid; position: fixed; left: 14px; bottom: 16px; z-index: 60;
+  grid-template-columns: repeat(3, 52px);
+  grid-template-rows: repeat(3, 52px);
+  gap: 6px;
+  touch-action: none;                        /* 버튼 위 스크롤/확대 방지 */
+}
+.dpad-up    { grid-column: 2; grid-row: 1; }
+.dpad-left  { grid-column: 1; grid-row: 2; }
+.dpad-right { grid-column: 3; grid-row: 2; }
+.dpad-down  { grid-column: 2; grid-row: 3; }
+.dpad-btn {
+  width: 52px; height: 52px; border: 0; border-radius: 12px;
+  font-size: 22px; color: #3a2a12; cursor: pointer;
+  background: rgba(255, 246, 224, .82);
+  box-shadow: 0 0 0 3px rgba(43,35,64,.55), inset 2px 2px 0 0 #fff, inset -2px -2px 0 0 #c99f5f;
+  display: flex; align-items: center; justify-content: center;
+  user-select: none; -webkit-user-select: none; touch-action: none;
+}
+.dpad-btn.active { background: #ffd8a8; transform: translateY(1px); }
+
 /* 핸드폰 흔들림 애니메이션 */
 .shake { animation: shake .5s; }
 @keyframes shake {
