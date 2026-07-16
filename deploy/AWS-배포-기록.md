@@ -212,10 +212,9 @@ curl -s http://$IP/api/avatars | head -c 200     # 로그인용 아바타 목록
 ## 7. 배포 후 꼭 할 일 🔐
 
 1. **`soobing` 초기 비밀번호(1234) 변경**: 접속 → soobing 로그인 → ⚙️ 설정 → 내 정보.
-2. **HTTPS 붙이기(중요)**: 지금은 HTTP라 비밀번호가 **평문 전송**된다. 실제 공유 전 도메인+HTTPS 권장.
-   - 도메인 DNS **A레코드**를 `43.202.132.145`로 지정
-   - 서버 SSH 접속 후 `/etc/caddy/Caddyfile` 의 `:80` → `내도메인.com` 으로 변경 → `sudo systemctl reload caddy`
-   - → Caddy가 **Let's Encrypt 인증서를 자동 발급**해 `https://내도메인` 이 열림.
+2. **HTTPS 붙이기(완료)**: `youngworld-ai.com`(Cloudflare) A레코드 → `43.202.132.145`(회색 구름) →
+   서버 Caddyfile을 도메인 버전으로 교체 → Caddy가 Let's Encrypt 인증서 자동 발급.
+   → **https://youngworld-ai.com** 운영 중. 자세한 원리는 **`HTTPS-도메인-인증서.md`** 참고.
 3. **기존 `yw-ai-mentoring` 리포 삭제**: 실명 히스토리가 남아 있으므로 정리.
 
 ---
