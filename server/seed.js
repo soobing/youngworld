@@ -48,7 +48,12 @@ function ensureSeed() {
   // 교실 책장 기본 문서(How-to). 처음 한 번만.
   if (Guides.all().length === 0) {
     Guides.create({ title: 'GitHub 가입하는 법', url: '/guides/github-signup.html', slot: 0 });
-    Guides.create({ title: 'Claude 가입하는 법', url: '/guides/claude-signup.html', slot: 1 });
+  }
+
+  // 정리: 더 이상 쓰지 않는 'Claude 가입하는 법' 문서를 책장에서 제거(있으면).
+  // 이미 시드된 기존 DB(운영 포함)에서도 서버가 켜질 때 한 번 지운다. 멱등.
+  for (const g of Guides.all()) {
+    if (g.url === '/guides/claude-signup.html') Guides.deleteById(g.id);
   }
 
   if (already === 0) {
