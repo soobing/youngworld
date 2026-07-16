@@ -10,7 +10,8 @@
   <!-- Phaser 게임이 그려지는 곳 -->
   <div id="game"></div>
 
-  <!-- 화면 위에 떠 있는 버튼들(HUD) -->
+  <!-- 화면 위에 떠 있는 버튼들(HUD). 모바일에선 우측 상단 ☰ 하나로 접힌다. -->
+  <button id="hud-toggle" class="hud-btn" aria-label="메뉴 열기" aria-expanded="false" title="메뉴">☰<span id="hud-toggle-badge" class="badge hidden">0</span></button>
   <div id="hud">
     <button id="logout-button" class="hud-btn" title="로그아웃">🚪</button>
     <button id="admin-button" class="hud-btn" title="영월드 관리센터">🛠️</button>

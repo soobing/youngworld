@@ -13,6 +13,7 @@ import { state, isGuest } from '../state.js';
 import { send, onNet, offNet } from '../net.js';
 import { TILE } from './BootScene.js';
 import { openMePanel } from '../ui/me.js';
+import { isTouchDevice } from '../ui/touch.js';
 import { openMailbox } from '../ui/phone.js';
 
 const SPEED = 180;         // 이동 속도(px/s)
@@ -69,6 +70,16 @@ export class WorldScene extends Phaser.Scene {
 
     // 카메라: 지도가 화면보다 크면 나를 따라감.
     this.cameras.main.startFollow(this.me, true, 0.15, 0.15);
+
+    // 모바일은 화면을 꽉 채우느라(ENVELOP) 많이 확대돼 한 번에 보이는 범위가 좁다.
+    // 카메라를 줌아웃해 지도를 넓게 보여주면 학교 등 목적지를 찾아가기 쉬워진다.
+    // fitZoom = 맵이 화면 밖으로 안 넘치는(=여백 안 생기는) 최소 줌.
+    //  - 큰 섬 지도: 0.85 로 줌아웃(거의 전체가 보임).
+    //  - 작은 교실: fitZoom 이 커서 그만큼만 채운다(빈 공간 방지).
+    if (isTouchDevice()) {
+      const fitZoom = Math.max(this.scale.width / this.worldW, this.scale.height / this.worldH);
+      this.cameras.main.setZoom(Math.max(0.85, fitZoom));
+    }
 
     // 키보드 입력(방향키 + WASD).
     this.cursors = this.input.keyboard.createCursorKeys();
@@ -138,6 +149,8 @@ export class WorldScene extends Phaser.Scene {
     // 월드 경계를 지도 크기에 맞춘다.
     const w = grid[0].length * TILE;
     const h = grid.length * TILE;
+    this.worldW = w;
+    this.worldH = h;
     this.physics.world.setBounds(0, 0, w, h);
     this.cameras.main.setBounds(0, 0, w, h);
   }

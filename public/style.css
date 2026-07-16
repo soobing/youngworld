@@ -36,10 +36,32 @@ html, body {
   background: #e03131; color: #fff; border-radius: 10px;
   font-size: 12px; line-height: 20px; text-align: center; font-weight: 700;
 }
+/* ☰ 합침 버튼: PC 에선 숨김(HUD 가로줄 그대로), 모바일에서만 우측 상단에 표시 */
+#hud-toggle { display: none; }
+body.touch #hud-toggle {
+  display: flex; position: fixed; top: 14px; right: 14px; bottom: auto; z-index: 62;
+}
+/* 모바일: HUD 를 ☰ 아래로 펼쳐지는 세로 리스트(접힘 메뉴)로 바꾼다. */
+body.touch #hud {
+  position: fixed; top: 74px; right: 14px; bottom: auto; left: auto; z-index: 61;
+  flex-direction: column; align-items: flex-end; gap: 10px;
+  /* 접힘: 위로 접혀 숨김. .open 이면 드르륵 펼쳐짐. */
+  opacity: 0; pointer-events: none;
+  transform: translateY(-8px) scale(.96); transform-origin: top right;
+  transition: opacity .18s ease, transform .18s ease;
+}
+body.touch #hud.open { opacity: 1; pointer-events: auto; transform: translateY(0) scale(1); }
+/* 드르륵: 열릴 때 버튼이 순차로 미끄러져 나오게. */
+body.touch #hud .hud-btn { transition: transform .2s ease, opacity .2s ease; }
+body.touch #hud:not(.open) .hud-btn { transform: translateY(-10px); opacity: 0; }
+body.touch #hud.open .hud-btn:nth-child(1) { transition-delay: .00s; }
+body.touch #hud.open .hud-btn:nth-child(2) { transition-delay: .04s; }
+body.touch #hud.open .hud-btn:nth-child(3) { transition-delay: .08s; }
+body.touch #hud.open .hud-btn:nth-child(4) { transition-delay: .12s; }
 /* ---------------- 모바일 이동 D-패드 (터치 기기에서만) ---------------- */
 #touch-dpad { display: none; }               /* 기본 숨김 */
-body.touch #touch-dpad {                     /* 터치 기기에서만 표시 */
-  display: grid; position: fixed; left: 14px; bottom: 16px; z-index: 60;
+body.touch #touch-dpad {                     /* 터치 기기에서만 표시 (오른쪽 아래) */
+  display: grid; position: fixed; right: 14px; left: auto; bottom: 16px; z-index: 60;
   grid-template-columns: repeat(3, 52px);
   grid-template-rows: repeat(3, 52px);
   gap: 6px;

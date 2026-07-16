@@ -44,4 +44,23 @@ export function initTouch() {
   // 창이 가려지거나(백그라운드) UI 패널이 열리면 눌림 초기화(계속 이동하는 것 방지).
   window.addEventListener('blur', clearAll);
   document.addEventListener('visibilitychange', () => { if (document.hidden) clearAll(); });
+
+  // 모바일 우측 상단 ☰ 합침 버튼: 누르면 HUD 리스트가 드르륵 펼쳐진다.
+  const toggle = document.getElementById('hud-toggle');
+  const hud = document.getElementById('hud');
+  if (toggle && hud) {
+    const setOpen = (open) => {
+      hud.classList.toggle('open', open);
+      toggle.setAttribute('aria-expanded', open ? 'true' : 'false');
+    };
+    toggle.addEventListener('click', (e) => { e.stopPropagation(); setOpen(!hud.classList.contains('open')); });
+    // 메뉴 항목을 고르면 접는다.
+    hud.querySelectorAll('.hud-btn').forEach((b) => b.addEventListener('click', () => setOpen(false)));
+    // 바깥을 탭하면 접는다.
+    document.addEventListener('pointerdown', (e) => {
+      if (!hud.classList.contains('open')) return;
+      if (hud.contains(e.target) || toggle.contains(e.target)) return;
+      setOpen(false);
+    });
+  }
 }
