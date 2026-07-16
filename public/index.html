@@ -68,7 +68,7 @@
 
         <div id="login-pw-row" class="lg-pw-row">
           <label class="lg-field">🔑 비밀번호(숫자)
-            <input id="login-pw" type="password" inputmode="numeric" placeholder="처음엔 생년월일 8자리(예: 20101010)" />
+            <input id="login-pw" type="password" inputmode="numeric" autocomplete="off" data-1p-ignore data-lpignore="true" placeholder="처음엔 생년월일 8자리(예: 20101010)" />
           </label>
         </div>
 
@@ -79,7 +79,7 @@
       <div id="setpw-form" class="hidden">
         <p class="lg-notice">🌱 처음 오셨네요! 새 비밀번호(숫자 4자리 이상)를 정해주세요.</p>
         <label class="lg-field">새 비밀번호
-          <input id="setpw-input" type="password" inputmode="numeric" placeholder="숫자 4자리 이상" />
+          <input id="setpw-input" type="password" inputmode="numeric" autocomplete="new-password" data-1p-ignore data-lpignore="true" placeholder="숫자 4자리 이상" />
         </label>
         <button id="setpw-btn" class="lg-btn">🌟 저장하고 입장</button>
         <p id="setpw-msg" class="msg lg-msg"></p>
@@ -119,16 +119,19 @@
           </label>
           <button id="me-nick-save" class="pix-btn primary">💾 이름 저장</button>
 
-          <label class="pix-field me-color-field">아바타 색상 (고르면 바로 적용돼요)
-            <input id="me-color" type="color" value="#8ee07a" />
+          <label class="pix-field me-color-field">아바타 색상
+            <span class="me-color-row">
+              <input id="me-color" type="color" value="#8ee07a" />
+              <button id="me-color-save" class="pix-btn me-color-btn" type="button">🎨 색상 저장</button>
+            </span>
           </label>
 
           <div class="svd-divider"></div>
           <label class="pix-field">기존 비밀번호(숫자)
-            <input id="me-pw-old" class="pix-input" type="password" inputmode="numeric" placeholder="지금 비밀번호" />
+            <input id="me-pw-old" class="pix-input" type="password" inputmode="numeric" autocomplete="off" data-1p-ignore data-lpignore="true" placeholder="지금 비밀번호" />
           </label>
           <label class="pix-field">새 비밀번호(숫자 4자리 이상)
-            <input id="me-pw-new" class="pix-input" type="password" inputmode="numeric" placeholder="새 비밀번호" />
+            <input id="me-pw-new" class="pix-input" type="password" inputmode="numeric" autocomplete="new-password" data-1p-ignore data-lpignore="true" placeholder="새 비밀번호" />
           </label>
           <button id="me-pw-save" class="pix-btn">🔒 비밀번호 변경</button>
         </section>

@@ -157,7 +157,7 @@ button.primary:hover { background: #d9480f; }
 /* 아바타 기본 색상: 라벨 옆 컴팩트한 색 스와치 */
 .adm-color-field { display: flex; align-items: center; gap: 10px; }
 .adm-color-field input[type="color"] {
-  width: 46px; height: 34px; margin-top: 0; padding: 2px; cursor: pointer; flex: none;
+  width: 34px; height: 26px; margin-top: 0; padding: 1px; cursor: pointer; flex: none;
 }
 
 /* 핸드폰 수신함 아이템 */
@@ -508,13 +508,15 @@ button.primary:hover { background: #d9480f; }
   box-shadow: 0 0 0 3px #2b2340, inset 3px 3px 0 0 #d8b98a, inset -3px -3px 0 0 #ffffff;
 }
 textarea.pix-input { resize: vertical; }
-/* 내 아바타 색상: 라벨 옆 픽셀풍 색 스와치 */
-.me-color-field { display: flex; align-items: center; gap: 12px; }
+/* 내 아바타 색상: 작은 픽셀풍 색 스와치 + 저장 버튼 */
+.me-color-field { display: block; }
+.me-color-row { display: flex; align-items: center; gap: 10px; margin-top: 7px; }
 .me-color-field input[type="color"] {
-  width: 52px; height: 38px; margin-top: 0; padding: 3px; cursor: pointer; flex: none;
+  width: 36px; height: 28px; margin-top: 0; padding: 2px; cursor: pointer; flex: none;
   background: #fffdf5; border: 0; image-rendering: pixelated;
-  box-shadow: 0 0 0 3px #2b2340, inset 3px 3px 0 0 #d8b98a, inset -3px -3px 0 0 #ffffff;
+  box-shadow: 0 0 0 3px #2b2340, inset 2px 2px 0 0 #d8b98a, inset -2px -2px 0 0 #ffffff;
 }
+.me-color-row .me-color-btn { display: inline-block; width: auto; margin-top: 0; padding: 8px 16px; font-size: 13px; flex: none; }
 /* select 는 입력창보다 작고 덜 튀게(전반적으로 크다는 피드백 반영) */
 select.pix-input { padding: 6px 8px; font-size: 12px; margin-top: 5px; }
 .pix-input:focus {

@@ -73,13 +73,16 @@ export function initMe() {
   document.getElementById('me-nick-save').addEventListener('click', saveNickname);
   document.getElementById('me-pw-save').addEventListener('click', changePassword);
 
-  // 아바타 색상: 고르는 동안 도트 미리보기, 확정(change)되면 서버에 저장.
+  // 아바타 색상: 고르는 동안 도트만 미리보기하고, '색상 저장' 버튼을 눌러야 실제 적용.
   const colorInput = document.getElementById('me-color');
   if (colorInput) {
     colorInput.addEventListener('input', () => {
       document.getElementById('me-avatar-dot').style.background = colorInput.value;
     });
-    colorInput.addEventListener('change', () => send('me:setColor', { color: colorInput.value }));
+  }
+  const colorSave = document.getElementById('me-color-save');
+  if (colorSave) {
+    colorSave.addEventListener('click', () => send('me:setColor', { color: colorInput.value }));
   }
   document.getElementById('me-msg-send').addEventListener('click', sendPeerMessage);
   document.getElementById('me-survey-add').addEventListener('click', () => addSurveyQuestionBlock());
