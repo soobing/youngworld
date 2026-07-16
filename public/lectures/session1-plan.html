@@ -21,9 +21,14 @@
     color:var(--ink);
     font-size:10.5pt;
     line-height:1.6;
+    max-width:840px;
+    margin:0 auto;
+    padding:34px 32px 44px;
     -webkit-print-color-adjust:exact;
     print-color-adjust:exact;
   }
+  /* 인쇄 시엔 @page 여백을 쓰므로 화면용 여백은 해제 */
+  @media print{ body{ max-width:none; margin:0; padding:0; } }
 
   /* ---- Header ---- */
   header.doc{
@@ -148,15 +153,15 @@
   <h2 class="sec"><span class="num">1</span>강의 개요</h2>
   <table class="kv">
     <tr><td class="k">강의명</td><td>AI와 함께하는 진로 탐색 — 나를 설계하는 시간</td></tr>
-    <tr><td class="k">강사</td><td>[박수빈] (현직 카카오 개발자)</td></tr>
+    <tr><td class="k">강사</td><td>[박수빈] (카카오 FE개발자)</td></tr>
     <tr><td class="k">대상</td><td>중·고등학생 5명</td></tr>
     <tr><td class="k">회차</td><td>총 4회 (회당 2시간)</td></tr>
     <tr><td class="k">운영 형태</td><td>소그룹 멘토링 + 실습 (개인 노트북 사용 권장)</td></tr>
   </table>
   <div class="concept">
-    진로가 막막한 건 정보가 부족해서가 아니라 '나'를 충분히 들여다보지 못했기 때문이다.
+    <strong>목표:</strong> 진로가 막막한 건 '나'를 충분히 들여다보지 못했기 때문이다.
     이 수업은 AI를 <em>나를 탐색하고 미래를 그리는 도구</em>로 삼아 막연한 꿈을 구체적인 계획으로 만들어간다.
-    현직 개발자 멘토가 자신이 진로를 찾아온 과정과 AI 활용법을 더해 탐색의 깊이를 키운다.
+    영월 출신의 현직 개발자 멘토가 자신이 진로를 찾아온 과정과 AI 활용법을 더해 탐색의 깊이를 키운다.
   </div>
 </section>
 
@@ -259,8 +264,8 @@
 <section>
   <h2 class="sec"><span class="num">6</span>준비물 / 운영 환경</h2>
   <ul class="clean">
-    <li><strong>학생</strong> : 각자 노트북 (3대 지원 가능), 인터넷, AI 계정</li>
-    <li><strong>멘토 사전 준비</strong> : AI 실습 환경, 회사 내 강의 일정 공유 (회사 프로필 사용 가능)</li>
+    <li><strong>학생</strong> : 개인 노트북 (센터에서 3대 지원 가능)</li>
+    <li><strong>멘토 사전 준비</strong> : AI 실습 환경, 회사 내 강의 일정 공유</li>
     <li><strong>안전장치</strong> : 빈 화면에서 막막하게 시작하지 않도록 실습은 멘토가 준비한 프롬프트·템플릿에서 시작</li>
   </ul>
 </section>
@@ -271,7 +276,10 @@
     <li><strong>진로</strong> : 막연한 꿈을 구체적 미래 계획과 실행 단계로 쪼개보기</li>
     <li><strong>AI 리터러시</strong> : AI를 활용하여 <em>나를 탐색하는 도구</em>로 쓰는 법 체득</li>
   </ul>
-  <p style="margin:11px 0 3px;"><strong>산출물</strong></p>
+</section>
+
+<section>
+  <h2 class="sec"><span class="num">8</span>산출물</h2>
   <div class="chips">
     <span class="chip">나 소개 발표자료</span>
     <span class="chip">AI로 표현한 내 꿈 (이미지·영상·음악)</span>
