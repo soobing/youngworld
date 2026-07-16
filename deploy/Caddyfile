@@ -1,12 +1,14 @@
 # =====================================================================
 # Caddyfile — 영월드 리버스 프록시 (자동 HTTPS)
-# youngworld.example.com 을 실제 도메인으로 바꾸세요.
 # Caddy 가 Let's Encrypt 인증서를 자동 발급/갱신하고,
 # 443(HTTPS)·80(→443 리다이렉트)을 받아 내부 Node(127.0.0.1:3000)로 넘깁니다.
 # WebSocket(Socket.io)도 별도 설정 없이 자동 프록시됩니다.
+#
+# 전제: 도메인 A레코드가 이 서버 IP를 가리키고(Cloudflare는 "DNS only" 회색 구름),
+#       방화벽 80·443 이 열려 있어야 인증서 발급이 된다.
 # =====================================================================
 
-youngworld.example.com {
+youngworld-ai.com, www.youngworld-ai.com {
 	encode gzip
 	reverse_proxy 127.0.0.1:3000
 }
