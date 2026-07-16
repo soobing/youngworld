@@ -45,6 +45,18 @@ function ensureSeed() {
     });
   }
 
+  // 자기소개 강의자료: 기존 데이터는 그대로 두고, 없을 때만 칠판에 추가(멱등).
+  //   (이미 운영 중인 DB 에도 배포 후 재시작하면 이 자료가 칠판에 걸린다)
+  const SELF_INTRO_URL = '/lectures/self-intro.html';
+  if (!Materials.all().some((m) => m.url === SELF_INTRO_URL)) {
+    Materials.create({
+      title: '자기소개 만들기',
+      url: SELF_INTRO_URL,
+      sessionNo: 1,
+      slot: 1,
+    });
+  }
+
   // 교실 책장 기본 문서(How-to). 처음 한 번만.
   if (Guides.all().length === 0) {
     Guides.create({ title: 'GitHub 가입하는 법', url: '/guides/github-signup.html', slot: 0 });
