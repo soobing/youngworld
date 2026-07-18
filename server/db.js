@@ -75,15 +75,37 @@ const Avatars = {
   deleteByNickname(nickname) {
     const a = this.byNickname(nickname);
     if (!a || a.role === 'admin') return false;
+    // 외래키(FK, better-sqlite3 기본 ON)를 위반하지 않도록 이 아바타를 참조하는 행을
+    // 모두 먼저 정리한다. 자식 → 부모 순서로 지워야 한다.
+    const delResponses = (delIds) => {
+      if (!delIds.length) return;
+      const ph = delIds.map(() => '?').join(',');
+      db.prepare('DELETE FROM phone_responses WHERE delivery_id IN (' + ph + ')').run(...delIds);
+    };
     const tx = db.transaction(() => {
-      // 이 사람이 받은 배달의 응답 → 배달 순으로 삭제.
-      const delIds = db.prepare('SELECT id FROM phone_deliveries WHERE recipient_id = ?').all(a.id).map((r) => r.id);
-      if (delIds.length) {
-        const ph = delIds.map(() => '?').join(',');
-        db.prepare('DELETE FROM phone_responses WHERE delivery_id IN (' + ph + ')').run(...delIds);
-      }
+      // (1) 이 사람이 '받은' 배달 → 응답 먼저, 그다음 배달.
+      const recvDelIds = db.prepare('SELECT id FROM phone_deliveries WHERE recipient_id = ?').all(a.id).map((r) => r.id);
+      delResponses(recvDelIds);
       db.prepare('DELETE FROM phone_deliveries WHERE recipient_id = ?').run(a.id);
+
+      // (2) 이 사람이 '보낸' 메시지 → 그 메시지의 배달·응답 먼저, 그다음 메시지.
+      const sentMsgIds = db.prepare('SELECT id FROM phone_messages WHERE sender_id = ?').all(a.id).map((r) => r.id);
+      if (sentMsgIds.length) {
+        const mph = sentMsgIds.map(() => '?').join(',');
+        const sentDelIds = db.prepare('SELECT id FROM phone_deliveries WHERE message_id IN (' + mph + ')').all(...sentMsgIds).map((r) => r.id);
+        delResponses(sentDelIds);
+        if (sentDelIds.length) {
+          const dph = sentDelIds.map(() => '?').join(',');
+          db.prepare('DELETE FROM phone_deliveries WHERE id IN (' + dph + ')').run(...sentDelIds);
+        }
+        db.prepare('DELETE FROM phone_messages WHERE id IN (' + mph + ')').run(...sentMsgIds);
+      }
+
+      // (3) 이 사람의 작품(갤러리) + 세션.
+      db.prepare('DELETE FROM gallery_works WHERE author_id = ?').run(a.id);
       db.prepare('DELETE FROM sessions WHERE avatar_id = ?').run(a.id);
+
+      // (4) 마지막으로 아바타.
       db.prepare('DELETE FROM avatars WHERE id = ?').run(a.id);
     });
     tx();

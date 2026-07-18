@@ -424,17 +424,23 @@ function setup(io) {
         socket.emit('error', { code: 'CANT_DELETE', message: '삭제할 수 없는 아바타입니다.' });
         return;
       }
-      // 접속 중이면 먼저 끊고 화면/온라인 목록에서 정리.
-      const onlineP = online.get(target.id);
-      if (onlineP) {
-        const sk = io.sockets.sockets.get(onlineP.socketId);
-        if (sk) sk.disconnect(true);
-        io.to(ROOM(onlineP.scene)).emit('player:left', { id: target.id });
-        online.delete(target.id);
+      try {
+        // 접속 중이면 먼저 끊고 화면/온라인 목록에서 정리.
+        const onlineP = online.get(target.id);
+        if (onlineP) {
+          const sk = io.sockets.sockets.get(onlineP.socketId);
+          if (sk) sk.disconnect(true);
+          io.to(ROOM(onlineP.scene)).emit('player:left', { id: target.id });
+          online.delete(target.id);
+        }
+        Avatars.deleteByNickname(nickname);
+        io.emit('gallery:update', { gallery: Gallery.structured() }); // 학생 삭제 시 갤러리 갱신
+        socket.emit('admin:done', { action: 'deleteAvatar', nickname });
+      } catch (e) {
+        // 예전엔 여기서 조용히 실패해 "삭제가 안 된다"로 보였다. 이제 에러를 알린다.
+        console.error('[admin:deleteAvatar] 실패:', e);
+        socket.emit('error', { code: 'DELETE_FAILED', message: '아바타 삭제 중 오류가 발생했어요.' });
       }
-      Avatars.deleteByNickname(nickname);
-      io.emit('gallery:update', { gallery: Gallery.structured() }); // 학생 삭제 시 갤러리 갱신
-      socket.emit('admin:done', { action: 'deleteAvatar', nickname });
     });
 
     socket.on('admin:postMaterial', ({ title, url, sessionNo, slot }) => {
