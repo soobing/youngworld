@@ -204,7 +204,7 @@ export class WorldScene extends Phaser.Scene {
     // 다른 사람을 클릭하면 그 사람에게 쪽지 쓰기 창이 바로 열린다(게스트 제외).
     sprite.setInteractive({ useHandCursor: true });
     sprite.on('pointerdown', () => {
-      if (!state.uiOpen && !isGuest()) openMePanel({ tab: 'msg', to: entry.nickname });
+      if (!state.uiOpen && !isGuest()) openMePanel({ mode: 'mailbox', tab: 'msg', to: entry.nickname });
     });
     this.others.set(p.id, entry);
   }

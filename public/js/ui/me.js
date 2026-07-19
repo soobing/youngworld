@@ -7,6 +7,7 @@
 
 import { state, isGuest, isAdmin } from '../state.js';
 import { onNet, send } from '../net.js';
+import { renderInbox } from './phone.js'; // 우편함 '받은편지' 탭 렌더(순환 import — 런타임 호출만)
 
 let inited = false;
 
@@ -36,7 +37,7 @@ export function initMe() {
     return;
   }
   btn.style.display = 'flex';
-  btn.addEventListener('click', () => openMePanel());
+  btn.addEventListener('click', () => openMePanel({ mode: 'settings' }));
   document.getElementById('me-close').addEventListener('click', closeMePanel);
 
   // 상위 탭 전환.
@@ -161,9 +162,11 @@ function refreshMissionsIfOpen() {
 //   openMePanel({ tab:'msg', to:'학생1' })
 export async function openMePanel(prefill = {}) {
   if (isGuest()) return;
+  const mode = prefill.mode || 'settings'; // 'settings'(⚙️ 내정보) | 'mailbox'(📮 소통)
   const p = document.getElementById('me-panel');
   p.classList.remove('hidden');
   state.uiOpen = true;
+  applyMode(mode); // 제목 + 탭 구성(설정=내정보 / 우편함=받은편지·쪽지·설문·미션)
 
   // 내 정보 채우기.
   document.getElementById('me-nick').value = state.me.nickname;
@@ -177,13 +180,26 @@ export async function openMePanel(prefill = {}) {
 
   await fillRecipients(); // 최신 상대 목록
 
-  selectTab(prefill.tab || 'profile');
+  const defaultTab = mode === 'mailbox' ? 'inbox' : 'profile';
+  selectTab(prefill.tab || defaultTab);
   if (prefill.to) {
     document.getElementById('me-msg-to').value = prefill.to;
     document.getElementById('me-vote-target').value = 'individual';
     document.getElementById('me-vote-to-row').style.display = 'block';
     document.getElementById('me-vote-to').value = prefill.to;
   }
+}
+
+// 열림 모드에 따라 제목과 보이는 탭을 정한다.
+//   settings(⚙️) → '내 정보'만 / mailbox(📮) → 받은편지·쪽지·설문·미션
+function applyMode(mode) {
+  const mailboxTabs = ['inbox', 'msg', 'survey', 'mission'];
+  const visible = mode === 'mailbox' ? mailboxTabs : ['profile'];
+  document.querySelectorAll('#me-panel .pix-tab').forEach((t) => {
+    t.style.display = visible.includes(t.dataset.tab) ? '' : 'none';
+  });
+  const title = document.getElementById('me-title');
+  if (title) title.textContent = mode === 'mailbox' ? '📮 우편함' : '⚙ 설정';
 }
 
 function closeMePanel() {
@@ -199,6 +215,8 @@ function selectTab(name) {
     s.classList.toggle('hidden', s.dataset.pane !== name)
   );
   line('', '');
+  // 받은편지 탭을 열면 최신 수신함을 그린다.
+  if (name === 'inbox') renderInbox();
   // 설문/미션 상위 탭을 열면 마지막(또는 기본 '만들기') 서브탭을 활성화한다.
   if (name === 'survey') selectSubTab('survey', currentSub.survey);
   if (name === 'mission') selectSubTab('mission', currentSub.mission);

@@ -91,14 +91,15 @@
   <div id="me-panel" class="pix-overlay hidden">
     <div class="pix-window">
       <div class="pix-titlebar">
-        <span class="pix-title">⚙ 설정</span>
+        <span id="me-title" class="pix-title">⚙ 설정</span>
         <button id="me-close" class="pix-x" title="닫기">✕</button>
       </div>
 
-      <!-- 상위 탭. 설문/미션은 안에서 서브탭으로 만들기↔결과.
-           미션 탭은 모두 보이되, "만들기"는 선생님만(학생은 결과만). -->
+      <!-- 상위 탭. ⚙️설정으로 열면 '내 정보'만, 📮우편함으로 열면 받은편지/쪽지/설문/미션만 보인다.
+           설문/미션은 안에서 서브탭으로 만들기↔결과. 미션 "만들기"는 선생님만(학생은 결과만). -->
       <div class="pix-tabs" role="tablist">
         <button class="pix-tab selected" data-tab="profile">내 정보</button>
+        <button class="pix-tab" data-tab="inbox">받은편지</button>
         <button class="pix-tab" data-tab="msg">쪽지</button>
         <button class="pix-tab" data-tab="survey">설문</button>
         <button class="pix-tab" data-tab="mission">미션</button>
@@ -135,6 +136,11 @@
             <input id="me-pw-new" class="pix-input" type="password" inputmode="numeric" autocomplete="new-password" data-1p-ignore data-lpignore="true" placeholder="새 비밀번호" />
           </label>
           <button id="me-pw-save" class="pix-btn">🔒 비밀번호 변경</button>
+        </section>
+
+        <!-- 탭: 받은편지(우편함 수신함) -->
+        <section class="pix-pane hidden" data-pane="inbox">
+          <div id="phone-list"></div>
         </section>
 
         <!-- 탭: 쪽지 쓰기 -->
@@ -220,17 +226,6 @@
 
         <p id="me-msg-line" class="pix-line"></p>
       </div>
-    </div>
-  </div>
-
-  <!-- ================= 우편함(쪽지·설문·미션, 픽셀) ================= -->
-  <div id="phone-panel" class="pix-overlay hidden">
-    <div class="pix-window">
-      <div class="pix-titlebar">
-        <span class="pix-title">📮 우편함</span>
-        <button id="phone-close" class="pix-x" title="닫기">✕</button>
-      </div>
-      <div id="phone-list" class="pix-body"></div>
     </div>
   </div>
 

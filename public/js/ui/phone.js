@@ -12,6 +12,7 @@
 
 import { state, isGuest } from '../state.js';
 import { onNet, send } from '../net.js';
+import { openMePanel } from './me.js'; // 우편함은 통합 패널(#me-panel)의 mailbox 모드로 연다
 
 let inited = false;
 
@@ -26,8 +27,7 @@ export function initPhone() {
     return;
   }
   btn.style.display = 'flex';
-  btn.addEventListener('click', togglePanel);
-  document.getElementById('phone-close').addEventListener('click', closePanel);
+  btn.addEventListener('click', openMailbox);
 
   renderInbox();
   updateBadge();
@@ -90,24 +90,9 @@ function toast(text) {
   setTimeout(() => { item.classList.add('out'); setTimeout(() => item.remove(), 300); }, 2600);
 }
 
-// 맵의 💌 알림에서 호출: 쪽지함을 연다.
+// 📮 버튼 / 맵의 💌 알림에서 호출: 통합 패널을 우편함(받은편지) 모드로 연다.
 export function openMailbox() {
-  const p = document.getElementById('phone-panel');
-  p.classList.remove('hidden');
-  state.uiOpen = true;
-  renderInbox();
-}
-
-function togglePanel() {
-  const p = document.getElementById('phone-panel');
-  const willOpen = p.classList.contains('hidden');
-  p.classList.toggle('hidden');
-  state.uiOpen = willOpen;
-  if (willOpen) renderInbox();
-}
-function closePanel() {
-  document.getElementById('phone-panel').classList.add('hidden');
-  state.uiOpen = false;
+  openMePanel({ mode: 'mailbox' });
 }
 
 function unreadCount() {
@@ -152,7 +137,7 @@ function beep() {
 }
 
 // 수신함 목록을 그린다.
-function renderInbox() {
+export function renderInbox() {
   const list = document.getElementById('phone-list');
   list.innerHTML = '';
   if (state.inbox.length === 0) {
