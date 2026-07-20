@@ -1,0 +1,470 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>soobing 선생님의 자기소개 — 영월드</title>
+<!--
+  ▶ 실제 사진 넣는 법
+    1) 사진 파일을 public/works/soobing/img/ 폴더에 넣으세요. (예: nz.jpg)
+    2) .photo 안의 .pslide 를 늘리거나, .ph(플레이스홀더)를 <img src="/works/soobing/img/nz.jpg" alt="설명"> 로 교체.
+    3) .photo 는 클릭하면 다음 .pslide 로 넘어갑니다(사진 여러 장 순환). 여러 장이면 자동으로 "1 / N" 표시.
+
+  ▶ 구성: 진로 타임라인(넓은 세상 동경 → 상경 → 코딩과의 만남 → 복수전공 → 취업 → 후회·이직 → 카카오) → "막연한 꿈도 결국 현실이 되더라"
+-->
+<style>
+  :root{
+    --ink:#1f2430; --muted:#5b6472; --accent:#e8590c; --accent2:#1b2f57; /* 남색(파랑 대체) */
+    --green:#2f9e44; --soft:#fff4e6; --sky:#eaedf4; --line:#e6e9f0; --bg:#f4f6fb;
+  }
+  *{ box-sizing:border-box; margin:0; padding:0; }
+  html,body{ height:100%; }
+  body{
+    font-family:"Apple SD Gothic Neo","Pretendard","Noto Sans KR",-apple-system,"Malgun Gothic",sans-serif;
+    color:var(--ink); background:#0e1220; overflow:hidden;
+  }
+  .deck{ position:fixed; inset:0; }
+
+  /* ---- 슬라이드 공통 ---- */
+  .slide{
+    position:absolute; inset:0; display:flex; align-items:center; justify-content:center;
+    padding:5vmin 6.5vmin 10.5vmin; background:var(--bg);
+    opacity:0; visibility:hidden; transform:translateY(12px);
+    transition:opacity .35s ease, transform .35s ease;
+  }
+  .slide.active{ opacity:1; visibility:visible; transform:none; }
+  /* 내용이 길면 슬라이드 안에서 스크롤(절대 잘리지 않게) */
+  .inner{ width:min(100%,1060px); max-height:100%; overflow-y:auto; text-align:left; padding-right:.5vmin; }
+  .inner::-webkit-scrollbar{ width:8px; }
+  .inner::-webkit-scrollbar-thumb{ background:#cdd3df; border-radius:4px; }
+
+  h1{ font-size:clamp(26px,5.4vmin,52px); line-height:1.16; }
+  h2{ font-size:clamp(21px,4vmin,38px); line-height:1.22; margin-bottom:2.2vmin; }
+  .kicker{ font-size:clamp(12px,2vmin,16px); font-weight:800; letter-spacing:.02em; color:var(--accent2); margin-bottom:1.2vmin; }
+  p{ font-size:clamp(15px,2.4vmin,21px); line-height:1.68; color:var(--muted); }
+  .narr{ font-size:clamp(14px,2.15vmin,19px); line-height:1.72; margin-top:1.2vmin; }
+  .narr + .narr{ margin-top:1vmin; }
+  .big{ font-size:clamp(17px,3vmin,26px); color:var(--ink); }
+  .accent{ color:var(--accent); font-weight:800; }
+  .accent2{ color:var(--accent2); font-weight:800; }
+  /* 본문 bold 는 남색으로(마무리 등 컬러 배경은 인라인 style 로 흰색 지정) */
+  .narr b, .goal b, .lead-c b, p b{ color:var(--accent2); }
+  .punch{ margin-top:2.2vmin; font-size:clamp(16px,2.7vmin,24px); font-weight:800; color:var(--ink); }
+
+  /* ---- 표지 / 마무리 (컬러 배경) ---- */
+  .slide.cover{ background:linear-gradient(135deg,#060e1f,#0f2140); color:#fff; }
+  .slide.cover p{ color:rgba(255,255,255,.92); }
+  .slide.closing{ background:linear-gradient(135deg,#e8590c,#ff922b); color:#fff; }
+  .slide.closing p{ color:rgba(255,255,255,.95); }
+  .tag{ display:inline-block; background:rgba(255,255,255,.22); font-weight:800; font-size:clamp(12px,2vmin,15px); padding:6px 14px; border-radius:22px; margin-bottom:2.6vmin; }
+  .brand{ display:inline-block; background:#fff; color:var(--accent2); font-weight:900; border-radius:12px; padding:10px 18px; font-size:clamp(14px,2.4vmin,22px); margin-top:3vmin; }
+
+  /* ---- 레이아웃 ---- */
+  .row{ display:grid; grid-template-columns:1.05fr .95fr; gap:3.2vmin; align-items:center; }
+  .stack{ display:flex; flex-direction:column; gap:1.4vmin; }
+
+  /* 근거 pill / 회사 경로 / 모티프 */
+  .pills{ display:flex; flex-wrap:wrap; gap:1.2vmin; margin-top:1.4vmin; }
+  .pill{ background:var(--sky); color:var(--accent2); font-weight:700; border-radius:10px; padding:1vmin 1.7vmin; font-size:clamp(13px,2vmin,18px); }
+  .cpath{ display:flex; flex-wrap:wrap; gap:1vmin; align-items:center; margin:1.4vmin 0 .6vmin; }
+  .cpath .c{ background:var(--sky); color:var(--accent2); font-weight:800; border-radius:9px; padding:.8vmin 1.5vmin; font-size:clamp(12px,1.95vmin,17px); }
+  .cpath .c.last{ background:var(--accent2); color:#fff; }
+  .cpath .ar{ color:#adb5bd; font-weight:900; }
+  .motif{ margin-top:1.4vmin; font-size:clamp(14px,2.2vmin,20px); color:var(--accent); font-weight:800; }
+
+  /* 복수전공 일러스트 (환경공학 + 컴퓨터공학) — 작게 */
+  .major{ display:flex; align-items:stretch; gap:1vmin; max-width:min(100%,330px); }
+  .mj{ flex:1; text-align:center; border-radius:11px; padding:.9vmin .7vmin; border:2px solid; display:flex; flex-direction:column; justify-content:center; }
+  .mj.base{ background:#f1f3f7; border-color:#d5dae4; }
+  .mj.new{ background:var(--soft); border-color:var(--accent); }
+  .mj .mji{ font-size:clamp(15px,2.5vmin,22px); }
+  .mj b{ font-size:clamp(10px,1.5vmin,13px); display:block; margin:.3vmin 0 .1vmin; color:var(--ink); }
+  .mj.base b{ color:var(--muted); }
+  .mj small{ font-size:clamp(9px,1.3vmin,11px); color:var(--muted); }
+  .mj.new small{ color:var(--accent); font-weight:800; }
+  .plus{ display:flex; align-items:center; font-size:clamp(15px,2.6vmin,22px); font-weight:900; color:var(--accent); }
+  .major-fig{ max-width:min(100%,340px); }
+  .major-fig svg{ width:100%; height:auto; display:block; }
+
+  /* 단일 스크린샷 + 하단 로고 */
+  .shot{ width:100%; border-radius:14px; border:1px solid var(--line); background:#fff; display:block; }
+  .logo{ display:block; margin:1.6vmin auto 0; width:min(58%,220px); height:auto; }
+  /* 로고 옆 작은 썸네일 (화면과 살짝 겹치게) */
+  .logo-row{ display:flex; align-items:center; justify-content:center; gap:1.8vmin; margin-top:-1.4vmin; }
+  .logo-row .logo{ margin:0; width:min(46%,160px); }
+  .logo-row .thumb{ width:clamp(60px,14vmin,104px); aspect-ratio:1/1; object-fit:cover; border-radius:10px; border:2px solid #fff; box-shadow:0 4px 14px rgba(0,0,0,.15); }
+  /* 마무리 슬라이드 */
+  .closing-in{ display:flex; flex-direction:column; align-items:center; justify-content:center; gap:2.6vmin; text-align:center; min-height:100%; }
+  .quote2{ font-size:clamp(14px,2.8vmin,27px); font-weight:800; color:#fff; line-height:1.42; white-space:nowrap; }
+  .closing .lead-c{ color:rgba(255,255,255,.95); font-size:clamp(15px,2.4vmin,21px); line-height:1.6; max-width:42ch; }
+  .closing .cta{ color:#fff; font-size:clamp(14px,2.2vmin,18px); }
+  .closing .cta a{ color:#fff; font-weight:800; }
+
+  /* 앞으로의 꿈 리스트 */
+  .goals{ display:flex; flex-direction:column; gap:1.2vmin; margin-top:1vmin; }
+  .goal{ display:flex; align-items:center; gap:1.6vmin; background:#fff; border:1px solid var(--line); border-radius:12px; padding:1.4vmin 2vmin; font-size:clamp(14px,2.3vmin,20px); color:var(--ink); }
+  .goal .mk{ flex:none; width:clamp(24px,3.6vmin,32px); height:clamp(24px,3.6vmin,32px); border-radius:50%; background:var(--soft); color:var(--accent); display:flex; align-items:center; justify-content:center; font-weight:900; font-size:clamp(13px,2vmin,18px); }
+
+  /* 인용 */
+  .quote{ border-left:5px solid #fff; padding:0 0 0 3vmin; margin:2vmin 0; font-size:clamp(16px,2.7vmin,24px); font-weight:700; color:#fff; line-height:1.5; }
+
+  /* ---- 이미지 갤러리 (클릭·자동 페이드 전환) ---- */
+  .gallery{ width:100%; }
+  .frame{ position:relative; width:100%; aspect-ratio:16/10; border-radius:16px; overflow:hidden; border:2px solid var(--line); background:#e7ebf3; cursor:pointer; transition:box-shadow .2s ease; }
+  .frame:hover{ box-shadow:0 10px 26px rgba(20,30,60,.22); }
+  .frame .pslide{ position:absolute; inset:0; opacity:0; transition:opacity .9s ease; }
+  .frame .pslide.on{ opacity:1; }
+  .frame .pslide img{ width:100%; height:100%; object-fit:cover; display:block; }
+  .frame.fit .pslide img{ object-fit:contain; }  /* 세로/혼합 사진: 잘리지 않게 전체 보이기 */
+  .pnav{ margin-top:1vmin; text-align:center; font-size:clamp(11px,1.9vmin,15px); color:var(--muted); }
+  .pnav .pcount{ font-weight:800; color:var(--accent2); }
+  /* 사진 없는 자리(플레이스홀더)는 프레임을 채움 */
+  .frame .ph{
+    position:absolute; inset:0; display:flex; flex-direction:column; align-items:center; justify-content:center; text-align:center; gap:1vmin;
+    background:repeating-linear-gradient(45deg,#eef1f7,#eef1f7 12px,#e7ebf3 12px,#e7ebf3 24px);
+    color:#7b8698; padding:3vmin;
+  }
+  .frame .ph .ic{ font-size:clamp(26px,5.5vmin,48px); }
+  .frame .ph .cap{ font-size:clamp(12px,2vmin,16px); font-weight:700; }
+  .frame .ph .cap b{ color:var(--accent2); }
+
+  /* ---- 하단 네비 ---- */
+  .hud{
+    position:fixed; left:0; right:0; bottom:0; height:8vmin; min-height:52px;
+    display:flex; align-items:center; justify-content:center; gap:2vmin;
+    background:rgba(14,18,32,.9); color:#fff; z-index:20;
+  }
+  .hud button{
+    width:clamp(38px,6vmin,52px); height:clamp(32px,5vmin,44px);
+    border:none; border-radius:10px; background:#2b3350; color:#fff; font-size:clamp(15px,2.6vmin,22px); cursor:pointer; transition:background .15s;
+  }
+  .hud button:hover{ background:#3a4468; } .hud button:disabled{ opacity:.35; cursor:default; }
+  .count{ font-size:clamp(13px,2.2vmin,18px); font-variant-numeric:tabular-nums; min-width:64px; text-align:center; }
+  .count b{ color:#ffd24a; }
+  .dots{ display:flex; gap:7px; flex-wrap:wrap; justify-content:center; max-width:40vw; }
+  .dots i{ width:9px; height:9px; border-radius:50%; background:#4a5578; cursor:pointer; transition:background .15s,transform .15s; }
+  .dots i.on{ background:#ffd24a; transform:scale(1.25); }
+  .hint{ position:fixed; top:2vmin; right:2.5vmin; color:#9aa4bd; font-size:12px; z-index:20; text-align:right; }
+
+  @media (max-width:680px){ .row{ grid-template-columns:1fr; } }
+</style>
+</head>
+<body>
+<div class="deck">
+
+  <!-- 1. 표지 -->
+  <section class="slide cover active">
+    <div class="inner" style="text-align:center">
+      <span class="tag">👩‍🏫 soobing 선생님의 자기소개</span>
+      <h1>저는 어떻게 <span style="color:#ffd24a">개발자</span>가 되었을까요?</h1>
+      <div class="brand">"영월 시골 <s>소녀</s>아줌마, 아직도 꿈을 펼쳐나가는 중!"</div>
+    </div>
+  </section>
+
+  <!-- 2. 넓은 세상으로 -->
+  <section class="slide">
+    <div class="inner row">
+      <div class="stack">
+        <div class="kicker">① 학창시절</div>
+        <h2>넓은 세상으로 가고 싶었어요</h2>
+        <p class="narr">작은 시골이 답답하게 느껴졌어요. 늘 <span class="accent">넓은 세상에 대한 동경</span>이 있었죠.</p>
+        <p class="narr">기억에 남는 경험으로는 중3 때 다녀온 <b>뉴질랜드 어학연수</b>, 그리고 고등학생 때 <b>건축 동아리를 만들어</b> 서울에서 열리는 <b>인테리어 디자인 박람회</b>와 <b>건축가 투어</b>에 참여했던 일들이 있어요.</p>
+      </div>
+      <!-- 사진: 클릭하면 다음, 가만두면 자동 페이드 전환 -->
+      <div>
+        <div class="gallery">
+          <div class="frame" data-auto="1">
+            <figure class="pslide on"><img src="/works/soobing/img/exp6.jpg" alt="넓은 세상 경험 사진 1"></figure>
+            <figure class="pslide"><img src="/works/soobing/img/exp5.jpg" alt="넓은 세상 경험 사진 2"></figure>
+            <figure class="pslide"><img src="/works/soobing/img/exp4.jpg" alt="넓은 세상 경험 사진 3"></figure>
+            <figure class="pslide"><img src="/works/soobing/img/exp3.jpg" alt="넓은 세상 경험 사진 4"></figure>
+            <figure class="pslide"><img src="/works/soobing/img/exp2.jpg" alt="넓은 세상 경험 사진 5"></figure>
+            <figure class="pslide"><img src="/works/soobing/img/exp1.jpg" alt="넓은 세상 경험 사진 6"></figure>
+          </div>
+          <div class="pnav"><span class="pcount">1 / 6</span></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 3. 상경 (세종대) -->
+  <section class="slide">
+    <div class="inner row">
+      <div class="stack">
+        <div class="kicker">② 대학교 입학</div>
+        <h2>드디어 상경!</h2>
+        <p class="narr">저의 목표는 무조건 <span class="accent">상경</span>이었기 때문에, 수능 성적에 맞춰 갈 수 있는 대학과 학과를 선택했어요. 그렇게 가게 된 곳은 세종대학교 <b>'환경에너지공간융합학과'</b>였습니다.</p>
+        <p class="narr">전공이 적성에 딱 맞진 않았지만, 저의 목표인 '상경'은 이뤘기에 후회하지 않았어요. 대신 <span class="accent2">저에게 맞는 전공을 찾기 위해</span> 다양한 활동과 경험을 하며 노력했습니다.</p>
+      </div>
+      <!-- 사진: 클릭하면 다음, 가만두면 자동 페이드 전환 (세로 사진 있어서 fit) -->
+      <div>
+        <div class="gallery">
+          <div class="frame fit" data-auto="1">
+            <figure class="pslide on"><img src="/works/soobing/img/grad2.jpg" alt="세종대 졸업 사진 1"></figure>
+            <figure class="pslide"><img src="/works/soobing/img/grad1.jpg" alt="세종대 졸업 사진 2"></figure>
+          </div>
+          <div class="pnav"><span class="pcount">1 / 2</span></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 4. 코딩과의 만남 -->
+  <section class="slide">
+    <div class="inner row">
+      <div class="stack">
+        <div class="kicker">③ 진로 탐색</div>
+        <h2>우연한 계기로 '코딩'에 관심</h2>
+        <p class="narr">다양한 활동을 열심히 했지만, 저에게 맞는 전공은 <span class="accent">우연히</span> 찾게 됐어요. 지금의 남편(그때 남자친구)이 '전자전기·컴퓨터공학'을 전공했는데, 함께 숙제하다 <b>C언어로 코딩하는 모습</b>을 보게 됐죠.</p>
+        <p class="narr">실험 결과가 나오기까지 일주일에서 한 달까지 걸리는 환경 전공과는 달리, 코딩은 <span class="accent2">1초 만에 결과</span>가 나오는 게 흥미로웠고, 제 성향과 잘 맞을 것 같았어요.</p>
+      </div>
+      <!-- 이미지: 클릭하면 다음 사진 (여러 장이면 자동 순환) -->
+      <div>
+        <div class="gallery">
+          <div class="frame">
+            <figure class="pslide on"><img src="/works/soobing/img/code1.jpg" alt="남자친구와 함께"></figure>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 5. 복수전공 결심 -->
+  <section class="slide">
+    <div class="inner row">
+      <div class="stack">
+        <div class="kicker">④ 복수전공 결심</div>
+        <h2>'컴퓨터공학과' 복수전공 시작</h2>
+        <p class="narr">일단 2학년 때부터 컴퓨터공학과 수업을 들어 보기 시작했어요. '잘 맞으면 복수전공을 신청해야지' 하는 생각으로요.</p>
+        <p class="narr">전공 수업이 마냥 쉽진 않았지만 <span class="accent">코딩 수업은 늘 흥미로웠어요.</span> 문·이과의 교집합 특성을 가진 컴퓨터공학을 공부하는 게 즐거웠고, 그렇게 <b>복수전공을 결심</b>하게 되었습니다.</p>
+      </div>
+      <div class="stack">
+        <!-- 일러스트: 본전공(환경) + 복수전공(컴퓨터) 두 전공 카드가 겹친 그림 -->
+        <div class="major-fig">
+          <svg viewBox="0 0 300 172" role="img" aria-label="환경에너지공간융합 본전공에 컴퓨터공학 복수전공을 더함">
+            <g transform="rotate(-5 95 96)">
+              <rect x="16" y="50" width="152" height="92" rx="12" fill="#eef3ee" stroke="#9dc29d" stroke-width="2.5"/>
+              <text x="92" y="87" text-anchor="middle" font-size="25">🌱</text>
+              <text x="92" y="111" text-anchor="middle" font-size="11.5" font-weight="800" fill="#5b6472">환경에너지공간융합</text>
+              <text x="92" y="128" text-anchor="middle" font-size="10" fill="#8a97a3">본전공</text>
+            </g>
+            <g transform="rotate(5 212 100)">
+              <rect x="140" y="54" width="150" height="95" rx="12" fill="#fff4e6" stroke="#e8590c" stroke-width="3"/>
+              <text x="215" y="92" text-anchor="middle" font-size="28">💻</text>
+              <text x="215" y="117" text-anchor="middle" font-size="13" font-weight="800" fill="#1f2430">컴퓨터공학</text>
+              <text x="215" y="135" text-anchor="middle" font-size="10" font-weight="800" fill="#e8590c">복수전공</text>
+            </g>
+            <circle cx="150" cy="42" r="17" fill="#e8590c"/>
+            <text x="150" y="48" text-anchor="middle" font-size="17" font-weight="900" fill="#fff">＋</text>
+          </svg>
+        </div>
+        <!-- 이어서: 코딩하는 사진 (해커톤 · 카페) -->
+        <div class="gallery">
+          <div class="frame" data-auto="1">
+            <figure class="pslide on"><img src="/works/soobing/img/code2.jpg" alt="해커톤에서 코딩"></figure>
+            <figure class="pslide"><img src="/works/soobing/img/code3.jpg" alt="카페에서 코딩"></figure>
+          </div>
+          <div class="pnav"><span class="pcount">1 / 2</span></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 6. 취업 -->
+  <section class="slide">
+    <div class="inner row">
+      <div class="stack">
+        <div class="kicker">⑤ 취업</div>
+        <h2>졸업하기도 전에 '직장인'</h2>
+        <p class="narr">부모님은 늘 취업을 걱정하셨어요. '졸업하면 내 힘으로 살자'는 목표가 있어서, 4학년 2학기부터 자기소개서를 열심히 쓰고 취업 준비에 열중했죠.</p>
+        <p class="narr">가장 먼저 최종면접에 합격한 <b>'오스템임플란트'</b>에 입사하게 됐어요. 치과에서 CT를 찍으면 볼 수 있는 <span class="accent2">3D 뷰어를 만드는 개발팀</span>이었습니다.</p>
+        <p class="narr">입사 후 여러 대기업 1차 합격 알림이 오기 시작했지만, 이미 합격증을 받은 저는 더 큰 진로 고민 없이 <b>첫 회사에 집중</b>하기로 했어요.</p>
+      </div>
+      <!-- 오스템임플란트 3D 뷰어(OneClinic) 스크린샷 한 장 + 하단 기업 로고 -->
+      <div class="stack">
+        <img class="shot" src="/works/soobing/img/osstem_viewer.png" alt="치과 CT 3D 뷰어 (OneClinic)">
+        <img class="logo" src="/works/soobing/img/osstem_logo.png" alt="OSSTEM IMPLANT">
+      </div>
+    </div>
+  </section>
+
+  <!-- 7. 후회, 그리고 이직 (스타트업 = Sweetspot) -->
+  <section class="slide">
+    <div class="inner row">
+      <div class="stack">
+        <div class="kicker">⑥ 다시 도전</div>
+        <h2>후회, 그리고 네 번의 이직</h2>
+        <p class="narr">막연하게 개발자가 되고 싶었지, 개발 안에서도 <span class="accent">어떤 분야에 흥미가 있고 어느 회사를 가고 싶은지</span> 진지하게 탐구하지 않았어요. 그 후회는 시간이 갈수록 더 커졌죠.</p>
+        <p class="narr">도전하지 않았던 제 모습을 반성하고 <b>다시 시작</b>하기로 결심했어요. 하고 싶은 분야를 탐색했고, 그 기회를 준 <span class="accent2">스타트업으로 이직</span>했습니다.</p>
+        <p class="narr">그렇게 <b>첫 FE 개발자</b>로 커리어를 시작할 수 있었습니다.</p>
+      </div>
+      <!-- 우측: Sweetspot 서비스 화면 + (로고 + 스타트업 사진 작게) -->
+      <div class="stack">
+        <img class="shot" src="/works/soobing/img/sweetspot_viewer.jpeg" alt="Sweetspot 서비스 화면">
+        <div class="logo-row">
+          <img class="logo" src="/works/soobing/img/sweetspot_logo.jpeg" alt="Sweetspot — THE FUTURE OF RETAIL">
+          <img class="thumb" src="/works/soobing/img/startup1.jpg" alt="스타트업 시절">
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 8. 도전의 연속 -->
+  <section class="slide">
+    <div class="inner row">
+      <div class="stack">
+        <div class="kicker">⑦ 도전의 연속</div>
+        <h2>장밋빛보단 도전의 연속</h2>
+        <div class="cpath">
+          <span class="c">스타트업</span><span class="ar">→</span>
+          <span class="c">11번가</span><span class="ar">→</span>
+          <span class="c">카카오엔터프라이즈</span><span class="ar">→</span>
+          <span class="c last">카카오</span>
+        </div>
+        <p class="narr">회사가 두 번이나 어려워져 새 회사로 옮겨야 했어요. 첫 스타트업은 <b>팝업스토어 중개</b> 회사였는데 코로나가 터졌고, 오프라인 사업이 힘들어져 회사가 규모를 크게 줄이던 시기였죠. <span class="accent">하지만 위기는 기회였어요.</span> 대규모 서비스를 경험하고 싶었는데 <b>11번가</b>로 이직에 성공했거든요.</p>
+        <p class="narr">11번가에서 경력을 쌓다가 AI 사업을 하는 <b>카카오엔터프라이즈</b>로 옮겼는데, ChatGPT 등장으로 계열사 사업이 축소됐어요. 다른 계열사로 면접을 봐야 하는 상황에 스트레스를 받았지만, <span class="accent">또 위기는 기회가 되어</span> 현재 <b>카카오</b>에 안착했습니다.</p>
+      </div>
+      <!-- 우측: 커리어 여정 사진 (WeWork · 헤드샷 · 크리스마스 파티 · 카카오프렌즈) -->
+      <div>
+        <div class="gallery">
+          <div class="frame fit" data-auto="1">
+            <figure class="pslide on"><img src="/works/soobing/img/startup2.jpg" alt="WeWork 앞"></figure>
+            <figure class="pslide"><img src="/works/soobing/img/profile1.jpg" alt="프로필"></figure>
+            <figure class="pslide"><img src="/works/soobing/img/chal1.jpg" alt="크리스마스 파티"></figure>
+            <figure class="pslide"><img src="/works/soobing/img/chal2.jpg" alt="카카오프렌즈"></figure>
+          </div>
+          <div class="pnav"><span class="pcount">1 / 4</span></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 9. 카카오 개발자 -->
+  <section class="slide">
+    <div class="inner row">
+      <div class="stack">
+        <div class="kicker">⑧ Finally</div>
+        <h2>그렇게, 카카오 개발자 ✨</h2>
+        <p class="narr">그렇게 <b>다섯 번째 회사인 카카오</b>에 오게 됐어요. 카카오의 <b>'메이커스'</b> 서비스를 만드는 조직에 합류했죠.</p>
+        <p class="narr">실력 있는 개발자들과 함께 일할 수 있어서 행복해요. <span class="accent">막연하게 꿈꿨거든요. 언젠가 '네카라쿠배'에 가는 것을!</span></p>
+      </div>
+      <div>
+        <div class="gallery">
+          <div class="frame fit" data-auto="1">
+            <figure class="pslide on"><img src="/works/soobing/img/kakao1.jpg" alt="카카오 패밀리데이 1"></figure>
+            <figure class="pslide"><img src="/works/soobing/img/kakao2.jpg" alt="카카오 패밀리데이 2"></figure>
+            <figure class="pslide"><img src="/works/soobing/img/kakao3.jpg" alt="카카오 아지트"></figure>
+          </div>
+          <div class="pnav"><span class="pcount">1 / 3</span></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 10. 지금도 꿈을 펼치는 중 -->
+  <section class="slide">
+    <div class="inner stack">
+      <div class="kicker">계속해서</div>
+      <h2>그리고 <span class="accent">지금도, 꿈을 펼치는 중</span>이에요</h2>
+      <p class="narr">이제 꿈을 다 이루었냐고요? <span class="accent">No,</span> 아직도 이런 꿈들이 있어요.</p>
+      <div class="goals">
+        <div class="goal"><span class="mk">?</span>언젠가 꼭 <b>글로벌 기업</b>에서 일해보기</div>
+        <div class="goal"><span class="mk">?</span>(개발자로서뿐만 아니라) <b>나의 다양한 역량</b>을 펼치며 일하기</div>
+        <div class="goal"><span class="mk">?</span>행복한 가정 꾸리기</div>
+        <div class="goal"><span class="mk">?</span><b>나만의 서비스</b> 만들기</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 11. 마무리 -->
+  <section class="slide closing">
+    <div class="inner closing-in">
+      <div class="quote2">“스스로 한계를 규정하는 것만큼 어리석은 일은 없다”</div>
+      <h1>막연한 꿈도, 결국 현실이 되더라</h1>
+      <p class="lead-c">한계를 규정하지 않고 나를 탐구하며 한 걸음씩.<br>그렇게 시골 소녀는 <b style="color:#fff">개발자</b>가 됐고, 지금도 꿈을 펼치는 중이에요.</p>
+      <div class="brand">영월 출신 soobing, 아직도 꿈을 펼쳐나가는 중!</div>
+      <p class="cta">여러분도 파이팅! 💪<br>🔗 <a href="https://www.linkedin.com/in/soobin-bak-8a1994117/" target="_blank" rel="noopener">soobing 의 LinkedIn</a></p>
+    </div>
+  </section>
+
+  <!-- 네비게이션 -->
+  <div class="hint">← → 방향키 · 화면 클릭으로 넘기기<br>사진은 <b style="color:#1b2f57">클릭</b>하면 바뀌어요</div>
+  <nav class="hud">
+    <button id="prev" aria-label="이전">◀</button>
+    <div class="dots" id="dots"></div>
+    <span class="count"><b id="cur">1</b> / <span id="tot">11</span></span>
+    <button id="next" aria-label="다음">▶</button>
+  </nav>
+</div>
+
+<script>
+  const slides = Array.from(document.querySelectorAll('.slide'));
+  const dotsWrap = document.getElementById('dots');
+  const curEl = document.getElementById('cur');
+  const prevBtn = document.getElementById('prev');
+  const nextBtn = document.getElementById('next');
+  document.getElementById('tot').textContent = slides.length;
+  let i = 0;
+
+  slides.forEach((_, k) => {
+    const d = document.createElement('i');
+    d.addEventListener('click', (e) => { e.stopPropagation(); show(k); });
+    dotsWrap.appendChild(d);
+  });
+  const dots = Array.from(dotsWrap.children);
+
+  // 사진 갤러리 컨트롤러: 슬라이드가 활성화될 때만 1번 사진부터 자동 전환 시작.
+  // (예전엔 로드 즉시 모든 갤러리 타이머가 돌아, 슬라이드 도착 시 이미 2번째 사진이 보였음)
+  const galleries = [];
+  document.querySelectorAll('.gallery').forEach((g) => {
+    const frame = g.querySelector('.frame');
+    const ps = Array.from(g.querySelectorAll('.pslide'));
+    const count = g.querySelector('.pcount');
+    const slide = g.closest('.slide');
+    let pi = 0, timer = null;
+    function render() {
+      ps.forEach((p, k) => p.classList.toggle('on', k === pi));
+      if (count) count.textContent = (pi + 1) + ' / ' + ps.length;
+    }
+    function go(n) { if (ps.length < 2) return; pi = (n + ps.length) % ps.length; render(); }
+    function stop() { if (timer) { clearInterval(timer); timer = null; } }
+    function startAuto() {
+      stop();
+      if (ps.length > 1 && frame && frame.dataset.auto === '1') timer = setInterval(() => go(pi + 1), 3500);
+    }
+    function reset() { pi = 0; render(); }
+    if (frame) frame.addEventListener('click', (e) => { e.stopPropagation(); go(pi + 1); startAuto(); });
+    galleries.push({ slide, reset, startAuto, stop });
+  });
+
+  function show(n) {
+    i = Math.max(0, Math.min(slides.length - 1, n));
+    slides.forEach((s, k) => s.classList.toggle('active', k === i));
+    dots.forEach((d, k) => d.classList.toggle('on', k === i));
+    curEl.textContent = i + 1;
+    prevBtn.disabled = i === 0;
+    nextBtn.disabled = i === slides.length - 1;
+    const inner = slides[i].querySelector('.inner');
+    if (inner) inner.scrollTop = 0;
+    // 활성 슬라이드의 갤러리만 1번 사진으로 리셋 + 자동 시작, 나머지는 정지
+    galleries.forEach((gal) => {
+      if (gal.slide === slides[i]) { gal.reset(); gal.startAuto(); }
+      else gal.stop();
+    });
+  }
+
+  prevBtn.addEventListener('click', (e) => { e.stopPropagation(); show(i - 1); });
+  nextBtn.addEventListener('click', (e) => { e.stopPropagation(); show(i + 1); });
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'ArrowRight' || e.key === 'PageDown') { show(i + 1); e.preventDefault(); }
+    else if (e.key === 'ArrowLeft' || e.key === 'PageUp') { show(i - 1); e.preventDefault(); }
+  });
+  document.querySelector('.deck').addEventListener('click', (e) => {
+    if (e.target.closest('.hud') || e.target.closest('a') || e.target.closest('.dots') || e.target.closest('.gallery')) return;
+    if (e.clientX > window.innerWidth / 2) show(i + 1); else show(i - 1);
+  });
+
+  show(0);
+</script>
+</body>
+</html>

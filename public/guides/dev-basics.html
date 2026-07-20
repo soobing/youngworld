@@ -1,0 +1,445 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>처음 만나는 개발 지식</title>
+<style>
+  :root{
+    --ink:#1f2430; --muted:#5b6472; --accent:#e8590c;   /* 포인트 컬러 딱 하나(주황) */
+    --soft:#fff4e6; --tint:#ffe8d3; --line:#e3e7ee; --bg:#f7f8fb;
+  }
+  *{ box-sizing:border-box; }
+  html,body{ margin:0; padding:0; background:var(--bg); }
+  body{
+    font-family:"Apple SD Gothic Neo","Pretendard","Noto Sans KR",-apple-system,"Malgun Gothic",sans-serif;
+    color:var(--ink); line-height:1.75; -webkit-text-size-adjust:100%;
+  }
+  .wrap{ max-width:800px; margin:0 auto; padding:34px 22px 80px; }
+
+  header.hero{
+    background:linear-gradient(135deg,#e8590c,#ff922b); color:#fff;
+    border-radius:18px; padding:28px 26px; margin-bottom:10px;
+    box-shadow:0 10px 30px rgba(232,89,12,.22);
+  }
+  header.hero .tag{ display:inline-block; background:rgba(255,255,255,.24); font-weight:800; font-size:13px; padding:5px 12px; border-radius:20px; }
+  header.hero h1{ margin:12px 0 6px; font-size:27px; }
+  header.hero p{ margin:0; opacity:.96; font-size:14.5px; }
+
+  .toc{ background:#fff; border:1px solid var(--line); border-radius:14px; padding:14px 18px; margin:16px 0 4px; }
+  .toc b{ font-size:14px; color:var(--muted); }
+  .toc ol{ margin:8px 0 0; padding-left:20px; }
+  .toc li{ font-size:14.5px; margin:4px 0; }
+  .toc a{ color:var(--accent); text-decoration:none; font-weight:700; }
+
+  h2{ font-size:21px; margin:40px 0 10px; padding-left:12px; border-left:5px solid var(--accent); scroll-margin-top:12px; }
+  h2 .num{ color:var(--accent); font-weight:900; margin-right:8px; }
+  h3{ font-size:16.5px; margin:20px 0 6px; color:var(--accent); }
+  p{ margin:0 0 12px; font-size:15px; }
+  .lead{ color:var(--muted); }
+  b{ color:var(--ink); }
+  .k{ color:var(--accent); font-weight:800; }
+
+  /* 그림(일러스트) */
+  figure.fig{ margin:16px 0; padding:16px 14px 12px; background:#fff; border:1px solid var(--line); border-radius:16px; text-align:center; }
+  figure.fig svg{ width:100%; max-width:560px; height:auto; display:block; margin:0 auto; }
+  figure.fig figcaption{ font-size:13px; color:var(--muted); margin-top:10px; }
+
+  /* 비유 박스 */
+  .analogy{ background:var(--soft); border-left:4px solid var(--accent); border-radius:12px; padding:13px 17px; margin:14px 0; font-size:14.5px; }
+  .analogy b{ color:var(--accent); }
+  .term{ display:inline-block; background:#f1f3f9; border:1px solid var(--line); border-radius:6px; padding:1px 7px; font-size:13.5px; font-weight:700; color:#364152; font-family:ui-monospace,SFMono-Regular,Menlo,monospace; }
+
+  .cards{ display:grid; grid-template-columns:1fr 1fr; gap:14px; margin:14px 0; }
+  .card{ background:#fff; border:1px solid var(--line); border-radius:14px; padding:15px 17px; }
+  .card h4{ margin:0 0 6px; font-size:15px; }
+  .card p{ margin:0; font-size:14px; color:var(--muted); }
+
+  .tbl{ width:100%; border-collapse:collapse; margin:14px 0; font-size:14px; background:#fff; border-radius:12px; overflow:hidden; border:1px solid var(--line); }
+  .tbl th,.tbl td{ padding:11px 13px; text-align:left; vertical-align:top; border-bottom:1px solid var(--line); }
+  .tbl th{ background:var(--soft); font-size:13.5px; }
+  .tbl tr:last-child td{ border-bottom:none; }
+  .tbl .h{ font-weight:800; color:var(--ink); white-space:nowrap; }
+
+  .steps{ counter-reset:s; list-style:none; padding:0; margin:12px 0; }
+  .steps li{ counter-increment:s; position:relative; padding:10px 14px 10px 44px; margin:8px 0; background:#fff; border:1px solid var(--line); border-radius:12px; font-size:14.5px; }
+  .steps li::before{ content:counter(s); position:absolute; left:12px; top:10px; width:24px; height:24px; background:var(--accent); color:#fff; font-weight:800; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:13px; }
+
+  .tip{ background:var(--soft); border-left:4px solid var(--accent); padding:12px 16px; border-radius:10px; margin:16px 0; font-size:14px; }
+  .tip b{ color:var(--accent); }
+
+  footer{ margin-top:44px; text-align:center; color:var(--muted); font-size:13px; }
+  @media (max-width:560px){ .cards{ grid-template-columns:1fr; } }
+</style>
+</head>
+<body>
+  <div class="wrap">
+    <header class="hero">
+      <span class="tag">🛠️ 개발 기초</span>
+      <h1>처음 만나는 개발 지식</h1>
+      <p>개발자들은 어떻게 함께 코드를 만들까요? 우리가 만드는 게임은 어떻게 움직일까요? 그림으로 하나씩 알아봐요.</p>
+    </header>
+
+    <nav class="toc">
+      <b>오늘 배울 것</b>
+      <ol>
+        <li><a href="#s1">협업하며 코드 관리하기 — Git · GitHub · 브랜치 · PR</a></li>
+        <li><a href="#s2">오픈소스 문화 — 함께 만들고 나누기</a></li>
+        <li><a href="#s3">LLM 서비스 vs 코딩 에이전트(Claude Code · Codex)</a></li>
+        <li><a href="#s4">이번 실습에서 Claude를 고른 이유</a></li>
+        <li><a href="#s5">우리가 만드는 게임은 어떻게 움직일까? (아키텍처)</a></li>
+        <li><a href="#s6">코드가 인터넷에 올라가기까지 — 배포(deploy)</a></li>
+      </ol>
+    </nav>
+
+    <!-- =============== 1 =============== -->
+    <h2 id="s1"><span class="num">1</span>협업하며 코드 관리하기</h2>
+    <p class="lead">프로그램은 글자로 된 <b>코드(code)</b> 수천 줄로 이뤄져요. 여럿이 고치다 보면 금세 뒤죽박죽이 되죠. 그래서 개발자들은 <span class="k">버전 관리(형상 관리)</span> 도구를 씁니다.</p>
+
+    <h3>Git — 코드의 타임머신</h3>
+    <p><span class="term">Git</span> 은 코드가 언제·어떻게 바뀌었는지 <b>기록(버전)</b>을 남겨줘요. 실수해도 예전 버전으로 되돌릴 수 있죠.</p>
+    <figure class="fig">
+      <svg viewBox="0 0 560 210" role="img" aria-label="지저분한 파일 이름 vs Git 버전 관리">
+        <line x1="280" y1="16" x2="280" y2="198" stroke="#e3e7ee" stroke-width="2" stroke-dasharray="5 5"/>
+        <!-- 왼쪽: 이렇게 하면 -->
+        <text x="135" y="28" text-anchor="middle" fill="#5b6472" font-size="13" font-weight="800">이렇게 하면… 😵</text>
+        <g font-size="12" fill="#5b6472">
+          <rect x="24" y="44" width="224" height="28" rx="6" fill="#fff" stroke="#c3cad6" stroke-width="2"/><text x="38" y="62">📄 발표.pptx</text>
+          <rect x="24" y="80" width="224" height="28" rx="6" fill="#fff" stroke="#c3cad6" stroke-width="2"/><text x="38" y="98">📄 발표_최종.pptx</text>
+          <rect x="24" y="116" width="224" height="28" rx="6" fill="#fff" stroke="#c3cad6" stroke-width="2"/><text x="38" y="134">📄 발표_진짜최종.pptx</text>
+          <rect x="24" y="152" width="224" height="28" rx="6" fill="#fff" stroke="#c3cad6" stroke-width="2"/><text x="38" y="170">📄 발표_찐찐최종_v2.pptx</text>
+        </g>
+        <!-- 오른쪽: Git 이라면 -->
+        <text x="415" y="28" text-anchor="middle" fill="#e8590c" font-size="13" font-weight="800">Git 이라면 😎</text>
+        <rect x="326" y="44" width="208" height="30" rx="6" fill="#fff4e6" stroke="#e8590c" stroke-width="2.5"/>
+        <text x="342" y="64" fill="#1f2430" font-size="12" font-weight="700">📄 발표.pptx — 파일은 하나!</text>
+        <line x1="360" y1="90" x2="360" y2="184" stroke="#c3cad6" stroke-width="4" stroke-linecap="round"/>
+        <g font-size="12" fill="#5b6472">
+          <circle cx="360" cy="98"  r="8" fill="#fff" stroke="#e8590c" stroke-width="3"/><text x="380" y="102">버전 1</text>
+          <circle cx="360" cy="126" r="8" fill="#fff" stroke="#e8590c" stroke-width="3"/><text x="380" y="130">버전 2</text>
+          <circle cx="360" cy="154" r="8" fill="#fff" stroke="#e8590c" stroke-width="3"/><text x="380" y="158">버전 3</text>
+          <circle cx="360" cy="184" r="9" fill="#e8590c"/><text x="380" y="188" fill="#1f2430" font-weight="800">지금 (되돌리기 가능)</text>
+        </g>
+      </svg>
+      <figcaption>파일 이름을 자꾸 늘리지 않아도, Git이 한 파일의 <b>변경 기록(버전)</b>을 차곡차곡 관리해 줘요.</figcaption>
+    </figure>
+    <div class="analogy">📄 <b>비유:</b> 발표 자료를 고칠 때 <b>발표 → 발표_최종 → 발표_진짜최종 → 발표_찐찐최종</b>처럼 파일을 자꾸 새로 만든 적 있죠? Git은 이런 이름 놀이 없이, <b>하나의 파일에 바뀐 기록</b>을 순서대로 저장해 줘요. 예전 버전으로 되돌리기도 한 번에!</div>
+
+    <h3>GitHub — 코드를 함께 두는 인터넷 공간</h3>
+    <p><span class="term">GitHub</span> 는 내 컴퓨터의 코드를 인터넷에 올려 <b>여럿이 함께 보고 나누는</b> 곳이에요. (Git = 도구, GitHub = 코드를 모아두는 웹사이트!)</p>
+    <figure class="fig">
+      <svg viewBox="0 0 560 200" role="img" aria-label="깃허브에 코드 올려 함께 보기">
+        <!-- GitHub 웹사이트 카드(중앙 상단) -->
+        <rect x="196" y="22" width="168" height="98" rx="12" fill="#fff" stroke="#e8590c" stroke-width="3"/>
+        <rect x="196" y="22" width="168" height="24" rx="12" fill="#e8590c"/>
+        <circle cx="211" cy="34" r="3.5" fill="#fff"/><circle cx="223" cy="34" r="3.5" fill="#fff"/><circle cx="235" cy="34" r="3.5" fill="#fff"/>
+        <text x="280" y="74" text-anchor="middle" fill="#1f2430" font-size="16" font-weight="800">🐙 GitHub</text>
+        <line x1="216" y1="90" x2="344" y2="90" stroke="#ffe8d3" stroke-width="6"/>
+        <line x1="216" y1="104" x2="322" y2="104" stroke="#ffe8d3" stroke-width="6"/>
+        <text x="280" y="140" text-anchor="middle" fill="#5b6472" font-size="12">코드를 모아두는 웹사이트</text>
+        <!-- 내 컴퓨터(왼쪽 아래) -->
+        <rect x="38" y="150" width="104" height="40" rx="6" fill="#fff4e6" stroke="#e8590c" stroke-width="2.5"/>
+        <text x="90" y="175" text-anchor="middle" fill="#1f2430" font-size="12" font-weight="700">💻 내 컴퓨터</text>
+        <path d="M138 158 C 172 140, 190 122, 206 104" fill="none" stroke="#e8590c" stroke-width="2.5"/>
+        <polygon points="206,104 194,108 201,117" fill="#e8590c"/>
+        <text x="150" y="134" fill="#e8590c" font-size="11" font-weight="700">올리기(push)</text>
+        <!-- 친구들(오른쪽 아래) -->
+        <g fill="#fff" stroke="#5b6472" stroke-width="2.5">
+          <circle cx="452" cy="162" r="15"/><circle cx="500" cy="162" r="15"/>
+        </g>
+        <g fill="#5b6472">
+          <circle cx="452" cy="158" r="5.5"/><circle cx="500" cy="158" r="5.5"/>
+          <path d="M441 175 a11 9 0 0 1 22 0z"/><path d="M489 175 a11 9 0 0 1 22 0z"/>
+        </g>
+        <text x="476" y="196" text-anchor="middle" fill="#5b6472" font-size="12">친구들과 함께 보기</text>
+        <path d="M354 108 C 400 130, 428 145, 450 152" fill="none" stroke="#c3cad6" stroke-width="2.5"/>
+      </svg>
+      <figcaption>내 컴퓨터의 코드를 <b>GitHub에 올리면(push)</b>, 어디서든 친구와 함께 이어 만들 수 있어요.</figcaption>
+    </figure>
+    <div class="analogy">📁 <b>비유:</b> 발표 자료를 <b>구글 드라이브에 올려 친구와 함께 보고 고치는</b> 것과 비슷해요. (GitHub는 '코드 전용' 드라이브인 셈!)</div>
+    <div class="tip">🔗 여러분이 <b>GitHub에 가입하고 Username을 쪽지로 공유</b>한 것도, 바로 이 개발자들의 세계로 들어온 첫걸음이에요!</div>
+
+    <h3>브랜치(branch) — 원본을 지키는 '가지' 🌿</h3>
+    <p>원본을 바로 고치면 위험해요. 그래서 <span class="term">branch</span>(가지)를 쳐서 <b>복사본에서 마음껏 작업</b>하고, 잘 되면 원본에 합칩니다.</p>
+    <figure class="fig">
+      <svg viewBox="0 0 560 170" role="img" aria-label="브랜치와 합치기">
+        <!-- main 라인 -->
+        <line x1="40" y1="130" x2="520" y2="130" stroke="#c3cad6" stroke-width="5" stroke-linecap="round"/>
+        <text x="40" y="152" fill="#5b6472" font-size="12" font-weight="700">main (원본)</text>
+        <circle cx="110" cy="130" r="11" fill="#fff" stroke="#5b6472" stroke-width="3"/>
+        <circle cx="500" cy="130" r="12" fill="#e8590c"/>
+        <text x="500" y="156" text-anchor="middle" fill="#e8590c" font-size="12" font-weight="700">합치기</text>
+        <!-- 가지 -->
+        <path d="M180 130 C 220 60, 250 60, 300 60 L 380 60 C 430 60, 460 90, 500 128" fill="none" stroke="#e8590c" stroke-width="4"/>
+        <circle cx="300" cy="60" r="11" fill="#fff" stroke="#e8590c" stroke-width="3"/>
+        <circle cx="380" cy="60" r="11" fill="#fff" stroke="#e8590c" stroke-width="3"/>
+        <text x="340" y="40" text-anchor="middle" fill="#e8590c" font-size="13" font-weight="800">🌿 내 가지(branch)에서 작업</text>
+      </svg>
+      <figcaption>원본은 그대로 두고, <b>가지에서 안전하게 실험</b> → 잘 되면 <b>합치기(merge)</b>.</figcaption>
+    </figure>
+    <div class="analogy">🌿 <b>비유:</b> 숙제 파일을 <b>복사해서 '연습용 사본'</b>을 만들고, 거기서 이것저것 고쳐보는 것과 같아요. 원본은 안전하니 마음 놓고 실험하고, <b>마음에 들 때만 원본에 반영</b>해요.</div>
+
+    <h3>PR(Pull Request) — "합쳐도 될까요?" 검토 요청</h3>
+    <p>가지에서 바꾼 걸 원본에 합치기 전에, <span class="term">Pull Request</span>(PR)로 <b>"이렇게 바꿨는데 합쳐도 될까요?"</b> 하고 동료에게 검토를 요청해요. 함께 확인하니 실수가 줄어요.</p>
+    <figure class="fig">
+      <svg viewBox="0 0 560 150" role="img" aria-label="PR 검토 흐름">
+        <!-- 변경 문서 -->
+        <rect x="30" y="45" width="96" height="70" rx="8" fill="#fff" stroke="#5b6472" stroke-width="2.5"/>
+        <line x1="46" y1="66" x2="110" y2="66" stroke="#c3cad6" stroke-width="4"/>
+        <line x1="46" y1="82" x2="110" y2="82" stroke="#e8590c" stroke-width="4"/>
+        <line x1="46" y1="98" x2="90"  y2="98" stroke="#c3cad6" stroke-width="4"/>
+        <text x="78" y="134" text-anchor="middle" fill="#5b6472" font-size="12">내 변경</text>
+        <!-- 화살표1 -->
+        <line x1="132" y1="80" x2="196" y2="80" stroke="#e8590c" stroke-width="2.5"/><polygon points="196,80 184,74 184,86" fill="#e8590c"/>
+        <!-- 검토 -->
+        <circle cx="260" cy="80" r="38" fill="#fff4e6" stroke="#e8590c" stroke-width="3"/>
+        <text x="260" y="76" text-anchor="middle" fill="#e8590c" font-size="13" font-weight="800">👀 검토</text>
+        <text x="260" y="93" text-anchor="middle" fill="#e8590c" font-size="11" font-weight="700">(PR)</text>
+        <!-- 화살표2 -->
+        <line x1="302" y1="80" x2="366" y2="80" stroke="#e8590c" stroke-width="2.5"/><polygon points="366,80 354,74 354,86" fill="#e8590c"/>
+        <!-- 합침 -->
+        <circle cx="430" cy="80" r="34" fill="#e8590c"/>
+        <text x="430" y="78" text-anchor="middle" fill="#fff" font-size="20" font-weight="800">✓</text>
+        <text x="430" y="134" text-anchor="middle" fill="#5b6472" font-size="12">main 에 합침</text>
+      </svg>
+      <figcaption>바꾼 코드 → <b>검토 요청(PR)</b> → 통과하면 <b>원본에 합치기</b>.</figcaption>
+    </figure>
+    <div class="analogy">📝 <b>비유:</b> 숙제를 바로 붙이는 게 아니라, <b>선생님께 먼저 검사받고(리뷰) 통과하면 합치는</b> 것과 같아요.</div>
+
+    <!-- =============== 2 =============== -->
+    <h2 id="s2"><span class="num">2</span>오픈소스 문화</h2>
+    <p class="lead"><span class="k">오픈소스(Open Source)</span>는 프로그램의 <b>설계도(소스 코드)를 공개</b>해서, 누구나 보고·쓰고·고치고·나눌 수 있게 하는 문화예요.</p>
+    <figure class="fig">
+      <svg viewBox="0 0 560 230" role="img" aria-label="오픈소스: 공개된 코드를 함께">
+        <!-- 중앙 코드 -->
+        <rect x="220" y="90" width="120" height="52" rx="10" fill="#e8590c"/>
+        <text x="280" y="122" text-anchor="middle" fill="#fff" font-size="20" font-weight="800">&lt;/&gt;</text>
+        <text x="280" y="164" text-anchor="middle" fill="#5b6472" font-size="12">공개된 코드</text>
+        <!-- 4명 -->
+        <g fill="#fff" stroke="#5b6472" stroke-width="2.5">
+          <circle cx="90"  cy="50" r="20"/><circle cx="470" cy="50" r="20"/>
+          <circle cx="90"  cy="185" r="20"/><circle cx="470" cy="185" r="20"/>
+        </g>
+        <g fill="#5b6472">
+          <circle cx="90"  cy="45" r="7"/><circle cx="470" cy="45" r="7"/>
+          <circle cx="90"  cy="180" r="7"/><circle cx="470" cy="180" r="7"/>
+          <path d="M75 66 a15 12 0 0 1 30 0z"/><path d="M455 66 a15 12 0 0 1 30 0z"/>
+          <path d="M75 201 a15 12 0 0 1 30 0z"/><path d="M455 201 a15 12 0 0 1 30 0z"/>
+        </g>
+        <!-- 양방향 연결 -->
+        <g stroke="#e8590c" stroke-width="2.5" fill="none">
+          <path d="M118 62 L 214 100"/><path d="M442 62 L 346 100"/>
+          <path d="M118 172 L 214 132"/><path d="M442 172 L 346 132"/>
+        </g>
+        <text x="150" y="42"  fill="#e8590c" font-size="12" font-weight="700">보기</text>
+        <text x="392" y="42"  fill="#e8590c" font-size="12" font-weight="700">고치기</text>
+        <text x="150" y="205" fill="#e8590c" font-size="12" font-weight="700">나누기</text>
+        <text x="388" y="205" fill="#e8590c" font-size="12" font-weight="700">기여하기</text>
+      </svg>
+      <figcaption>전 세계 사람들이 <b>조금씩 기여</b>해서 더 튼튼하고 좋은 코드가 돼요.</figcaption>
+    </figure>
+    <div class="cards">
+      <div class="card"><h4>🔍 열려 있어요</h4><p>어떻게 만들었는지 보고 배우고 따라 할 수 있어요.</p></div>
+      <div class="card"><h4>🤝 함께 만들어요</h4><p>여럿이 <b>기여(contribution)</b>해서 점점 좋아져요.</p></div>
+      <div class="card"><h4>🎁 나눌수록 커져요</h4><p>내가 나누면 다른 사람이 이어서 발전시켜요.</p></div>
+      <div class="card"><h4>🙏 존중과 감사</h4><p>남의 코드를 쓸 땐 감사하고 규칙(라이선스)을 지켜요.</p></div>
+    </div>
+    <div class="tip">🌏 우리가 만드는 <b>영월드 게임</b>도 전 세계 개발자들이 무료로 공개한 오픈소스 도구(예: 게임 라이브러리 <span class="term">Phaser</span>) 위에서 만들어졌어요!</div>
+
+    <!-- =============== 3 =============== -->
+    <h2 id="s3"><span class="num">3</span>AI로 코딩하는 두 가지 방법 — 채팅 vs 에이전트</h2>
+    <p class="lead">요즘 AI는 코딩을 도와줘요. 그런데 <b>쓰는 방법</b>이 두 가지예요. 둘 다 <b>속은 같은 AI(LLM)</b>인데, 차이는 '어떻게 쓰느냐'죠.</p>
+    <figure class="fig">
+      <svg viewBox="0 0 560 210" role="img" aria-label="LLM 채팅과 코딩 에이전트 비교">
+        <line x1="280" y1="20" x2="280" y2="190" stroke="#e3e7ee" stroke-width="2" stroke-dasharray="5 5"/>
+        <!-- 왼쪽: LLM 채팅 -->
+        <text x="140" y="34" text-anchor="middle" fill="#1f2430" font-size="14" font-weight="800">💬 LLM 채팅</text>
+        <rect x="40" y="52" width="130" height="34" rx="16" fill="#f1f3f9" stroke="#5b6472" stroke-width="2"/>
+        <text x="105" y="74" text-anchor="middle" fill="#5b6472" font-size="12">이 코드 어떻게 짜?</text>
+        <rect x="90" y="98" width="150" height="34" rx="16" fill="#fff4e6" stroke="#e8590c" stroke-width="2"/>
+        <text x="165" y="120" text-anchor="middle" fill="#e8590c" font-size="12">이렇게 하면 돼요!</text>
+        <text x="140" y="168" text-anchor="middle" fill="#5b6472" font-size="12">글로 알려주면</text>
+        <text x="140" y="186" text-anchor="middle" fill="#5b6472" font-size="12"><tspan fill="#1f2430" font-weight="700">복붙은 내가</tspan> 해요</text>
+        <!-- 오른쪽: 코딩 에이전트 -->
+        <text x="420" y="34" text-anchor="middle" fill="#1f2430" font-size="14" font-weight="800">🤖 코딩 에이전트</text>
+        <circle cx="360" cy="95" r="26" fill="#e8590c"/>
+        <rect x="349" y="86" width="22" height="16" rx="3" fill="#fff"/><circle cx="355" cy="94" r="2.5" fill="#e8590c"/><circle cx="365" cy="94" r="2.5" fill="#e8590c"/>
+        <line x1="360" y1="69" x2="360" y2="60" stroke="#e8590c" stroke-width="3"/><circle cx="360" cy="57" r="4" fill="#e8590c"/>
+        <!-- 폴더+연필 -->
+        <rect x="404" y="80" width="86" height="58" rx="6" fill="#fff" stroke="#5b6472" stroke-width="2.5"/>
+        <path d="M404 80 h30 l8 10 h44" fill="none" stroke="#5b6472" stroke-width="2.5"/>
+        <path d="M470 96 l14 14 -8 20 -20 8 8 -20z" fill="#fff4e6" stroke="#e8590c" stroke-width="2.5"/>
+        <path d="M420 110 l50 0" stroke="#c3cad6" stroke-width="3"/>
+        <text x="420" y="180" text-anchor="middle" fill="#5b6472" font-size="12">내 프로젝트에 들어와</text>
+        <text x="420" y="198" text-anchor="middle" fill="#1f2430" font-size="12" font-weight="700">직접 고치고 실행해요</text>
+      </svg>
+      <figcaption>둘 다 유용하지만 <b>하는 일</b>이 달라요.</figcaption>
+    </figure>
+    <div class="analogy">🍳 <b>비유:</b> <b>채팅</b>은 옆에서 <b>레시피를 알려주는 친구</b>, <b>에이전트</b>는 <b>주방에 들어와 같이 요리해 주는 친구</b>예요.</div>
+    <div class="tip">🧠 <b>알아두기:</b> 코딩 에이전트도 속은 <b>LLM</b>이 움직여요. '채팅'은 그 AI가 말로 답하는 것, '에이전트'는 그 AI에게 <b>손(도구)</b>을 쥐여줘 직접 파일을 고치게 한 거예요.</div>
+    <table class="tbl">
+      <tr><th>구분</th><th>LLM 채팅 서비스</th><th>코딩 에이전트</th></tr>
+      <tr><td class="h">예시</td><td>ChatGPT, Claude 앱</td><td>Claude Code, Codex</td></tr>
+      <tr><td class="h">일하는 곳</td><td>웹/앱 대화창</td><td>내 실제 프로젝트 폴더 안</td></tr>
+      <tr><td class="h">코드 반영</td><td>내가 복사해서 붙여넣기</td><td>AI가 파일을 직접 수정·실행</td></tr>
+      <tr><td class="h">잘하는 일</td><td>설명, 아이디어, 짧은 코드</td><td>여러 파일을 아우르는 실제 작업</td></tr>
+    </table>
+
+    <!-- =============== 4 =============== -->
+    <h2 id="s4"><span class="num">4</span>이번 실습에서 Claude를 고른 이유</h2>
+    <p class="lead">이번 수업에서는 코딩 에이전트 <b>Claude(Claude Code)</b>로 실제 게임을 함께 만들어요. 이유는 이래요.</p>
+    <ol class="steps">
+      <li><b>프로젝트 전체를 이해해요.</b> 파일 하나가 아니라 게임 전체를 읽고, 맥락에 맞게 고쳐 줘요.</li>
+      <li><b>읽기 → 고치기 → 실행까지</b> 한 번에 해요. 결과를 바로 확인하며 배울 수 있어요.</li>
+      <li><b>안전장치가 있어요.</b> 위험하거나 되돌리기 어려운 일은 <b>먼저 물어보고</b> 진행해서, 처음 배우는 사람도 안심돼요.</li>
+      <li><b>한국어 설명이 자연스러워요.</b> 왜 그렇게 고쳤는지 친절히 알려줘요.</li>
+      <li><b>이 게임(영월드)이 실제 증거예요.</b> 여러분이 지금 하고 있는 이 게임도 Claude와 함께 만들었어요!</li>
+    </ol>
+    <div class="tip">💡 도구는 <b>도구일 뿐</b>이에요. 가장 중요한 건 <b>무엇을 왜 만들지 생각하는 사람</b>, 바로 여러분이에요. AI는 그 생각을 빠르게 도와주는 친구랍니다.</div>
+
+    <!-- =============== 5 =============== -->
+    <h2 id="s5"><span class="num">5</span>우리가 만드는 게임은 어떻게 움직일까?</h2>
+    <p class="lead">영월드는 <b>브라우저 게임</b>이에요. 설치 없이 인터넷 주소만 열면 바로 실행되죠. 그 안을 들여다볼게요.</p>
+
+    <h3>① 브라우저 게임 &amp; 라이브러리(Phaser)</h3>
+    <p>웹페이지를 만드는 <span class="term">HTML</span>·<span class="term">CSS</span>·<span class="term">JavaScript</span>로 만들어요. 캐릭터를 그리고 움직이게 하는 <b>게임 부분</b>은 <a href="https://phaser.io" target="_blank" rel="noopener"><b>Phaser</b> ↗</a>라는 <span class="k">게임 라이브러리</span>가 도와줘요.</p>
+    <p><b>라이브러리(library)</b>가 뭐냐면 — <b>남이 미리 잘 만들어 둔 편리한 도구 모음</b>이에요. 캐릭터 움직임·충돌·애니메이션 같은 걸 처음부터 다 만들지 않고, Phaser에서 <b>가져다 쓰는</b> 거죠.</p>
+    <div class="analogy">🧱 <b>비유:</b> 라이브러리는 <b>레고 블록</b>이나 <b>요리 밀키트</b> 같아요. 바닥부터 다 만들지 않고, 잘 만들어진 재료를 조립해서 <b>훨씬 빠르게</b> 완성해요.</div>
+
+    <h3>② 앞쪽과 뒤쪽 — 프론트엔드 &amp; 백엔드</h3>
+    <p>게임은 크게 <b>두 부분</b>으로 나뉘어요. <span class="k">눈에 보이는 앞쪽</span>과 <span class="k">뒤에서 조용히 일하는 뒤쪽</span>이죠.</p>
+    <figure class="fig">
+      <svg viewBox="0 0 560 200" role="img" aria-label="프론트엔드와 백엔드 비교">
+        <line x1="280" y1="16" x2="280" y2="186" stroke="#e3e7ee" stroke-width="2" stroke-dasharray="5 5"/>
+        <!-- 왼쪽: 프론트엔드(보이는 화면) -->
+        <text x="140" y="30" text-anchor="middle" fill="#1f2430" font-size="13" font-weight="800">🎨 프론트엔드 (보이는 곳)</text>
+        <rect x="46" y="44" width="188" height="118" rx="10" fill="#fff4e6" stroke="#e8590c" stroke-width="3"/>
+        <rect x="46" y="44" width="188" height="20" rx="10" fill="#e8590c"/>
+        <circle cx="60" cy="54" r="3" fill="#fff"/><circle cx="70" cy="54" r="3" fill="#fff"/>
+        <circle cx="108" cy="112" r="15" fill="#fff" stroke="#5b6472" stroke-width="2.5"/>
+        <circle cx="108" cy="107" r="5" fill="#5b6472"/><path d="M95 129 a13 11 0 0 1 26 0z" fill="#5b6472"/>
+        <rect x="150" y="94" width="64" height="20" rx="10" fill="#fff" stroke="#e8590c" stroke-width="2"/><text x="182" y="108" text-anchor="middle" fill="#e8590c" font-size="10" font-weight="700">버튼</text>
+        <rect x="150" y="122" width="64" height="20" rx="10" fill="#fff" stroke="#e8590c" stroke-width="2"/><text x="182" y="136" text-anchor="middle" fill="#e8590c" font-size="10" font-weight="700">캐릭터</text>
+        <text x="140" y="182" text-anchor="middle" fill="#5b6472" font-size="11">눈에 보이고 만지는 부분</text>
+        <!-- 오른쪽: 백엔드(뒤에서 일하는 곳) -->
+        <text x="420" y="30" text-anchor="middle" fill="#1f2430" font-size="13" font-weight="800">⚙️ 백엔드 (안 보이는 곳)</text>
+        <rect x="326" y="66" width="96" height="60" rx="8" fill="#fff" stroke="#5b6472" stroke-width="3"/>
+        <rect x="340" y="82" width="68" height="8" rx="3" fill="#ffe8d3"/><rect x="340" y="98" width="68" height="8" rx="3" fill="#ffe8d3"/>
+        <text x="374" y="146" text-anchor="middle" fill="#1f2430" font-size="12" font-weight="700">🗄️ 서버</text>
+        <ellipse cx="480" cy="78" rx="30" ry="10" fill="#fff" stroke="#5b6472" stroke-width="2.5"/>
+        <path d="M450 78 v36 a30 10 0 0 0 60 0 v-36" fill="#fff" stroke="#5b6472" stroke-width="2.5"/>
+        <path d="M450 96 a30 10 0 0 0 60 0" fill="none" stroke="#c3cad6" stroke-width="1.5"/>
+        <text x="480" y="146" text-anchor="middle" fill="#1f2430" font-size="12" font-weight="700">💾 DB</text>
+        <text x="420" y="182" text-anchor="middle" fill="#5b6472" font-size="11">저장·전달을 뒤에서 처리</text>
+      </svg>
+      <figcaption>같은 게임의 <b>앞쪽(화면)</b>과 <b>뒤쪽(서버·저장)</b> — 손님이 보는 무대와 무대 뒤처럼요.</figcaption>
+    </figure>
+    <div class="cards">
+      <div class="card"><h4>🎨 프론트엔드 (앞쪽)</h4><p>화면·버튼·캐릭터처럼 <b>눈에 보이고 만지는</b> 부분. 우리 게임에선 <b>클라이언트</b> 쪽이에요.</p></div>
+      <div class="card"><h4>⚙️ 백엔드 (뒤쪽)</h4><p>저장·전달·규칙처럼 <b>뒤에서 일하는</b> 부분. 우리 게임에선 <b>서버·DB</b> 쪽이에요.</p></div>
+    </div>
+    <div class="tip">🔎 그래서 앞쪽 작업을 <b>프론트엔드</b>, 뒤쪽 작업을 <b>백엔드</b>라고 불러요. 둘 다 잘하면 <b>풀스택</b>!</div>
+
+    <h3>③ 세 친구의 팀워크 — 클라이언트 · 서버 · DB</h3>
+    <figure class="fig">
+      <svg viewBox="0 0 560 190" role="img" aria-label="클라이언트 서버 데이터베이스 3층 구조">
+        <!-- 클라이언트 -->
+        <rect x="24" y="66" width="132" height="80" rx="10" fill="#fff4e6" stroke="#e8590c" stroke-width="3"/>
+        <rect x="24" y="66" width="132" height="20" rx="10" fill="#e8590c"/>
+        <circle cx="38" cy="76" r="3" fill="#fff"/><circle cx="48" cy="76" r="3" fill="#fff"/>
+        <text x="90" y="116" text-anchor="middle" fill="#1f2430" font-size="13" font-weight="800">🖥️ 클라이언트</text>
+        <text x="90" y="134" text-anchor="middle" fill="#5b6472" font-size="11">내 브라우저 · Phaser</text>
+        <!-- 서버 -->
+        <rect x="214" y="66" width="132" height="80" rx="10" fill="#fff" stroke="#5b6472" stroke-width="3"/>
+        <rect x="230" y="82" width="100" height="9" rx="3" fill="#ffe8d3"/>
+        <rect x="230" y="98" width="100" height="9" rx="3" fill="#ffe8d3"/>
+        <text x="280" y="128" text-anchor="middle" fill="#1f2430" font-size="13" font-weight="800">🗄️ 서버</text>
+        <text x="280" y="142" text-anchor="middle" fill="#5b6472" font-size="11">Node.js</text>
+        <!-- DB -->
+        <ellipse cx="472" cy="76" rx="44" ry="14" fill="#fff" stroke="#5b6472" stroke-width="3"/>
+        <path d="M428 76 v54 a44 14 0 0 0 88 0 v-54" fill="#fff" stroke="#5b6472" stroke-width="3"/>
+        <path d="M428 100 a44 14 0 0 0 88 0" fill="none" stroke="#c3cad6" stroke-width="2"/>
+        <text x="472" y="120" text-anchor="middle" fill="#1f2430" font-size="13" font-weight="800">💾 DB</text>
+        <text x="472" y="140" text-anchor="middle" fill="#5b6472" font-size="11">SQLite</text>
+        <!-- 연결 클라↔서버 -->
+        <text x="185" y="94" text-anchor="middle" fill="#5b6472" font-size="10">Socket.io</text>
+        <line x1="156" y1="108" x2="214" y2="108" stroke="#e8590c" stroke-width="3"/>
+        <polygon points="214,108 202,102 202,114" fill="#e8590c"/><polygon points="156,108 168,102 168,114" fill="#e8590c"/>
+        <text x="185" y="126" text-anchor="middle" fill="#e8590c" font-size="10" font-weight="700">실시간</text>
+        <!-- 연결 서버↔DB -->
+        <text x="385" y="94" text-anchor="middle" fill="#5b6472" font-size="10">저장·불러오기</text>
+        <line x1="346" y1="108" x2="424" y2="108" stroke="#5b6472" stroke-width="3"/>
+        <polygon points="424,108 412,102 412,114" fill="#5b6472"/><polygon points="346,108 358,102 358,114" fill="#5b6472"/>
+      </svg>
+      <figcaption>각자 역할이 있어요: <b>클라이언트</b>는 보여주고, <b>서버</b>는 연결하고, <b>DB</b>는 저장해요.</figcaption>
+    </figure>
+    <div class="cards">
+      <div class="card"><h4>🖥️ 클라이언트</h4><p>내 화면에 게임을 그리고 내 조작을 받아요. 친구마다 각자 있어요.</p></div>
+      <div class="card"><h4>🗄️ 서버</h4><p>모두를 연결하는 중심. 소식을 정리해 <b>모두에게 전달</b>해요.</p></div>
+      <div class="card"><h4>💾 데이터베이스(DB)</h4><p>아바타·쪽지·작품을 <b>저장</b>. 껐다 켜도 정보가 남아요.</p></div>
+      <div class="card"><h4>⚡ 실시간(Socket.io)</h4><p>클라이언트와 서버가 <b>계속 연결</b>돼 소식을 바로 주고받아요.</p></div>
+    </div>
+
+    <h3>④ 함께 노는 비결 — 실시간 멀티플레이</h3>
+    <figure class="fig">
+      <svg viewBox="0 0 560 210" role="img" aria-label="여러 친구가 한 서버에 접속">
+        <!-- 서버 (상단 중앙) -->
+        <rect x="220" y="24" width="120" height="58" rx="10" fill="#fff" stroke="#e8590c" stroke-width="3"/>
+        <text x="280" y="50" text-anchor="middle" fill="#1f2430" font-size="13" font-weight="800">🗄️ 서버</text>
+        <text x="280" y="68" text-anchor="middle" fill="#5b6472" font-size="11">모두를 연결</text>
+        <!-- 연결선(팬) -->
+        <g stroke="#e8590c" stroke-width="2.5">
+          <line x1="90" y1="150" x2="250" y2="82"/>
+          <line x1="280" y1="150" x2="280" y2="82"/>
+          <line x1="470" y1="150" x2="310" y2="82"/>
+        </g>
+        <!-- 세 브라우저 -->
+        <g>
+          <rect x="40" y="150" width="100" height="52" rx="8" fill="#fff4e6" stroke="#e8590c" stroke-width="2.5"/>
+          <rect x="40" y="150" width="100" height="14" rx="8" fill="#e8590c"/>
+          <text x="90" y="188" text-anchor="middle" fill="#1f2430" font-size="12" font-weight="700">나</text>
+        </g>
+        <g>
+          <rect x="230" y="150" width="100" height="52" rx="8" fill="#fff4e6" stroke="#e8590c" stroke-width="2.5"/>
+          <rect x="230" y="150" width="100" height="14" rx="8" fill="#e8590c"/>
+          <text x="280" y="188" text-anchor="middle" fill="#1f2430" font-size="12" font-weight="700">친구</text>
+        </g>
+        <g>
+          <rect x="420" y="150" width="100" height="52" rx="8" fill="#fff4e6" stroke="#e8590c" stroke-width="2.5"/>
+          <rect x="420" y="150" width="100" height="14" rx="8" fill="#e8590c"/>
+          <text x="470" y="188" text-anchor="middle" fill="#1f2430" font-size="12" font-weight="700">친구</text>
+        </g>
+      </svg>
+      <figcaption>친구들이 <b>같은 서버</b>에 접속 → 내가 움직이면 <b>모두의 화면에 실시간</b>으로 보여요.</figcaption>
+    </figure>
+    <div class="analogy">📞 <b>비유:</b> 서버는 <b>전화 교환실</b>이에요. 내가 움직이면 서버에 알리고, 서버가 그 소식을 친구들 화면에 전해 줘서 실시간으로 같이 보이게 돼요.</div>
+    <div class="tip">🏝️ 여러분이 섬을 걷고, 쪽지를 보내고, 작품을 거는 모든 순간이 바로 이 구조로 돌아가고 있어요!</div>
+
+    <!-- =============== 6 =============== -->
+    <h2 id="s6"><span class="num">6</span>코드가 인터넷에 올라가기까지 (배포)</h2>
+    <p class="lead">완성한 코드는 어떻게 <b>진짜 인터넷 주소</b>에서 친구들이 접속하게 될까요? 이 과정을 <span class="k">배포(deploy)</span>라고 해요.</p>
+    <figure class="fig">
+      <svg viewBox="0 0 560 150" role="img" aria-label="배포 흐름: 내 코드에서 인터넷까지">
+        <rect x="20" y="46" width="130" height="58" rx="10" fill="#fff4e6" stroke="#e8590c" stroke-width="3"/>
+        <text x="85" y="72" text-anchor="middle" fill="#1f2430" font-size="13" font-weight="800">💻 내 코드</text>
+        <text x="85" y="90" text-anchor="middle" fill="#5b6472" font-size="11">내 컴퓨터</text>
+        <line x1="152" y1="75" x2="210" y2="75" stroke="#e8590c" stroke-width="2.5"/><polygon points="210,75 198,69 198,81" fill="#e8590c"/>
+        <text x="181" y="66" text-anchor="middle" fill="#e8590c" font-size="10" font-weight="700">git push</text>
+        <rect x="212" y="46" width="130" height="58" rx="10" fill="#fff" stroke="#5b6472" stroke-width="3"/>
+        <text x="277" y="72" text-anchor="middle" fill="#1f2430" font-size="13" font-weight="800">🐙 GitHub</text>
+        <text x="277" y="90" text-anchor="middle" fill="#5b6472" font-size="11">코드 저장소</text>
+        <line x1="344" y1="75" x2="402" y2="75" stroke="#e8590c" stroke-width="2.5"/><polygon points="402,75 390,69 390,81" fill="#e8590c"/>
+        <text x="373" y="66" text-anchor="middle" fill="#e8590c" font-size="10" font-weight="700">자동 배포</text>
+        <rect x="404" y="46" width="136" height="58" rx="10" fill="#fff4e6" stroke="#e8590c" stroke-width="3"/>
+        <text x="472" y="72" text-anchor="middle" fill="#1f2430" font-size="13" font-weight="800">🌐 인터넷</text>
+        <text x="472" y="90" text-anchor="middle" fill="#5b6472" font-size="10">youngworld-ai.com</text>
+      </svg>
+      <figcaption>GitHub에 <b>올리면(push)</b> 자동으로 인터넷 서버에 반영돼요 — 친구들은 주소만 열면 최신 게임을!</figcaption>
+    </figure>
+    <div class="analogy">🎬 <b>비유:</b> <b>유튜브에 영상을 업로드</b>하면 전 세계 누구나 볼 수 있죠? 배포도 똑같아요. 내 코드를 인터넷에 <b>올리면(배포)</b>, 누구나 주소로 접속해 즐길 수 있게 돼요.</div>
+    <div class="tip">⚡ 1번에서 배운 <b>GitHub</b>가 여기서도 쓰여요. 코드를 push 하면 → 자동 배포 → <b>youngworld-ai.com</b> 에 반영. 이렇게 배운 게 다 연결돼요!</div>
+
+    <footer>영월드 · AI와 함께하는 진로 멘토링 · 처음 만나는 개발 지식</footer>
+  </div>
+</body>
+</html>

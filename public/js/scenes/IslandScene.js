@@ -212,8 +212,8 @@ export class IslandScene extends WorldScene {
   drawSignpost(x, y) {
     const g = this.add.graphics();
     g.fillStyle(0x946b3c, 1); g.fillRect(x - 2, y, 4, 18);
-    g.fillStyle(0xb98a53, 1); g.fillRect(x - 16, y - 4, 26, 10);
-    this.add.text(x - 3, y + 1, '← 학교', { fontSize: '9px', color: '#4a3418' }).setOrigin(0.5, 0.5);
+    g.fillStyle(0xb98a53, 1); g.fillRect(x - 30, y - 5, 60, 12);
+    this.add.text(x, y + 1, '← 청소년수련관', { fontSize: '8px', color: '#4a3418' }).setOrigin(0.5, 0.5);
   }
 
   // 작은 3x2 학교 건물. (bx,by)=벽 몸통 왼쪽 위, bw×bh=벽 크기.
@@ -255,9 +255,9 @@ export class IslandScene extends WorldScene {
     g.fillStyle(0xffd24a, 1); g.fillCircle(cx + dw / 2 - 4, by + bh - dh / 2, 1.6);
 
     // 간판(처마 아래 벽 위쪽).
-    g.fillStyle(0xb98a53, 1); g.fillRect(cx - 20, by + 2, 40, 12);
-    g.fillStyle(0x000000, 0.15); g.fillRect(cx - 20, by + 14, 40, 2);
-    this.add.text(cx, by + 7, '학교', { fontSize: '11px', fontStyle: 'bold', color: '#4a3418' }).setOrigin(0.5);
+    g.fillStyle(0xb98a53, 1); g.fillRect(cx - 33, by + 2, 66, 13);
+    g.fillStyle(0x000000, 0.15); g.fillRect(cx - 33, by + 15, 66, 2);
+    this.add.text(cx, by + 8, '청소년수련관', { fontSize: '8px', fontStyle: 'bold', color: '#4a3418' }).setOrigin(0.5);
   }
 
   placeLabel(text, x, y, color, bg) {

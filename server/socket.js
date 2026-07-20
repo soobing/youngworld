@@ -16,9 +16,12 @@ const SCENES = ['island', 'classroom'];
 //   같은 서버의 /lectures/ 또는 /guides/ 아래 .html 만 허용(외부·javascript:·경로탈출 차단).
 //   iframe 으로 임의 HTML 을 로드하지 못하게 해 XSS 를 막는다.
 function isSafeDocUrl(url) {
-  return typeof url === 'string'
-    && /^\/(lectures|guides)\/[A-Za-z0-9._-]+\.html$/.test(url)
-    && !url.includes('..');
+  if (typeof url !== 'string' || url.includes('..')) return false;
+  // 강의자료·안내문서: /lectures|guides/파일.html (단일 파일)
+  if (/^\/(lectures|guides)\/[A-Za-z0-9._-]+\.html$/.test(url)) return true;
+  // 작품 갤러리: /works/<사람슬러그>/<카테고리>.html (사람별 폴더 1단계)
+  if (/^\/works\/[A-Za-z0-9._-]+\/[A-Za-z0-9._-]+\.html$/.test(url)) return true;
+  return false;
 }
 
 // 재알람 주기(ms). 미확인 핸드폰 메시지가 있으면 이 주기로 계속 알린다.
@@ -458,6 +461,10 @@ function setup(io) {
     socket.on('admin:addWork', ({ authorId, title, url, thumbnail, slot }) => {
       if (deny('admin:addWork')) return;
       if (!title) return;
+      if (url && !isSafeDocUrl(url)) {
+        socket.emit('error', { code: 'BAD_URL', message: '작품 주소는 /works/폴더/파일.html 형식만 됩니다.' });
+        return;
+      }
       Gallery.create({ authorId, title, url, thumbnail, slot });
       io.emit('gallery:update', { gallery: Gallery.structured() });
       socket.emit('admin:done', { action: 'addWork', title });
