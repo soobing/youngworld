@@ -24,8 +24,16 @@ const TILES = {
 };
 
 // 작품 구역(오른쪽 좁은 스트립)과 문 위치.
-const GALLERY_COLS = [22, 23];      // 러그 열
+const GALLERY_COLS = [21, 23];      // 러그 열(작품 구역) — 이름표가 잘리지 않게 3칸으로 넓힘
 const DOOR_COLS = [12, 13];         // 아래 벽 가운데 2칸이 문
+
+// 배경색(0xRRGGBB)이 밝은지 판단 — 색 이름표 위 글자색(어둡게/밝게)을 고르는 데 쓴다.
+function isLightHex(num) {
+  const r = (num >> 16) & 0xff;
+  const g = (num >> 8) & 0xff;
+  const b = num & 0xff;
+  return 0.299 * r + 0.587 * g + 0.114 * b > 150;
+}
 
 export class ClassroomScene extends WorldScene {
   constructor() {
@@ -122,7 +130,9 @@ export class ClassroomScene extends WorldScene {
   drawDesks() {
     if (this._desks) this._desks.forEach((o) => o.destroy());
     this._desks = [];
-    const n = (state.gallery && state.gallery.students) ? state.gallery.students.length : 5;
+    // 책상은 학생 수만큼만(선생님은 갤러리에는 있지만 학생 책상은 두지 않는다).
+    const people = (state.gallery && state.gallery.students) || null;
+    const n = people ? people.filter((s) => s.role !== 'admin').length : 5;
     const desks = this.deskLayout(n);
     for (const d of desks) {
       // 의자(책상 남쪽)를 먼저 → 책상이 살짝 덮어 "책상에 앉은" 느낌.
@@ -179,33 +189,44 @@ export class ClassroomScene extends WorldScene {
       .setOrigin(0.5, 1).setDepth(3);
   }
 
-  // 오른쪽 작품 구역(러그 스트립): 큰 액자 없이 학생 이름만 세로로 나열.
-  // 이름을 클릭하면 그 학생의 작품(4가지) 화면이 열린다.
+  // 오른쪽 작품 구역(러그 스트립): 사람마다 '색 이름표'(대표색 배경 + 이름)를 세로로 건다.
+  // 대표색을 이름표 배경으로 삼아 점 아이콘 없이 색과 이름을 하나로 보여준다.
+  // 이름표를 누르면 그 사람의 작품(4가지) 화면이 열린다. 선생님도 학생과 동일하게(별도 아이콘 없이) 표시.
   drawGallery() {
     if (this._g) this._g.forEach((o) => o.destroy());
     this._g = [];
-    const gx = (GALLERY_COLS[0] + GALLERY_COLS[1] + 1) / 2 * TILE; // 러그 중심 x
-    this._g.push(this.add.text(gx, 1 * TILE + 6, '작품', { fontSize: '14px', fontStyle: 'bold', color: '#3f5c3a' }).setOrigin(0.5, 0));
+    const stripL = GALLERY_COLS[0] * TILE;                          // 러그 왼쪽 x
+    const stripW = (GALLERY_COLS[1] - GALLERY_COLS[0] + 1) * TILE;  // 러그 폭
+    const cx = stripL + stripW / 2;                                 // 러그 중심 x
+    this._g.push(this.add.text(cx, 1 * TILE + 4, '🖼 작품', { fontSize: '13px', fontStyle: 'bold', color: '#3f5c3a' }).setOrigin(0.5, 0));
 
     const gallery = state.gallery;
     if (!gallery || !gallery.students || gallery.students.length === 0) {
-      this._g.push(this.add.text(gx, 6 * TILE, '(준비중)', { fontSize: '11px', color: '#6b8a66' }).setOrigin(0.5));
+      this._g.push(this.add.text(cx, 6 * TILE, '(준비중)', { fontSize: '11px', color: '#6b8a66' }).setOrigin(0.5));
       return;
     }
 
-    const nameX = GALLERY_COLS[0] * TILE + 6; // 이름 시작(왼쪽 정렬)
+    const plateW = stripW - 12;  // 이름표 폭(러그 안쪽 여백)
+    const plateH = 24;
+    const top = 2.6 * TILE;      // 첫 이름표 y(제목 아래)
+    const gap = plateH + 10;     // 이름표 세로 간격
     gallery.students.forEach((stu, i) => {
-      const y = (3 + i * 2.5) * TILE;
-      const color = colorToHex(stu.color || '#adb5bd');
-      const dot = this.add.rectangle(nameX, y, 9, 9, color).setStrokeStyle(1, 0x2b2340).setOrigin(0, 0.5);
-      const name = this.add
-        .text(nameX + 14, y, stu.nickname, { fontSize: '12px', color: '#3a2a12' })
-        .setOrigin(0, 0.5)
+      const y = top + i * gap;
+      const fill = colorToHex(stu.color || '#adb5bd');
+      const plate = this.add
+        .rectangle(cx, y, plateW, plateH, fill)
+        .setStrokeStyle(2, 0x2b2340)
+        .setOrigin(0.5)
         .setInteractive({ useHandCursor: true });
-      name.on('pointerover', () => name.setColor('#e8590c'));
-      name.on('pointerout', () => name.setColor('#3a2a12'));
-      name.on('pointerdown', () => openGallery(stu.id));
-      this._g.push(dot, name);
+      // 배경 밝기에 따라 글자색 자동 선택(대비 확보).
+      const txtColor = isLightHex(fill) ? '#2b2340' : '#ffffff';
+      const name = this.add
+        .text(cx, y, stu.nickname, { fontSize: '11px', fontStyle: 'bold', color: txtColor })
+        .setOrigin(0.5);
+      plate.on('pointerover', () => plate.setStrokeStyle(2, 0xe8590c));
+      plate.on('pointerout', () => plate.setStrokeStyle(2, 0x2b2340));
+      plate.on('pointerdown', () => openGallery(stu.id));
+      this._g.push(plate, name);
     });
   }
 }

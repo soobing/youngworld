@@ -95,7 +95,8 @@ function render() {
   nextBtn.disabled = list.length <= 1;
 
   const student = list[currentIndex];
-  nameEl.textContent = `${student.nickname} (${currentIndex + 1}/${list.length})`;
+  const who = student.role === 'admin' ? `${student.nickname} 선생님` : student.nickname;
+  nameEl.textContent = `${who} (${currentIndex + 1}/${list.length})`;
   dotEl.style.background = student.color || '#8ee07a';
   line.textContent = '';
   line.className = 'pix-line';

@@ -453,18 +453,24 @@ const Gallery = {
   // 갤러리 화면용 구조화 데이터: 카테고리 4종 + 학생별 4칸(작품 없으면 null).
   //   { categories:[{key,label,sub,icon}], students:[{id,nickname,color,works:{<key>:{url,thumbnail}|null}}] }
   structured() {
-    const students = db
-      .prepare("SELECT id, nickname, color FROM avatars WHERE role = 'student' ORDER BY id")
+    // 학생 + 선생님(admin)까지 전시 대상. 선생님을 맨 앞에 둬 멘토의 예시를 먼저 보여준다.
+    // 게스트는 제외. 각 항목에 role 을 실어 화면단에서 선생님을 구분·표시한다.
+    const people = db
+      .prepare(
+        "SELECT id, nickname, color, role FROM avatars WHERE role IN ('student','admin') " +
+          "ORDER BY CASE WHEN role='admin' THEN 0 ELSE 1 END, id"
+      )
       .all();
     const rows = db.prepare('SELECT author_id, slot, url, thumbnail FROM gallery_works').all();
     const byKey = {};
     for (const w of rows) byKey[w.author_id + ':' + w.slot] = { url: w.url, thumbnail: w.thumbnail };
     return {
       categories: WORK_CATEGORIES,
-      students: students.map((s) => ({
+      students: people.map((s) => ({
         id: s.id,
         nickname: s.nickname,
         color: s.color,
+        role: s.role,
         works: Object.fromEntries(
           WORK_CATEGORIES.map((c, i) => [c.key, byKey[s.id + ':' + i] || null])
         ),

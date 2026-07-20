@@ -5,7 +5,7 @@
 // 직접 실행: npm run seed
 // =====================================================================
 
-const { Avatars, Materials, Guides, db } = require('./db');
+const { Avatars, Materials, Guides, Gallery, db } = require('./db');
 
 // 초기 아바타 7명. 색은 서로 잘 구분되게 다르게.
 // 색은 서로 잘 구분되게 다르게 준다. 이름은 예시(가명)이며, 실제 수업에서는
@@ -45,6 +45,34 @@ function ensureSeed() {
     });
   }
 
+  // 자기소개 강의자료: 기존 데이터는 그대로 두고, 없을 때만 칠판에 추가(멱등).
+  //   (이미 운영 중인 DB 에도 배포 후 재시작하면 이 자료가 칠판에 걸린다)
+  const SELF_INTRO_URL = '/lectures/self-intro.html';
+  if (!Materials.all().some((m) => m.url === SELF_INTRO_URL)) {
+    Materials.create({
+      title: '자기소개 만들기',
+      url: SELF_INTRO_URL,
+      sessionNo: 1,
+      slot: 1,
+    });
+  }
+
+  // 선생님(soobing) 자기소개를 작품 갤러리 '자기소개' 칸(slot 0)에 건다(멱등).
+  //   학생들에게 보여줄 모범 예시. 파일은 /works/soobing/intro.html (public 정적 서빙).
+  const soobing = Avatars.byNickname('soobing');
+  if (soobing) {
+    const introUrl = '/works/soobing/intro.html';
+    const has = Gallery.all().some((w) => w.author_id === soobing.id && w.url === introUrl);
+    if (!has) {
+      Gallery.setWork({
+        authorId: soobing.id,
+        slot: 0, // WORK_CATEGORIES[0] = intro(자기소개)
+        url: introUrl,
+        title: 'soobing 선생님의 자기소개',
+      });
+    }
+  }
+
   // 교실 책장 기본 문서(How-to). 처음 한 번만.
   if (Guides.all().length === 0) {
     Guides.create({ title: 'GitHub 가입하는 법', url: '/guides/github-signup.html', slot: 0 });
@@ -54,6 +82,12 @@ function ensureSeed() {
   // 이미 시드된 기존 DB(운영 포함)에서도 서버가 켜질 때 한 번 지운다. 멱등.
   for (const g of Guides.all()) {
     if (g.url === '/guides/claude-signup.html') Guides.deleteById(g.id);
+  }
+
+  // 개발 지식 자료: 없을 때만 책장에 추가(멱등). 기존 DB(운영 포함)에도 재시작 시 걸린다.
+  const DEV_BASICS_URL = '/guides/dev-basics.html';
+  if (!Guides.all().some((g) => g.url === DEV_BASICS_URL)) {
+    Guides.create({ title: '처음 만나는 개발 지식', url: DEV_BASICS_URL, slot: 1 });
   }
 
   if (already === 0) {
