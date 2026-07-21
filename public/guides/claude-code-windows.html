@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Windows에 Claude Code 설치하기 (WSL 없이)</title>
+<style>
+  :root{ --ink:#1f2430; --muted:#5b6472; --accent:#e8590c; --soft:#fff4e6; --line:#e3e7ee; --bg:#f7f8fb; --code:#0e1220; }
+  *{ box-sizing:border-box; }
+  html,body{ margin:0; padding:0; background:var(--bg); }
+  body{ font-family:"Apple SD Gothic Neo","Pretendard","Noto Sans KR",-apple-system,"Malgun Gothic",sans-serif; color:var(--ink); line-height:1.75; -webkit-text-size-adjust:100%; }
+  .wrap{ max-width:800px; margin:0 auto; padding:34px 22px 80px; }
+
+  header.hero{ background:linear-gradient(135deg,#e8590c,#ff922b); color:#fff; border-radius:18px; padding:28px 26px; margin-bottom:8px; box-shadow:0 10px 30px rgba(232,89,12,.22); }
+  header.hero .tag{ display:inline-block; background:rgba(255,255,255,.24); font-weight:800; font-size:13px; padding:5px 12px; border-radius:20px; }
+  header.hero h1{ margin:12px 0 6px; font-size:26px; }
+  header.hero p{ margin:0; opacity:.96; font-size:14.5px; }
+
+  .nowsl{ display:flex; gap:10px; align-items:center; background:#fff; border:1px solid var(--line); border-left:5px solid var(--accent); border-radius:12px; padding:13px 16px; margin:16px 0; font-size:14.5px; }
+  .nowsl b{ color:var(--accent); }
+
+  h2{ font-size:20px; margin:34px 0 8px; padding-left:12px; border-left:5px solid var(--accent); }
+  h2 .num{ color:var(--accent); font-weight:900; margin-right:8px; }
+  h3{ font-size:16px; margin:18px 0 6px; }
+  p{ margin:0 0 12px; font-size:15px; }
+  .lead{ color:var(--muted); }
+  b{ color:var(--ink); }
+  .k{ color:var(--accent); font-weight:800; }
+
+  pre{ background:var(--code); color:#e7ebf3; border-radius:12px; padding:14px 16px; margin:10px 0; overflow-x:auto; font-size:13.5px; line-height:1.6; }
+  pre .c{ color:#7b8698; }               /* 주석 */
+  pre .p{ color:#ffd24a; }               /* 프롬프트 표시 */
+  code.inl{ background:#f1f3f9; border:1px solid var(--line); border-radius:6px; padding:1px 7px; font-size:13.5px; font-weight:700; color:#364152; font-family:ui-monospace,SFMono-Regular,Menlo,monospace; }
+
+  .rec{ display:inline-block; background:var(--accent); color:#fff; font-weight:800; font-size:12px; padding:2px 9px; border-radius:20px; margin-left:6px; vertical-align:middle; }
+
+  .steps{ counter-reset:s; list-style:none; padding:0; margin:12px 0; }
+  .steps li{ counter-increment:s; position:relative; padding:12px 14px 12px 46px; margin:8px 0; background:#fff; border:1px solid var(--line); border-radius:12px; font-size:14.5px; }
+  .steps li::before{ content:counter(s); position:absolute; left:12px; top:12px; width:24px; height:24px; background:var(--accent); color:#fff; font-weight:800; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:13px; }
+
+  .tip{ background:var(--soft); border-left:4px solid var(--accent); padding:12px 16px; border-radius:10px; margin:16px 0; font-size:14px; }
+  .tip b{ color:var(--accent); }
+
+  table.tbl{ width:100%; border-collapse:collapse; margin:14px 0; font-size:13.5px; background:#fff; border:1px solid var(--line); border-radius:12px; overflow:hidden; }
+  table.tbl th,table.tbl td{ padding:11px 13px; text-align:left; vertical-align:top; border-bottom:1px solid var(--line); }
+  table.tbl th{ background:var(--soft); font-size:13px; }
+  table.tbl tr:last-child td{ border-bottom:none; }
+  table.tbl .e{ font-weight:800; color:#b23b0c; white-space:nowrap; }
+
+  footer{ margin-top:44px; text-align:center; color:var(--muted); font-size:13px; }
+</style>
+</head>
+<body>
+  <div class="wrap">
+    <header class="hero">
+      <span class="tag">🪟 개발 환경 설정</span>
+      <h1>Windows에 Claude Code 설치하기</h1>
+      <p>복잡한 WSL 설치 없이, PowerShell 한 줄로 가장 쉽게 설치하는 방법이에요.</p>
+    </header>
+
+    <div class="nowsl">✅ <span><b>WSL도, Node.js도 필요 없어요.</b> 아래 <b>Native 설치</b> 방법은 Windows에서 그대로 동작합니다.</span></div>
+
+    <h2><span class="num">0</span>시작 전에</h2>
+    <ul>
+      <li><b>운영체제</b>: Windows 10 (1809 이상) 또는 Windows 11</li>
+      <li><b>계정</b>: Claude <b>Pro·Max·Team·Enterprise</b> 중 하나가 필요해요. <span class="k">무료 플랜은 Claude Code를 쓸 수 없어요.</span></li>
+      <li><b>인터넷</b> 연결</li>
+    </ul>
+
+    <h2><span class="num">1</span>가장 쉬운 설치 <span class="rec">추천</span></h2>
+    <p class="lead"><b>PowerShell</b>을 관리자 권한 없이 열고, 아래 한 줄을 붙여넣고 Enter 하면 끝이에요.</p>
+
+    <h3>① PowerShell 열기</h3>
+    <p>시작 메뉴에서 <b>"PowerShell"</b>을 검색해 실행해요. (관리자 권한 필요 없음)<br>
+    창 왼쪽에 <code class="inl">PS C:\Users\...&gt;</code> 처럼 <b>PS</b>가 보이면 PowerShell이 맞아요.</p>
+
+    <h3>② 설치 명령 실행</h3>
+    <pre><span class="p">PS&gt;</span> irm https://claude.ai/install.ps1 | iex</pre>
+    <p class="lead">잠시 기다리면 자동으로 설치돼요. (이후 업데이트도 백그라운드에서 자동으로 됩니다.)</p>
+
+    <div class="tip">💡 <b>더 간단한 대안 — WinGet.</b> Windows에 기본 내장된 설치 도구예요. 아무 터미널에서:
+      <pre><span class="p">&gt;</span> winget install Anthropic.ClaudeCode</pre>
+      (WinGet은 자동 업데이트가 안 돼서, 가끔 <code class="inl">winget upgrade Anthropic.ClaudeCode</code> 로 올려줘야 해요.)</div>
+
+    <h2><span class="num">2</span>설치 확인</h2>
+    <p><b>새 터미널</b>을 열고(중요: 방금 창 말고 새로 열기) 아래를 실행해요.</p>
+    <pre><span class="p">PS&gt;</span> claude --version
+<span class="c"># 2.1.211 (Claude Code) 처럼 버전이 나오면 성공 ✅</span></pre>
+    <p>더 자세히 점검하려면:</p>
+    <pre><span class="p">PS&gt;</span> claude doctor   <span class="c"># 설치·설정 상태를 진단해줘요</span></pre>
+
+    <h2><span class="num">3</span>실행 &amp; 로그인</h2>
+    <ol class="steps">
+      <li>작업할 폴더에서 터미널을 열고 <code class="inl">claude</code> 를 실행해요.</li>
+      <li>브라우저가 열리면 <b>Claude 계정으로 로그인</b>하고 승인해요.</li>
+      <li>터미널로 돌아오면 대화가 시작돼요. 🎉</li>
+    </ol>
+
+    <h2><span class="num">4</span>(선택) Git for Windows 설치하면 더 좋아요</h2>
+    <p class="lead">필수는 아니에요. 하지만 <a href="https://git-scm.com/downloads/win" target="_blank" rel="noopener"><b>Git for Windows</b> ↗</a>를 깔면 Claude Code가 <b>Git Bash</b>로 명령을 실행해 더 매끄러워요. (없으면 PowerShell로 동작해요.)</p>
+    <p>혹시 Claude Code가 Git Bash를 못 찾으면, <code class="inl">%USERPROFILE%\.claude\settings.json</code> 에 아래를 넣어줘요:</p>
+    <pre>{
+  <span class="c">"env"</span>: {
+    <span class="c">"CLAUDE_CODE_GIT_BASH_PATH"</span>: "C:\\Program Files\\Git\\bin\\bash.exe"
+  }
+}</pre>
+
+    <h2><span class="num">5</span>자주 겪는 문제 &amp; 해결 🛠️</h2>
+    <table class="tbl">
+      <tr><th>이런 메시지가 뜨면</th><th>이렇게 해결해요</th></tr>
+      <tr>
+        <td class="e">'irm' is not recognized</td>
+        <td>지금 <b>CMD</b> 창이에요(PowerShell 아님). 시작 메뉴에서 <b>PowerShell</b>을 열어 다시 실행하세요. (PS 표시 확인)</td>
+      </tr>
+      <tr>
+        <td class="e">'claude' is not recognized / command not found</td>
+        <td>설치는 됐지만 경로(PATH)가 아직 반영 안 된 거예요. <b>터미널을 완전히 닫고 새로 여세요.</b> 그래도 안 되면 PowerShell에서:
+          <pre>[Environment]::SetEnvironmentVariable('PATH',
+  "$env:PATH;$env:USERPROFILE\.local\bin", 'User')</pre>
+          실행 후 <b>새 터미널</b>에서 <code class="inl">claude --version</code> 다시 확인.</td>
+      </tr>
+      <tr>
+        <td class="e">설치는 됐는데 옛 버전이 뜸</td>
+        <td><code class="inl">%USERPROFILE%\.local\bin</code> 이 PATH 맨 앞에 있는지 확인하고 <b>새 터미널</b>을 여세요.</td>
+      </tr>
+      <tr>
+        <td class="e">로그인이 안 됨 / 권한 없음</td>
+        <td><b>무료 플랜</b>은 Claude Code를 쓸 수 없어요. <b>Pro·Max</b> 등 유료 플랜 계정으로 로그인하세요.</td>
+      </tr>
+      <tr>
+        <td class="e">회사 네트워크에서 403·연결 실패</td>
+        <td>사내 방화벽/프록시 때문이에요. 프록시 주소를 넣고 다시 설치:
+          <pre><span class="p">PS&gt;</span> $env:HTTPS_PROXY = 'http://proxy.회사주소:8080'
+<span class="p">PS&gt;</span> irm https://claude.ai/install.ps1 | iex</pre></td>
+      </tr>
+      <tr>
+        <td class="e">터미널이 무섭거나 계속 실패</td>
+        <td>터미널 없이 쓰는 <b>Claude Code 데스크톱 앱</b>도 있어요 — <a href="https://claude.com/download" target="_blank" rel="noopener">claude.com/download</a> 에서 Windows용을 받으면 클릭만으로 설치·사용할 수 있어요.</td>
+      </tr>
+    </table>
+
+    <div class="tip">🧭 막히면 <code class="inl">claude doctor</code> 가 무엇이 문제인지 알려줘요. 그 화면을 캡처해서 <b>soobing에게 카카오톡</b>으로 물어봐도 좋아요!</div>
+
+    <footer>영월드 · AI와 함께하는 진로 멘토링 · Windows에 Claude Code 설치하기</footer>
+  </div>
+</body>
+</html>

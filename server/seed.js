@@ -90,6 +90,12 @@ function ensureSeed() {
     Guides.create({ title: '처음 만나는 개발 지식', url: DEV_BASICS_URL, slot: 1 });
   }
 
+  // Windows에 Claude Code 설치 가이드(WSL 없이). 없을 때만 책장에 추가(멱등).
+  const CC_WIN_URL = '/guides/claude-code-windows.html';
+  if (!Guides.all().some((g) => g.url === CC_WIN_URL)) {
+    Guides.create({ title: 'Windows에 Claude Code 설치하기', url: CC_WIN_URL, slot: 2 });
+  }
+
   if (already === 0) {
     console.log('[seed] 초기 아바타 7명 + 예시 강의자료를 넣었습니다.');
   }
