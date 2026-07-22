@@ -1,0 +1,462 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>안해찬의 자기소개 — 영월드</title>
+<!--
+  ▶ 구성: 관객석에서 무대로
+     이야기를 좋아함 → 역사도 이야기 → 좋아함을 증명(한국사 자격증)
+     → 밴드 공연에 반함(관객) → "일단 예스"하고 드럼 시작 → 무대에 선 날
+     → 드럼이 알려준 것(같이 가는 자리) → 지금의 나 → 앞으로 → "일단 예스하면, 이야기가 생긴다"
+
+  ▶ 나중에 사진을 넣고 싶다면
+     1) 사진 파일을 public/works/ahn/img/ 폴더에 넣으세요. (예: stage.jpg)
+     2) 넣고 싶은 자리의 <div class="fig">...</div> 를
+        <div class="fig"><img src="/works/ahn/img/stage.jpg" alt="설명"></div> 로 교체하면 됩니다.
+-->
+<style>
+  :root{
+    /* 공연장 조명에서 가져온 색 — 앰버(스포트라이트) + 딥 인디고(암전된 객석) */
+    --ink:#1d1a2b; --muted:#5f5a72; --accent:#e07a00; --accent2:#342b5e;
+    --soft:#fff3e0; --sky:#eceafa; --line:#e6e3f0; --bg:#f6f5fa;
+  }
+  *{ box-sizing:border-box; margin:0; padding:0; }
+  html,body{ height:100%; }
+  body{
+    font-family:"Apple SD Gothic Neo","Pretendard","Noto Sans KR",-apple-system,"Malgun Gothic",sans-serif;
+    color:var(--ink); background:#0e0b1a; overflow:hidden;
+  }
+  .deck{ position:fixed; inset:0; }
+
+  /* ---- 슬라이드 공통 ---- */
+  .slide{
+    position:absolute; inset:0; display:flex; align-items:center; justify-content:center;
+    padding:5vmin 6.5vmin 10.5vmin; background:var(--bg);
+    opacity:0; visibility:hidden; transform:translateY(12px);
+    transition:opacity .35s ease, transform .35s ease;
+  }
+  .slide.active{ opacity:1; visibility:visible; transform:none; }
+  /* 내용이 길면 슬라이드 안에서 스크롤(절대 잘리지 않게) */
+  .inner{ width:min(100%,1060px); max-height:100%; overflow-y:auto; text-align:left; padding-right:.5vmin; }
+  .inner::-webkit-scrollbar{ width:8px; }
+  .inner::-webkit-scrollbar-thumb{ background:#d3cee0; border-radius:4px; }
+
+  h1{ font-size:clamp(26px,5.4vmin,52px); line-height:1.16; text-wrap:balance; }
+  h2{ font-size:clamp(21px,4vmin,38px); line-height:1.22; margin-bottom:2.2vmin; text-wrap:balance; }
+  .kicker{ font-size:clamp(12px,2vmin,16px); font-weight:800; letter-spacing:.02em; color:var(--accent2); margin-bottom:1.2vmin; }
+  p{ font-size:clamp(15px,2.4vmin,21px); line-height:1.68; color:var(--muted); }
+  .narr{ font-size:clamp(14px,2.15vmin,19px); line-height:1.72; margin-top:1.2vmin; }
+  .narr + .narr{ margin-top:1vmin; }
+  .accent{ color:var(--accent); font-weight:800; }
+  .accent2{ color:var(--accent2); font-weight:800; }
+  /* 본문 bold 는 인디고로(컬러 배경 슬라이드는 인라인 style 로 흰색 지정) */
+  .narr b, .goal b, .lead-c b, p b{ color:var(--accent2); }
+  .punch{ margin-top:2.2vmin; font-size:clamp(16px,2.7vmin,24px); font-weight:800; color:var(--ink); text-wrap:balance; }
+
+  /* ---- 표지 / 마무리 (컬러 배경) ---- */
+  .slide.cover{ background:linear-gradient(135deg,#140f2b,#342b5e); color:#fff; }
+  .slide.cover p{ color:rgba(255,255,255,.92); }
+  .slide.closing{ background:linear-gradient(135deg,#e07a00,#ffb340); color:#fff; }
+  .slide.closing p{ color:rgba(255,255,255,.95); }
+  .tag{ display:inline-block; background:rgba(255,255,255,.22); font-weight:800; font-size:clamp(12px,2vmin,15px); padding:6px 14px; border-radius:22px; margin-bottom:2.6vmin; }
+  .brand{ display:inline-block; background:#fff; color:var(--accent2); font-weight:900; border-radius:12px; padding:10px 18px; font-size:clamp(14px,2.4vmin,22px); margin-top:3vmin; }
+
+  /* ---- 레이아웃 ---- */
+  .row{ display:grid; grid-template-columns:1.05fr .95fr; gap:3.2vmin; align-items:center; }
+  .stack{ display:flex; flex-direction:column; gap:1.4vmin; }
+
+  /* 근거 pill / 흐름 경로 */
+  .pills{ display:flex; flex-wrap:wrap; gap:1.2vmin; margin-top:1.4vmin; }
+  .pill{ background:var(--sky); color:var(--accent2); font-weight:700; border-radius:10px; padding:1vmin 1.7vmin; font-size:clamp(13px,2vmin,18px); }
+  .cpath{ display:flex; flex-wrap:wrap; gap:1vmin; align-items:center; margin:1.4vmin 0 .6vmin; }
+  .cpath .c{ background:var(--sky); color:var(--accent2); font-weight:800; border-radius:9px; padding:.8vmin 1.5vmin; font-size:clamp(12px,1.95vmin,17px); }
+  .cpath .c.last{ background:var(--accent2); color:#fff; }
+  .cpath .ar{ color:#b3abc4; font-weight:900; }
+
+  /* ---- 일러스트 (SVG) ---- */
+  .fig{ width:100%; }
+  .fig svg, .fig img{
+    width:100%; height:auto; display:block;
+    aspect-ratio:16/10; object-fit:cover;
+    border-radius:16px; border:2px solid var(--line); background:#fff;
+  }
+  .cap{ margin-top:1vmin; text-align:center; font-size:clamp(11px,1.9vmin,15px); color:var(--muted); }
+  .cap b{ color:var(--accent2); }
+
+  /* 앞으로의 꿈 리스트 */
+  .goals{ display:flex; flex-direction:column; gap:1.2vmin; margin-top:1vmin; }
+  .goal{ display:flex; align-items:center; gap:1.6vmin; background:#fff; border:1px solid var(--line); border-radius:12px; padding:1.4vmin 2vmin; font-size:clamp(14px,2.3vmin,20px); color:var(--ink); }
+  .goal .mk{ flex:none; width:clamp(24px,3.6vmin,32px); height:clamp(24px,3.6vmin,32px); border-radius:50%; background:var(--soft); color:var(--accent); display:flex; align-items:center; justify-content:center; font-weight:900; font-size:clamp(13px,2vmin,18px); }
+
+  /* 인용 */
+  .quote{ border-left:5px solid var(--accent); padding:0 0 0 3vmin; margin:2vmin 0; font-size:clamp(15px,2.5vmin,22px); font-weight:700; color:var(--ink); line-height:1.5; }
+
+  /* 마무리 슬라이드 */
+  .closing-in{ display:flex; flex-direction:column; align-items:center; justify-content:center; gap:2.6vmin; text-align:center; min-height:100%; }
+  .quote2{ font-size:clamp(14px,2.8vmin,27px); font-weight:800; color:#fff; line-height:1.42; text-wrap:balance; }
+  .closing .lead-c{ color:rgba(255,255,255,.95); font-size:clamp(15px,2.4vmin,21px); line-height:1.6; max-width:44ch; }
+  .closing .cta{ color:#fff; font-size:clamp(14px,2.2vmin,18px); }
+
+  /* ---- 하단 네비 ---- */
+  .hud{
+    position:fixed; left:0; right:0; bottom:0; height:8vmin; min-height:52px;
+    display:flex; align-items:center; justify-content:center; gap:2vmin;
+    background:rgba(14,11,26,.9); color:#fff; z-index:20;
+  }
+  .hud button{
+    width:clamp(38px,6vmin,52px); height:clamp(32px,5vmin,44px);
+    border:none; border-radius:10px; background:#3a3163; color:#fff; font-size:clamp(15px,2.6vmin,22px); cursor:pointer; transition:background .15s;
+  }
+  .hud button:hover{ background:#4c4180; } .hud button:disabled{ opacity:.35; cursor:default; }
+  .hud button:focus-visible{ outline:3px solid #ffb340; outline-offset:2px; }
+  .count{ font-size:clamp(13px,2.2vmin,18px); font-variant-numeric:tabular-nums; min-width:64px; text-align:center; }
+  .count b{ color:#ffb340; }
+  .dots{ display:flex; gap:7px; flex-wrap:wrap; justify-content:center; max-width:40vw; }
+  .dots i{ width:9px; height:9px; border-radius:50%; background:#584d80; cursor:pointer; transition:background .15s,transform .15s; }
+  .dots i.on{ background:#ffb340; transform:scale(1.25); }
+  .hint{ position:fixed; top:2vmin; right:2.5vmin; color:#a49cbd; font-size:12px; z-index:20; text-align:right; }
+
+  @media (max-width:680px){ .row{ grid-template-columns:1fr; } }
+  @media (prefers-reduced-motion:reduce){ .slide{ transition:none; } }
+</style>
+</head>
+<body>
+<div class="deck">
+
+  <!-- 1. 표지 -->
+  <section class="slide cover active">
+    <div class="inner" style="text-align:center">
+      <span class="tag">🥁 안해찬의 자기소개</span>
+      <h1>저는 왜 항상 <span style="color:#ffb340">"일단 예스"</span>라고 할까요?</h1>
+      <div class="brand">관객석보다 무대가 좋은 고등학생, 안해찬</div>
+    </div>
+  </section>
+
+  <!-- 2. 나는 이야기에 약해요 -->
+  <section class="slide">
+    <div class="inner row">
+      <div class="stack">
+        <div class="kicker">① 나라는 사람</div>
+        <h2>저는 <span class="accent">이야기</span>에 약해요</h2>
+        <p class="narr">영화나 드라마를 볼 때, 저는 화려한 장면보다 <b>대사 한 줄</b>에 오래 붙잡혀요. 그 사람이 왜 그렇게 말했는지, 그때 어떤 마음이었을지를 계속 생각하게 되거든요.</p>
+        <p class="narr">줄거리는 잊어버려도 <span class="accent">그 대사와 감정</span>은 남아요. 저는 정보보다 이야기가 훨씬 잘 기억에 남는 사람입니다.</p>
+      </div>
+      <div>
+        <div class="fig">
+          <svg viewBox="0 0 400 250" role="img" aria-label="어두운 극장 화면에 자막 한 줄이 떠 있고 앞쪽에 관객 실루엣이 보이는 그림">
+            <rect width="400" height="250" fill="#fbfaff"/>
+            <rect x="26" y="22" width="348" height="176" rx="10" fill="#1d1a2b"/>
+            <ellipse cx="200" cy="96" rx="118" ry="58" fill="#e07a00" opacity=".16"/>
+            <ellipse cx="200" cy="96" rx="64" ry="32" fill="#e07a00" opacity=".14"/>
+            <rect x="70" y="146" width="260" height="34" rx="7" fill="#000" opacity=".38"/>
+            <text x="200" y="169" text-anchor="middle" font-size="17" font-weight="700" fill="#fff">“그 말, 계속 생각나요”</text>
+            <g fill="#2a2340">
+              <circle cx="86" cy="228" r="20"/><rect x="62" y="228" width="48" height="22" rx="8"/>
+              <circle cx="164" cy="234" r="18"/><rect x="142" y="234" width="44" height="16" rx="7"/>
+              <circle cx="240" cy="230" r="19"/><rect x="217" y="230" width="46" height="20" rx="8"/>
+              <circle cx="316" cy="236" r="17"/><rect x="295" y="236" width="42" height="14" rx="6"/>
+            </g>
+          </svg>
+        </div>
+        <p class="cap">줄거리는 잊어도 <b>대사와 감정</b>은 남아요</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- 3. 역사도 결국 이야기 -->
+  <section class="slide">
+    <div class="inner row">
+      <div class="stack">
+        <div class="kicker">② 그런데</div>
+        <h2>역사도 결국 <span class="accent">이야기</span>더라고요</h2>
+        <p class="narr">처음엔 역사가 그냥 외울 게 많은 과목인 줄 알았어요. 그런데 듣다 보니 결국 <b>사람들이 어떤 상황에서 무슨 선택을 했는지</b>에 대한 이야기였어요.</p>
+        <p class="narr">제가 제일 재밌어하는 건 <span class="accent">"만약 그때 달랐다면"</span>이에요. 그 사람이 다른 선택을 했다면 지금은 어떻게 달라졌을까 — 그 상상을 시작하면 시간이 훅 지나갑니다.</p>
+      </div>
+      <div>
+        <div class="fig">
+          <svg viewBox="0 0 400 250" role="img" aria-label="한 지점에서 실선과 점선으로 갈라지는 역사 타임라인 그림">
+            <rect width="400" height="250" fill="#fbfaff"/>
+            <line x1="34" y1="160" x2="196" y2="160" stroke="#342b5e" stroke-width="5" stroke-linecap="round"/>
+            <circle cx="62" cy="160" r="7" fill="#342b5e"/>
+            <circle cx="118" cy="160" r="7" fill="#342b5e"/>
+            <path d="M196 160 L366 160" stroke="#342b5e" stroke-width="5" stroke-linecap="round"/>
+            <circle cx="286" cy="160" r="7" fill="#342b5e"/>
+            <path d="M196 160 C250 160 258 92 366 74" stroke="#e07a00" stroke-width="5" stroke-linecap="round" stroke-dasharray="11 10" fill="none"/>
+            <circle cx="286" cy="99" r="7" fill="#e07a00"/>
+            <circle cx="196" cy="160" r="15" fill="#fff" stroke="#e07a00" stroke-width="6"/>
+            <text x="196" y="204" text-anchor="middle" font-size="15" font-weight="800" fill="#5f5a72">그 선택의 순간</text>
+            <text x="374" y="184" text-anchor="end" font-size="15" font-weight="800" fill="#342b5e">실제로 일어난 일</text>
+            <text x="374" y="56" text-anchor="end" font-size="15" font-weight="800" fill="#e07a00">만약 그때 달랐다면?</text>
+          </svg>
+        </div>
+        <p class="cap">저는 늘 <b>위쪽 점선</b>이 궁금해요</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- 4. 좋아한다고 말만 하긴 싫어서 -->
+  <section class="slide">
+    <div class="inner row">
+      <div class="stack">
+        <div class="kicker">③ 좋아하면</div>
+        <h2>좋아한다고 <span class="accent">말만</span> 하긴 싫어서</h2>
+        <p class="narr">좋아하는 건 확실히 알겠는데, 좋아하기만 하고 끝나는 건 아쉬웠어요. 그래서 지금 <b>한국사능력검정시험</b>을 준비하고 있어요.</p>
+        <p class="narr">시험 공부라기보단, 제가 좋아하는 이야기를 <span class="accent2">앞뒤 순서까지 제대로 알고 싶어서</span> 하는 쪽에 가까워요.</p>
+        <div class="cpath">
+          <span class="c">좋아함</span><span class="ar">→</span>
+          <span class="c">찾아봄</span><span class="ar">→</span>
+          <span class="c">공부</span><span class="ar">→</span>
+          <span class="c last">자격증 준비 중</span>
+        </div>
+      </div>
+      <div>
+        <div class="fig">
+          <svg viewBox="0 0 400 250" role="img" aria-label="한국사능력검정 준비 중이라고 적힌 배지 그림">
+            <rect width="400" height="250" fill="#fbfaff"/>
+            <path d="M170 168 L152 236 L200 214 L248 236 L230 168 Z" fill="#e07a00" opacity=".22"/>
+            <circle cx="200" cy="122" r="74" fill="#fff3e0"/>
+            <circle cx="200" cy="122" r="74" fill="none" stroke="#e07a00" stroke-width="5"/>
+            <circle cx="200" cy="122" r="60" fill="none" stroke="#e07a00" stroke-width="2.5" stroke-dasharray="6 7" opacity=".75"/>
+            <text x="200" y="112" text-anchor="middle" font-size="30" font-weight="900" fill="#342b5e">한국사</text>
+            <text x="200" y="141" text-anchor="middle" font-size="16" font-weight="800" fill="#e07a00">능력검정</text>
+            <text x="200" y="164" text-anchor="middle" font-size="13" font-weight="700" fill="#5f5a72">준비 중</text>
+          </svg>
+        </div>
+        <p class="cap">취미로 끝내지 않으려고요</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- 5. 관객석에서 -->
+  <section class="slide">
+    <div class="inner row">
+      <div class="stack">
+        <div class="kicker">④ 관객석에서</div>
+        <h2>밴드 공연을 보고 <span class="accent">반해버렸어요</span></h2>
+        <p class="narr">어느 날 본 밴드 공연이 계속 생각났어요. 그중에서도 <b>제일 뒤에 앉아 있던 드러머</b>요. 앞에서 노래하는 사람보다 자꾸 그쪽에 눈이 갔어요.</p>
+        <p class="narr">그때까지 저는 이야기를 <span class="accent2">보는 쪽</span>이었어요. 좋아하던 영화도, 드라마도, 역사도 전부 <b>남의 이야기</b>였죠.</p>
+      </div>
+      <div>
+        <div class="fig">
+          <svg viewBox="0 0 400 250" role="img" aria-label="무대 조명이 켜진 공연장을 객석에서 바라본 그림">
+            <rect width="400" height="250" fill="#171232"/>
+            <polygon points="138,4 66,168 210,168" fill="#ffb340" opacity=".22"/>
+            <polygon points="262,4 190,168 334,168" fill="#ffb340" opacity=".22"/>
+            <rect x="30" y="168" width="340" height="9" rx="4" fill="#e07a00"/>
+            <g fill="#0e0b1a">
+              <circle cx="70" cy="226" r="21"/><rect x="45" y="226" width="50" height="24" rx="9"/>
+              <circle cx="150" cy="232" r="19"/><rect x="127" y="232" width="46" height="18" rx="8"/>
+              <circle cx="310" cy="230" r="20"/><rect x="286" y="230" width="48" height="20" rx="8"/>
+            </g>
+            <g fill="#e07a00">
+              <circle cx="230" cy="228" r="20"/><rect x="206" y="228" width="48" height="22" rx="9"/>
+            </g>
+            <text x="230" y="204" text-anchor="middle" font-size="13" font-weight="800" fill="#ffb340">그때의 나</text>
+          </svg>
+        </div>
+        <p class="cap">아직은 <b>보는 쪽</b>이었어요</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- 6. 일단 예스 -->
+  <section class="slide">
+    <div class="inner row">
+      <div class="stack">
+        <div class="kicker">⑤ 일단 예스</div>
+        <h2>그래서 말했어요, <span class="accent">"저 해볼래요"</span></h2>
+        <p class="narr">저는 누가 뭘 같이 하자고 하면 일단 <b>"예스"</b> 하는 편이에요. 고민하다 놓치는 게 더 아깝더라고요.</p>
+        <p class="narr">드럼도 그랬어요. 잘할 자신이 있어서 시작한 게 아니라 <span class="accent">해보고 싶어서</span> 시작했어요.</p>
+        <p class="punch">저는 준비가 다 되고 나서 하는 사람이 아니라,<br>하면서 준비되는 사람이에요.</p>
+      </div>
+      <div>
+        <div class="fig">
+          <svg viewBox="0 0 400 250" role="img" aria-label="심벌과 탐탐이 있는 드럼 세트 그림">
+            <rect width="400" height="250" fill="#fbfaff"/>
+            <line x1="86" y1="70" x2="86" y2="196" stroke="#b3abc4" stroke-width="4"/>
+            <line x1="316" y1="60" x2="316" y2="196" stroke="#b3abc4" stroke-width="4"/>
+            <ellipse cx="86" cy="68" rx="46" ry="11" fill="#e07a00" opacity=".85"/>
+            <ellipse cx="316" cy="58" rx="52" ry="12" fill="#e07a00" opacity=".85"/>
+            <ellipse cx="152" cy="98" rx="38" ry="14" fill="#fff3e0" stroke="#342b5e" stroke-width="4"/>
+            <ellipse cx="242" cy="94" rx="40" ry="14" fill="#fff3e0" stroke="#342b5e" stroke-width="4"/>
+            <circle cx="200" cy="172" r="56" fill="#fff" stroke="#342b5e" stroke-width="6"/>
+            <circle cx="200" cy="172" r="36" fill="#fff3e0" stroke="#e07a00" stroke-width="4"/>
+            <ellipse cx="106" cy="164" rx="34" ry="13" fill="#fff" stroke="#342b5e" stroke-width="4"/>
+            <line x1="52" y1="52" x2="128" y2="120" stroke="#342b5e" stroke-width="7" stroke-linecap="round"/>
+            <line x1="76" y1="44" x2="146" y2="116" stroke="#e07a00" stroke-width="7" stroke-linecap="round"/>
+          </svg>
+        </div>
+        <p class="cap">잘해서가 아니라 <b>해보고 싶어서</b></p>
+      </div>
+    </div>
+  </section>
+
+  <!-- 7. 무대에 선 날 (★ 핵심 장면) -->
+  <section class="slide">
+    <div class="inner row">
+      <div class="stack">
+        <div class="kicker">⑥ 그 장면</div>
+        <h2>그리고 <span class="accent">무대에 섰어요</span></h2>
+        <p class="narr">얼마 뒤, 저는 밴드로 <b>무대에 섰습니다.</b></p>
+        <p class="narr">첫 박을 치기 직전이 제일 무서웠어요. 그런데 막상 시작하고 나니까 하나도 안 무섭더라고요. <span class="accent2">제 박자에 맞춰서 옆 사람들이 들어오는 소리</span>가 들렸거든요.</p>
+        <div class="quote">관객석에서 보던 그 무대에,<br>이번엔 제가 서 있었어요.</div>
+      </div>
+      <div>
+        <div class="fig">
+          <svg viewBox="0 0 400 250" role="img" aria-label="스포트라이트 아래에서 드럼을 치고 있는 사람의 실루엣 그림">
+            <rect width="400" height="250" fill="#171232"/>
+            <polygon points="200,0 96,214 304,214" fill="#ffb340" opacity=".26"/>
+            <polygon points="200,0 146,214 254,214" fill="#ffd08a" opacity=".22"/>
+            <line x1="150" y1="96" x2="182" y2="128" stroke="#0e0b1a" stroke-width="8" stroke-linecap="round"/>
+            <line x1="250" y1="96" x2="218" y2="128" stroke="#0e0b1a" stroke-width="8" stroke-linecap="round"/>
+            <circle cx="200" cy="86" r="21" fill="#0e0b1a"/>
+            <path d="M172 152 C172 122 228 122 228 152 Z" fill="#0e0b1a"/>
+            <ellipse cx="140" cy="146" rx="30" ry="9" fill="#0e0b1a"/>
+            <ellipse cx="262" cy="142" rx="32" ry="9" fill="#0e0b1a"/>
+            <circle cx="200" cy="186" r="40" fill="#0e0b1a"/>
+            <rect x="30" y="214" width="340" height="9" rx="4" fill="#e07a00"/>
+            <text x="200" y="243" text-anchor="middle" font-size="14" font-weight="800" fill="#ffb340">첫 박, 하나 둘 셋 넷</text>
+          </svg>
+        </div>
+        <p class="cap">관객석에서 <b>무대</b>로 건너간 날</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- 8. 드럼이 알려준 것 -->
+  <section class="slide">
+    <div class="inner row">
+      <div class="stack">
+        <div class="kicker">⑦ 드럼이 알려준 것</div>
+        <h2>드럼은 <span class="accent">혼자 튀는 악기</span>가 아니에요</h2>
+        <p class="narr">드럼에는 멜로디가 없어요. 대신 <b>전체 박자를 잡아줍니다.</b> 제가 흔들리면 밴드 전체가 흔들리고, 제가 잘 잡아주면 다들 편하게 그 위에 올라타요.</p>
+        <p class="narr">그 자리가 저랑 잘 맞았어요. 제일 앞에서 튀는 것보다 <span class="accent">다 같이 가게 만드는 자리</span>가 훨씬 좋더라고요.</p>
+      </div>
+      <div>
+        <div class="fig">
+          <svg viewBox="0 0 400 250" role="img" aria-label="드럼이 네 박을 모두 채우고 그 위에 보컬 기타 베이스가 얹히는 것을 보여주는 박자표">
+            <rect width="400" height="250" fill="#fbfaff"/>
+            <g font-size="14" font-weight="800" fill="#5f5a72" text-anchor="end">
+              <text x="96" y="53">보컬</text><text x="96" y="99">기타</text><text x="96" y="145">베이스</text>
+            </g>
+            <text x="96" y="196" font-size="16" font-weight="900" fill="#e07a00" text-anchor="end">드럼</text>
+            <g font-size="13" font-weight="800" fill="#b3abc4" text-anchor="middle">
+              <text x="140" y="24">1</text><text x="212" y="24">2</text><text x="284" y="24">3</text><text x="356" y="24">4</text>
+            </g>
+            <g fill="#eceafa">
+              <rect x="110" y="34" width="60" height="24" rx="7"/><rect x="182" y="34" width="60" height="24" rx="7"/><rect x="254" y="34" width="60" height="24" rx="7"/><rect x="326" y="34" width="60" height="24" rx="7"/>
+              <rect x="110" y="80" width="60" height="24" rx="7"/><rect x="182" y="80" width="60" height="24" rx="7"/><rect x="254" y="80" width="60" height="24" rx="7"/><rect x="326" y="80" width="60" height="24" rx="7"/>
+              <rect x="110" y="126" width="60" height="24" rx="7"/><rect x="182" y="126" width="60" height="24" rx="7"/><rect x="254" y="126" width="60" height="24" rx="7"/><rect x="326" y="126" width="60" height="24" rx="7"/>
+            </g>
+            <g fill="#342b5e">
+              <rect x="182" y="34" width="60" height="24" rx="7"/><rect x="326" y="34" width="60" height="24" rx="7"/>
+              <rect x="110" y="80" width="60" height="24" rx="7"/><rect x="254" y="80" width="60" height="24" rx="7"/>
+              <rect x="110" y="126" width="60" height="24" rx="7"/><rect x="182" y="126" width="60" height="24" rx="7"/><rect x="326" y="126" width="60" height="24" rx="7"/>
+            </g>
+            <g fill="#e07a00">
+              <rect x="110" y="176" width="60" height="30" rx="8"/><rect x="182" y="176" width="60" height="30" rx="8"/><rect x="254" y="176" width="60" height="30" rx="8"/><rect x="326" y="176" width="60" height="30" rx="8"/>
+            </g>
+            <text x="248" y="234" text-anchor="middle" font-size="14" font-weight="800" fill="#5f5a72">드럼이 다 채워야, 나머지가 올라탑니다</text>
+          </svg>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 9. 그래서 지금 나는 -->
+  <section class="slide">
+    <div class="inner stack">
+      <div class="kicker">⑧ 그래서 지금</div>
+      <h2>저는 <span class="accent">사람들 사이에서</span> 더 잘 되는 사람이에요</h2>
+      <p class="narr">저는 외향적이에요. 혼자 조용히 하는 것보다 <b>사람 많은 곳에서 같이 뭔가 벌이는 활동</b>을 할 때 확실히 힘이 납니다. 밴드도, 다른 활동들도 전부 그래서 재밌었어요.</p>
+      <p class="narr">진로요? <span class="accent">아직은 잘 모르겠어요.</span> 그런데 하나는 확실해요 — 어떤 일을 하게 되든, <b>사람들이랑 같이 하는 일</b>일 거예요.</p>
+      <div class="pills">
+        <span class="pill">외향적</span>
+        <span class="pill">협업을 좋아함</span>
+        <span class="pill">일단 예스</span>
+        <span class="pill">이야기를 좋아함</span>
+        <span class="pill">박자를 잡아주는 자리</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- 10. 앞으로 -->
+  <section class="slide">
+    <div class="inner stack">
+      <div class="kicker">앞으로</div>
+      <h2>아직 <span class="accent">하고 싶은 게 많아요</span></h2>
+      <p class="narr">다 정해놓진 않았지만, 지금 하고 싶은 건 이렇게 네 가지예요.</p>
+      <div class="goals">
+        <div class="goal"><span class="mk">1</span>한국사능력검정시험 <b>합격</b>하기</div>
+        <div class="goal"><span class="mk">2</span>밴드로 <b>더 큰 무대</b>에 서보기</div>
+        <div class="goal"><span class="mk">3</span>계속 해보면서 <b>내 진로 찾기</b></div>
+        <div class="goal"><span class="mk">4</span>이번 수업에서 <b>"만약 그때 달랐다면" 역사 시뮬레이터</b> 만들기</div>
+      </div>
+      <p class="narr">특히 마지막 게 제일 기대돼요. 제가 제일 좋아하는 <span class="accent">"만약"</span>을, 이번엔 상상만 하지 않고 <b>직접 만들어보고 싶거든요.</b></p>
+    </div>
+  </section>
+
+  <!-- 11. 마무리 -->
+  <section class="slide closing">
+    <div class="inner closing-in">
+      <div class="quote2">“관객석에 앉아만 있으면, 내 이야기는 시작되지 않는다”</div>
+      <h1>일단 예스하면, 이야기가 생긴다</h1>
+      <p class="lead-c">저는 남의 이야기를 좋아하다가, 결국 <b style="color:#fff">제 이야기</b>를 만들고 싶어졌어요.<br>그래서 오늘도 일단 "예스"라고 합니다.</p>
+      <div class="brand">관객석보다 무대가 좋은 고등학생, 안해찬</div>
+      <p class="cta">여러분도 일단 한번 해봐요! 🥁</p>
+    </div>
+  </section>
+
+  <!-- 네비게이션 -->
+  <div class="hint">← → 방향키 · 화면 클릭으로 넘기기</div>
+  <nav class="hud">
+    <button id="prev" aria-label="이전">◀</button>
+    <div class="dots" id="dots"></div>
+    <span class="count"><b id="cur">1</b> / <span id="tot">11</span></span>
+    <button id="next" aria-label="다음">▶</button>
+  </nav>
+</div>
+
+<script>
+  const slides = Array.from(document.querySelectorAll('.slide'));
+  const dotsWrap = document.getElementById('dots');
+  const curEl = document.getElementById('cur');
+  const prevBtn = document.getElementById('prev');
+  const nextBtn = document.getElementById('next');
+  document.getElementById('tot').textContent = slides.length;
+  let i = 0;
+
+  slides.forEach((_, k) => {
+    const d = document.createElement('i');
+    d.addEventListener('click', (e) => { e.stopPropagation(); show(k); });
+    dotsWrap.appendChild(d);
+  });
+  const dots = Array.from(dotsWrap.children);
+
+  function show(n) {
+    i = Math.max(0, Math.min(slides.length - 1, n));
+    slides.forEach((s, k) => s.classList.toggle('active', k === i));
+    dots.forEach((d, k) => d.classList.toggle('on', k === i));
+    curEl.textContent = i + 1;
+    prevBtn.disabled = i === 0;
+    nextBtn.disabled = i === slides.length - 1;
+    const inner = slides[i].querySelector('.inner');
+    if (inner) inner.scrollTop = 0;
+  }
+
+  prevBtn.addEventListener('click', (e) => { e.stopPropagation(); show(i - 1); });
+  nextBtn.addEventListener('click', (e) => { e.stopPropagation(); show(i + 1); });
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'ArrowRight' || e.key === 'PageDown') { show(i + 1); e.preventDefault(); }
+    else if (e.key === 'ArrowLeft' || e.key === 'PageUp') { show(i - 1); e.preventDefault(); }
+  });
+  document.querySelector('.deck').addEventListener('click', (e) => {
+    if (e.target.closest('.hud') || e.target.closest('a') || e.target.closest('.dots')) return;
+    if (e.clientX > window.innerWidth / 2) show(i + 1); else show(i - 1);
+  });
+
+  show(0);
+</script>
+</body>
+</html>
