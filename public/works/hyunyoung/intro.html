@@ -1,0 +1,419 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>김현영의 자기소개 — 영월드</title>
+<!--
+  ▶ 컨셉: "겁이 많은데, 제일 하고 싶은 건 낯선 데 가보는 것."
+     표지(궁금하게) → 저는 이런 편이에요(겁) → 제일 하고 싶은 것(여행·유럽)
+     → 그래서 정한 것(외고·국제고) → 오늘(영월드) → 마무리
+     취미는 한 줄만 스쳐 지나가고, 중심에 두지 않습니다.
+  ▶ 사진은 없습니다. 전부 코드로 그린 선(線) 그림입니다.
+     실제 사진을 넣으려면 public/works/hyunyoung/img/ 에 파일을 넣고
+     해당 <svg> 자리를 <img src="/works/hyunyoung/img/파일명.jpg"> 로 바꾸면 됩니다.
+  ▶ 색을 바꾸려면 :root 의 --paper / --blue 값만 고치면 전체가 바뀝니다.
+  ▶ 조작: ← → 방향키 / 화면 좌우 클릭 / 아래 점(dot) 클릭
+-->
+<style>
+  :root{
+    --paper:#d9dfe8; --ink:#1a2130; --muted:#5b6477;
+    --rule:#c1c9d6; --blue:#2b4a8f; --blue2:#4a68b0; --stone:#9fa9bd;
+    --deep:#3f4d66;
+  }
+  *{ box-sizing:border-box; margin:0; padding:0; }
+  html,body{ height:100%; }
+  body{
+    font-family:"Apple SD Gothic Neo","Pretendard","Noto Sans KR",-apple-system,"Malgun Gothic",sans-serif;
+    color:var(--ink); background:var(--paper); overflow:hidden;
+    -webkit-font-smoothing:antialiased;
+  }
+  .deck{ position:fixed; inset:0; }
+
+  /* ---- 슬라이드 공통 ---- */
+  .slide{
+    position:absolute; inset:0; display:flex; align-items:center; justify-content:center;
+    padding:6vmin 8vmin 12vmin; background:var(--paper);
+    opacity:0; visibility:hidden; transition:opacity .5s ease;
+  }
+  .slide.active{ opacity:1; visibility:visible; }
+  .inner{ width:min(100%,1000px); max-height:100%; overflow-y:auto; text-align:left; padding-right:.5vmin; }
+  .inner::-webkit-scrollbar{ width:6px; }
+  .inner::-webkit-scrollbar-thumb{ background:var(--stone); border-radius:3px; }
+
+  h1{ font-family:"Nanum Myeongjo","Noto Serif KR","Batang",serif;
+      font-size:clamp(27px,5.8vmin,58px); line-height:1.32; font-weight:700; letter-spacing:-.01em; }
+  h2{ font-family:"Nanum Myeongjo","Noto Serif KR","Batang",serif;
+      font-size:clamp(19px,3.5vmin,33px); line-height:1.42; font-weight:700; margin-bottom:2.2vmin; }
+  p{ font-size:clamp(13px,2vmin,17.5px); line-height:1.85; color:var(--muted); }
+  .narr + .narr{ margin-top:1.2vmin; }
+  b{ color:var(--ink); font-weight:700; }
+
+  .kicker{
+    display:flex; align-items:center; gap:1.2vmin;
+    font-size:clamp(10px,1.6vmin,12.5px); font-weight:700; letter-spacing:.22em;
+    color:var(--muted); margin-bottom:2.4vmin;
+  }
+  .kicker::before{ content:""; width:clamp(20px,3.4vmin,32px); height:1px; background:var(--blue); flex:none; }
+  .kicker em{ font-style:normal; color:var(--blue); }
+
+  .punch{
+    margin-top:3vmin; padding-left:2.6vmin; border-left:2px solid var(--blue);
+    font-family:"Nanum Myeongjo","Noto Serif KR","Batang",serif;
+    font-size:clamp(14px,2.3vmin,20px); line-height:1.72; color:var(--ink); font-weight:700;
+  }
+
+  /* ---- 등장 ---- */
+  .rv{ opacity:0; }
+  .slide.active .rv{ animation:rise .9s cubic-bezier(.16,1,.3,1) both; animation-delay:var(--d,0s); }
+  @keyframes rise{ from{ opacity:0; transform:translateY(9px) } to{ opacity:1; transform:none } }
+  @keyframes softin{ to{ opacity:1 } }
+  @keyframes drawLong{ to{ stroke-dashoffset:0 } }
+
+  /* ---- 레이아웃 ---- */
+  .row{ display:grid; grid-template-columns:1.02fr .98fr; gap:5vmin; align-items:center; }
+  .stack{ display:flex; flex-direction:column; }
+  .art{ width:100%; }
+  .art svg{ width:100%; height:auto; display:block; overflow:visible; }
+
+  /* ---- 표지 (마무리와 같은 색으로 앞뒤를 맞춤) ---- */
+  .slide.cover{ background:var(--deep); }
+  .cover .inner{ display:flex; align-items:center; }
+  .cover-in{ width:100%; }
+  .cover .top{ font-size:clamp(9.5px,1.55vmin,12px); letter-spacing:.4em;
+               color:rgba(238,242,247,.45); font-weight:700; margin-bottom:4.4vmin; }
+  .cover h1{ color:#eef2f7; }
+  .cover .sub1{ margin-top:3.6vmin; font-family:"Nanum Myeongjo","Noto Serif KR","Batang",serif;
+                font-size:clamp(13.5px,2.4vmin,22px); line-height:1.7; color:#a9c0e6; font-weight:700; }
+  .cover .hr{ width:clamp(44px,7vmin,80px); height:1px; background:rgba(238,242,247,.3); margin:4.4vmin 0 3vmin; }
+  .cover .who{ font-size:clamp(11px,1.85vmin,14.5px); letter-spacing:.18em; color:rgba(238,242,247,.7); }
+  .cover .here{ fill:#a9c0e6; }
+  .cover .lnk{ stroke:rgba(238,242,247,.38); }
+  .cover .far{ stroke:rgba(238,242,247,.5); }
+
+  /* ---- 여기 ┈┈ 저기 ---- */
+  .line{ margin-top:3.6vmin; max-width:min(100%,470px); }
+  .line svg{ width:100%; height:auto; display:block; }
+  .here{ fill:var(--blue); opacity:0; }
+  .slide.active .here{ animation:softin .9s ease var(--d,.9s) both; }
+  .step{ fill:var(--blue2); opacity:0; }
+  .slide.active .step{ animation:softin .8s ease var(--d,1.6s) both; }
+  .lnk{ fill:none; stroke:var(--stone); stroke-width:1.4; stroke-dasharray:4 7;
+        stroke-dashoffset:300; }
+  .slide.active .lnk{ stroke-dasharray:300; animation:drawLong 2s cubic-bezier(.16,1,.3,1) 1.1s forwards; }
+  .far{ fill:none; stroke:var(--stone); stroke-width:2; stroke-dasharray:4 4; opacity:0; }
+  .slide.active .far{ animation:softin 1s ease var(--d,2.4s) both; }
+  .tick{ font-size:clamp(9px,1.5vmin,11.5px); font-weight:700; letter-spacing:.14em; opacity:0; }
+  .slide.active .tick{ animation:softin 1s ease var(--d,2.6s) both; }
+
+  /* ---- 겁 → 그래도 ---- */
+  .statement{ font-family:"Nanum Myeongjo","Noto Serif KR","Batang",serif;
+              font-size:clamp(18px,3.7vmin,35px); line-height:1.52; font-weight:700; color:var(--ink); }
+  .statement em{ font-style:normal; color:var(--blue); }
+  .mind{ margin-top:3.2vmin; padding-left:3vmin; border-left:1px dashed var(--stone); }
+  .mind .mk{ font-size:clamp(10px,1.6vmin,12.5px); letter-spacing:.22em; color:var(--stone); font-weight:700; margin-bottom:1.6vmin; }
+  .mind .th{ font-family:"Nanum Myeongjo","Noto Serif KR","Batang",serif;
+             font-size:clamp(13.5px,2.2vmin,19px); line-height:1.75; color:var(--muted); }
+  .mind .th + .th{ margin-top:.9vmin; }
+  .drop{ margin:2.4vmin 0 2.4vmin 3vmin; }
+  .drop svg{ display:block; width:14px; height:auto; }
+  .dl{ stroke:var(--blue); stroke-width:1.6; stroke-linecap:round; stroke-dasharray:60; stroke-dashoffset:60; }
+  .slide.active .dl{ animation:drawLong 1s cubic-bezier(.16,1,.3,1) 1.6s forwards; }
+  .real{ padding-left:3vmin; border-left:2px solid var(--blue); }
+  .real .mk{ font-size:clamp(10px,1.6vmin,12.5px); letter-spacing:.22em; color:var(--blue); font-weight:700; margin-bottom:1.4vmin; }
+  .real .tx{ font-family:"Nanum Myeongjo","Noto Serif KR","Batang",serif;
+             font-size:clamp(16px,2.9vmin,26px); line-height:1.55; color:var(--ink); font-weight:700; }
+
+  /* ---- 여행 기록 ---- */
+  .logbook{ margin-top:2.4vmin; border-top:1px solid var(--rule); }
+  .logbook .lh{ display:flex; justify-content:space-between; padding:1.1vmin 0;
+                font-size:clamp(9.5px,1.55vmin,12px); letter-spacing:.2em; color:var(--stone); font-weight:700;
+                border-bottom:1px solid var(--rule); }
+  .logrow{ display:flex; align-items:baseline; justify-content:space-between; gap:2vmin;
+           padding:1.6vmin 0; border-bottom:1px solid var(--rule); }
+  .logrow .pl{ font-family:"Nanum Myeongjo","Noto Serif KR","Batang",serif;
+               font-size:clamp(13.5px,2.2vmin,19px); font-weight:700; color:var(--ink); }
+  .logrow .dt{ font-size:clamp(11px,1.8vmin,14px); color:var(--stone); letter-spacing:.1em; }
+  .logrow.first .pl{ color:var(--blue); }
+
+  /* ---- 유럽 풍경 ---- */
+  .sky .ln{ fill:none; stroke:var(--blue); stroke-width:1.8; stroke-linecap:round; stroke-linejoin:round;
+            stroke-dasharray:900; stroke-dashoffset:900; }
+  .slide.active .sky .ln{ animation:drawLong 2.4s cubic-bezier(.16,1,.3,1) .5s forwards; }
+  .sky .ln2{ fill:none; stroke:var(--stone); stroke-width:1.4; stroke-linecap:round; opacity:0; }
+  .slide.active .sky .ln2{ animation:softin 1.2s ease 1.8s both; }
+  .sky .gnd{ stroke:var(--stone); stroke-width:1.2; opacity:0; }
+  .slide.active .sky .gnd{ animation:softin 1s ease .4s both; }
+
+  /* ---- 목표 경로 ---- */
+  .track{ margin:2.6vmin 0 1.4vmin; }
+  .path-done{ fill:none; stroke:var(--blue); stroke-width:1.8; stroke-linecap:round; stroke-dasharray:520; stroke-dashoffset:520; }
+  .slide.active .path-done{ animation:drawLong 1.6s cubic-bezier(.16,1,.3,1) .5s forwards; }
+  .path-next{ fill:none; stroke:var(--blue2); stroke-width:1.6; stroke-linecap:round; stroke-dasharray:5 6; opacity:0; }
+  .slide.active .path-next{ animation:softin 1s ease 1.6s both; }
+  .mk-now{ fill:var(--blue); }
+  .mk-goal{ fill:var(--paper); stroke:var(--blue2); stroke-width:1.8; }
+  .lbl{ font-size:clamp(9px,1.5vmin,12px); font-weight:700; letter-spacing:.06em; }
+
+  /* ---- 출발 안내(티켓) ---- */
+  .ticket{ margin-top:1.4vmin; border:1.5px solid var(--blue); border-radius:5px;
+           background:rgba(255,255,255,.32); padding:2.6vmin 3vmin; max-width:min(100%,640px); }
+  .ticket .thead{ display:flex; align-items:flex-end; justify-content:space-between; gap:2vmin;
+                  padding-bottom:1.8vmin; border-bottom:1.5px dashed var(--blue); }
+  .ticket .dest{ font-family:"Nanum Myeongjo","Noto Serif KR","Batang",serif;
+                 font-size:clamp(20px,3.6vmin,34px); font-weight:700; color:var(--blue); line-height:1.2; }
+  .ticket .dest small{ display:block; font-family:inherit; font-size:clamp(9.5px,1.55vmin,12px);
+                       letter-spacing:.22em; color:var(--muted); font-weight:700; margin-bottom:.8vmin; }
+  .ticket .when{ text-align:right; font-size:clamp(11px,1.85vmin,14.5px); color:var(--ink); font-weight:700; letter-spacing:.06em; }
+  .ticket .when small{ display:block; font-size:clamp(9.5px,1.55vmin,12px); letter-spacing:.22em;
+                       color:var(--muted); margin-bottom:.8vmin; }
+  .trow{ display:flex; align-items:baseline; gap:2.6vmin; padding:1.6vmin 0; border-bottom:1px solid var(--rule); }
+  .trow:last-child{ border-bottom:none; padding-bottom:.4vmin; }
+  .trow .k{ flex:none; width:clamp(58px,8vmin,86px); font-size:clamp(9.5px,1.6vmin,12.5px);
+            letter-spacing:.16em; color:var(--muted); font-weight:700; }
+  .trow .v{ font-family:"Nanum Myeongjo","Noto Serif KR","Batang",serif;
+            font-size:clamp(13.5px,2.2vmin,19px); font-weight:700; color:var(--ink); line-height:1.6; }
+  .trow .v.dim{ color:var(--stone); }
+
+  /* ---- 마무리 ---- */
+  .slide.closing{ background:var(--deep); }
+  .closing-in{ display:flex; flex-direction:column; align-items:center; justify-content:center; gap:3.4vmin; text-align:center; min-height:100%; }
+  .quote2{ font-family:"Nanum Myeongjo","Noto Serif KR","Batang",serif;
+           font-size:clamp(16.5px,3.2vmin,31px); font-weight:700; line-height:1.62; color:#eef2f7; }
+  .closing .lead-c{ color:rgba(238,242,247,.72); font-size:clamp(12.5px,2vmin,17.5px); line-height:1.85; max-width:38ch; }
+  .signature{ margin-top:1vmin; padding-top:2.4vmin; border-top:1px solid rgba(238,242,247,.28);
+              font-size:clamp(11.5px,1.85vmin,15px); color:rgba(238,242,247,.85); letter-spacing:.16em; }
+
+  /* ---- 하단 네비 ---- */
+  .hud{
+    position:fixed; left:0; right:0; bottom:0; height:8vmin; min-height:54px;
+    display:flex; align-items:center; justify-content:center; gap:2.4vmin;
+    background:rgba(217,223,232,.94); border-top:1px solid var(--rule); z-index:20;
+  }
+  .hud button{
+    width:clamp(34px,5.2vmin,44px); height:clamp(30px,4.6vmin,40px);
+    border:1px solid var(--stone); border-radius:3px; background:transparent; color:var(--muted);
+    font-size:clamp(12px,2vmin,16px); cursor:pointer; transition:all .2s;
+  }
+  .hud button:hover{ border-color:var(--blue); color:var(--blue); } .hud button:disabled{ opacity:.3; cursor:default; }
+  .count{ font-size:clamp(11px,1.85vmin,14px); font-variant-numeric:tabular-nums; min-width:56px; text-align:center; color:var(--muted); letter-spacing:.1em; }
+  .count b{ color:var(--blue); }
+  .dots{ display:flex; gap:9px; flex-wrap:wrap; justify-content:center; max-width:36vw; }
+  .dots i{ width:6px; height:6px; border-radius:50%; background:var(--stone); cursor:pointer; transition:background .25s; }
+  .dots i.on{ background:var(--blue); }
+  .hint{ position:fixed; top:3vmin; right:3.4vmin; color:var(--stone); font-size:11px; letter-spacing:.1em; z-index:20; }
+
+  @media (max-width:720px){
+    .row{ grid-template-columns:1fr; gap:3vmin; }
+    .hint{ display:none; }
+  }
+</style>
+</head>
+<body>
+<div class="deck">
+
+  <!-- ===== 1. 표지 ===== -->
+  <section class="slide cover active">
+    <div class="inner">
+      <div class="cover-in">
+        <div class="top rv" style="--d:.1s">자 기 소 개</div>
+        <h1 class="rv" style="--d:.3s">안 가본 데가<br>아직 너무 많아요.</h1>
+
+        <div class="line">
+          <svg viewBox="0 0 470 30" aria-label="지금 있는 자리와 멀리 있는 자리를 잇는 점선">
+            <circle class="here" cx="12" cy="15" r="8" style="--d:.9s"/>
+            <path class="lnk" d="M30 15 H424"/>
+            <circle class="far" cx="446" cy="15" r="9" style="--d:2.6s"/>
+          </svg>
+        </div>
+
+        <div class="sub1 rv" style="--d:2.9s">그래서 좀 바빠질 것 같아요.</div>
+        <div class="hr rv" style="--d:3.15s"></div>
+        <div class="who rv" style="--d:3.3s">김현영 · 영월 · 중학교 1학년 14살</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== 2. 저는 이런 편이에요 ===== -->
+  <section class="slide">
+    <div class="inner">
+      <div class="kicker rv" style="--d:.1s">01 &nbsp;<em>저는 이런 편이에요</em></div>
+      <p class="statement rv" style="--d:.2s">저는 원래 <em>겁이 많아요.</em></p>
+
+      <div class="mind">
+        <div class="mk rv" style="--d:.5s">시 작 하 기 전</div>
+        <p class="th rv" style="--d:.65s">“생각보다 어려우면 어떡하지.”</p>
+        <p class="th rv" style="--d:.85s">“다들 잘하는데 나만 못 따라가면.”</p>
+        <p class="th rv" style="--d:1.05s">“그냥 안 한다고 할까.”</p>
+      </div>
+
+      <div class="drop">
+        <svg viewBox="0 0 14 60" aria-hidden="true"><path class="dl" d="M7 2 L7 52 M2 46 L7 53 L12 46"/></svg>
+      </div>
+
+      <div class="real rv" style="--d:2.2s">
+        <div class="mk">그 런 데</div>
+        <p class="tx">매번 결국 가긴 가요.</p>
+      </div>
+
+      <p class="narr rv" style="--d:2.45s">저는 <b>예체능 쪽</b>을 좋아해서 이것저것 해보는 편인데, 새로 시작할 때마다 매번 똑같았어요.
+        시작 전에는 계속 걱정하다가, <b>막상 하고 나면 그 걱정이 없어져요.</b></p>
+
+      <p class="punch rv" style="--d:2.65s">겁이 없어서 하는 게 아니라,<br>겁나는데도 하는 편이에요.</p>
+    </div>
+  </section>
+
+  <!-- ===== 3. 제일 하고 싶은 것 ===== -->
+  <section class="slide">
+    <div class="inner row">
+      <div class="stack">
+        <div class="kicker rv" style="--d:.1s">02 &nbsp;<em>그런데 제일 하고 싶은 건</em></div>
+        <h2 class="rv" style="--d:.2s">낯선 데서<br>안 해본 걸 해보는 거예요</h2>
+        <p class="narr rv" style="--d:.34s">겁은 많은데 제일 하고 싶은 게 이거라서, 저도 좀 이상하다고 생각해요.
+          유럽도 가보고 싶고, 아직 어딘지도 모르는 나라도 가보고 싶어요.</p>
+        <p class="narr rv" style="--d:.46s">가는 것 자체보다, 거기 가면 <b>제가 해볼 수 있는 게 여기보다 훨씬 많아진다는 것</b>이 좋아요.
+          말도, 음식도, 학교도, 만나는 사람도 전부 처음일 테니까요.</p>
+        <p class="punch rv" style="--d:.62s">제일 무서운 게<br>제일 궁금해요.</p>
+      </div>
+      <div class="art">
+        <svg class="sky" viewBox="0 0 320 130" aria-label="유럽 도시의 건물들을 그린 선 그림">
+          <path class="ln" d="M22 108 C34 80 40 56 44 24 M66 108 C54 80 48 56 44 24 M44 24 V12"/>
+          <path class="ln2" d="M30 84h28M36 62h16"/>
+          <path class="ln" d="M92 108 V72 a17 17 0 0 1 34 0 V108"/>
+          <path class="ln2" d="M109 55v-9M100 108V88h18v20"/>
+          <path class="ln" d="M152 108 V44 h22 V108 M148 44 l15 -16 l15 16"/>
+          <circle class="ln2" cx="163" cy="58" r="7"/>
+          <path class="ln" d="M198 108 V64 h30 V108 M198 64 l15 -12 l15 12"/>
+          <path class="ln2" d="M206 78h6v9h-6zM216 78h6v9h-6z"/>
+          <path class="ln" d="M242 108 V78 h26 V108 M242 78 l13 -11 l13 11"/>
+          <path class="ln2" d="M250 90h10v18h-10z"/>
+          <path class="ln" d="M280 108 V86 h24 V108"/>
+          <path class="ln2" d="M286 94h5v6h-5zM295 94h5v6h-5z"/>
+          <line class="gnd" x1="8" y1="108" x2="312" y2="108"/>
+        </svg>
+
+        <div class="logbook">
+          <div class="lh rv" style="--d:1.9s"><span>해 보 고 싶 은 것</span><span>언 제</span></div>
+          <div class="logrow first rv" style="--d:2s"><span class="pl">유럽 가보기</span><span class="dt">— — — —</span></div>
+          <div class="logrow rv" style="--d:2.1s"><span class="pl">그 나라 말로 말 걸어보기</span><span class="dt">— — — —</span></div>
+          <div class="logrow rv" style="--d:2.2s"><span class="pl">안 먹어본 것 먹어보기</span><span class="dt">— — — —</span></div>
+          <div class="logrow rv" style="--d:2.3s"><span class="pl">아직 모르는 것</span><span class="dt">— — — —</span></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== 4. 그래서 정한 것 ===== -->
+  <section class="slide">
+    <div class="inner">
+      <div class="kicker rv" style="--d:.1s">03 &nbsp;<em>그래서 정한 거</em></div>
+      <h2 class="rv" style="--d:.2s">외국어고등학교 · 국제고등학교</h2>
+
+      <div class="track rv" style="--d:.34s">
+        <svg viewBox="0 0 700 116" aria-label="영월에서 외고 국제고를 거쳐 더 먼 곳으로 이어지는 길">
+          <path class="path-done" d="M46 82 C140 78 200 62 296 54"/>
+          <path class="path-next" d="M296 54 C400 46 470 40 560 34 C610 31 640 29 660 28"/>
+          <circle class="mk-now" cx="46" cy="82" r="7"/>
+          <text class="lbl" x="46" y="104" fill="var(--blue)" text-anchor="middle">지금 · 영월</text>
+          <circle class="mk-goal" cx="296" cy="54" r="7"/>
+          <text class="lbl" x="296" y="78" fill="var(--blue2)" text-anchor="middle">외고 · 국제고</text>
+          <circle class="mk-goal" cx="660" cy="28" r="7"/>
+          <text class="lbl" x="660" y="52" fill="var(--blue2)" text-anchor="middle">그리고 더 멀리</text>
+        </svg>
+      </div>
+
+      <p class="narr rv" style="--d:.6s">가고 싶은 데가 생기니까 그 전에 필요한 게 보였어요. 말이 통해야 하고,
+        <b>그 나라를 좀 아는 사람이 먼저 돼야</b> 하더라고요. 그래서 외국어고나 국제고를 목표로 정했어요.
+        <b>거기서는 제가 해볼 수 있는 게 지금보다 훨씬 넓어질 것 같아서요.</b></p>
+      <p class="narr rv" style="--d:.74s">지금 실력으로 될지는 저도 걱정돼요. 그래도 <b>갈 데를 정해두니까 오늘 뭘 해야 할지는 확실해졌어요.</b></p>
+      <p class="punch rv" style="--d:.9s">제일 오래 걸릴 것 같아요.<br>그래서 지금부터 하려고요.</p>
+    </div>
+  </section>
+
+  <!-- ===== 5. 오늘 ===== -->
+  <section class="slide">
+    <div class="inner">
+      <div class="kicker rv" style="--d:.1s">04 &nbsp;<em>그리고 오늘</em></div>
+      <h2 class="rv" style="--d:.2s">제일 가까운 안 가본 데는<br>사실 여기예요</h2>
+
+      <div class="ticket rv" style="--d:.4s">
+        <div class="thead">
+          <div class="dest"><small>목 적 지</small>영월드</div>
+          <div class="when"><small>출 발</small>오늘</div>
+        </div>
+        <div class="trow"><span class="k">처음인 것</span><span class="v">전부 다</span></div>
+        <div class="trow"><span class="k">같이 가는 사람</span><span class="v dim">아직 모르는 친구들</span></div>
+        <div class="trow"><span class="k">준비물</span><span class="v dim">아직 없음</span></div>
+        <div class="trow"><span class="k">계획</span><span class="v">뭐가 됐든 일단 열심히 해보기</span></div>
+      </div>
+
+      <p class="narr rv" style="--d:.7s">유럽은 아직 한참 멀었으니까, <b>그 전에 갈 수 있는 낯선 데부터</b> 가보려고요.
+        여기도 저한테는 처음이라서 똑같이 겁이 나는데, 그건 매번 그랬으니까 괜찮아요.</p>
+
+      <p class="punch rv" style="--d:.9s">멀리 가려면<br>가까운 데부터 가봐야 하니까요.</p>
+    </div>
+  </section>
+
+  <!-- ===== 6. 마무리 ===== -->
+  <section class="slide closing">
+    <div class="inner">
+      <div class="closing-in">
+        <p class="quote2 rv" style="--d:.2s">“겁은 많은데,<br>가고 싶은 데는 더 많아요.”</p>
+        <p class="lead-c rv" style="--d:.5s">지금은 영월에 있어요.<br>여기서 할 수 있는 걸 먼저 해보고,<br>언젠가 더 먼 데로 가려고요.</p>
+        <div class="signature rv" style="--d:.8s">김현영 · 영월 · 중학교 1학년</div>
+      </div>
+    </div>
+  </section>
+
+  <div class="hint">← → 방향키 · 화면 클릭</div>
+
+  <nav class="hud">
+    <button id="prev" aria-label="이전">←</button>
+    <div class="dots" id="dots"></div>
+    <span class="count"><b id="cur">1</b> / <span id="tot">6</span></span>
+    <button id="next" aria-label="다음">→</button>
+  </nav>
+</div>
+
+<script>
+  const slides = Array.from(document.querySelectorAll('.slide'));
+  const dotsWrap = document.getElementById('dots');
+  const curEl = document.getElementById('cur');
+  const prevBtn = document.getElementById('prev');
+  const nextBtn = document.getElementById('next');
+  document.getElementById('tot').textContent = slides.length;
+  let i = 0;
+
+  slides.forEach((_, k) => {
+    const d = document.createElement('i');
+    d.addEventListener('click', (e) => { e.stopPropagation(); show(k); });
+    dotsWrap.appendChild(d);
+  });
+  const dots = Array.from(dotsWrap.children);
+
+  function show(n) {
+    i = Math.max(0, Math.min(slides.length - 1, n));
+    slides.forEach((s, k) => s.classList.toggle('active', k === i));
+    dots.forEach((d, k) => d.classList.toggle('on', k === i));
+    curEl.textContent = i + 1;
+    prevBtn.disabled = i === 0;
+    nextBtn.disabled = i === slides.length - 1;
+    const inner = slides[i].querySelector('.inner');
+    if (inner) inner.scrollTop = 0;
+  }
+
+  prevBtn.addEventListener('click', (e) => { e.stopPropagation(); show(i - 1); });
+  nextBtn.addEventListener('click', (e) => { e.stopPropagation(); show(i + 1); });
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'ArrowRight' || e.key === 'PageDown') { show(i + 1); e.preventDefault(); }
+    else if (e.key === 'ArrowLeft' || e.key === 'PageUp') { show(i - 1); e.preventDefault(); }
+  });
+  document.querySelector('.deck').addEventListener('click', (e) => {
+    if (e.target.closest('.hud') || e.target.closest('a') || e.target.closest('.dots')) return;
+    if (e.clientX > window.innerWidth / 2) show(i + 1); else show(i - 1);
+  });
+
+  show(0);
+</script>
+</body>
+</html>
