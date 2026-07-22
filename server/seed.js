@@ -73,6 +73,21 @@ function ensureSeed() {
     }
   }
 
+  // 학생 자기소개를 작품 갤러리 '자기소개' 칸(slot 0)에 건다(멱등).
+  //   파일은 public 정적 서빙이라 /works/<슬러그>/intro.html 로 바로 열린다.
+  //   - 그 닉네임의 아바타가 없으면 조용히 건너뛴다(기본 시드 '학생1~5' 만 있는 DB).
+  //   - 이미 그 학생의 slot 0 이 차 있으면 건드리지 않는다(관리센터에서 손수 바꾼 것을 덮어쓰지 않도록).
+  //   학생이 늘어나면 이 배열에 한 줄만 추가하면 된다.
+  const STUDENT_INTROS = [
+    { nickname: '최승찬', url: '/works/seungchan/intro.html', title: '최승찬의 자기소개' },
+  ];
+  for (const s of STUDENT_INTROS) {
+    const who = Avatars.byNickname(s.nickname);
+    if (!who) continue;
+    if (Gallery.all().some((w) => w.author_id === who.id && w.slot === 0)) continue;
+    Gallery.setWork({ authorId: who.id, slot: 0, url: s.url, title: s.title });
+  }
+
   // 교실 책장 기본 문서(How-to). 처음 한 번만.
   if (Guides.all().length === 0) {
     Guides.create({ title: 'GitHub 가입하는 법', url: '/guides/github-signup.html', slot: 0 });
