@@ -79,6 +79,7 @@ function ensureSeed() {
   //   - 이미 그 학생의 slot 0 이 차 있으면 건드리지 않는다(관리센터에서 손수 바꾼 것을 덮어쓰지 않도록).
   //   학생이 늘어나면 이 배열에 한 줄만 추가하면 된다.
   const STUDENT_INTROS = [
+    { nickname: '안해찬', url: '/works/ahn/intro.html', title: '안해찬의 자기소개' },
     { nickname: '최승찬', url: '/works/seungchan/intro.html', title: '최승찬의 자기소개' },
     { nickname: '김선우', url: '/works/kim/intro.html', title: '김선우의 자기소개' },
     { nickname: '박효진', url: '/works/park/intro.html', title: '박효진의 자기소개' },
