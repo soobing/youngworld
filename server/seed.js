@@ -77,12 +77,14 @@ function ensureSeed() {
   //   파일은 public 정적 서빙이라 /works/<슬러그>/intro.html 로 바로 열린다.
   //   - 그 닉네임의 아바타가 없으면 조용히 건너뛴다(기본 시드 '학생1~5' 만 있는 DB).
   //   - 이미 그 학생의 slot 0 이 차 있으면 건드리지 않는다(관리센터에서 손수 바꾼 것을 덮어쓰지 않도록).
+  //   - 폴더명은 isSafeDocUrl() 규칙상 영문·숫자만 되므로 이름 대신 슬러그를 쓴다.
   //   학생이 늘어나면 이 배열에 한 줄만 추가하면 된다.
   const STUDENT_INTROS = [
     { nickname: '안해찬', url: '/works/ahn/intro.html', title: '안해찬의 자기소개' },
     { nickname: '최승찬', url: '/works/seungchan/intro.html', title: '최승찬의 자기소개' },
     { nickname: '김선우', url: '/works/kim/intro.html', title: '김선우의 자기소개' },
     { nickname: '박효진', url: '/works/park/intro.html', title: '박효진의 자기소개' },
+    { nickname: '김현영', url: '/works/hyunyoung/intro.html', title: '김현영의 자기소개' },
   ];
   for (const s of STUDENT_INTROS) {
     const who = Avatars.byNickname(s.nickname);
