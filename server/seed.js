@@ -81,6 +81,7 @@ function ensureSeed() {
   const STUDENT_INTROS = [
     { nickname: '최승찬', url: '/works/seungchan/intro.html', title: '최승찬의 자기소개' },
     { nickname: '김선우', url: '/works/kim/intro.html', title: '김선우의 자기소개' },
+    { nickname: '박효진', url: '/works/park/intro.html', title: '박효진의 자기소개' },
   ];
   for (const s of STUDENT_INTROS) {
     const who = Avatars.byNickname(s.nickname);
