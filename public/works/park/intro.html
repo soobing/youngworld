@@ -1,0 +1,658 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>박효진의 자기소개 — 영월드</title>
+<!--
+  ▶ 박효진 학생의 자기소개 (작품 갤러리 slot 0 / intro)
+    - 6장짜리 슬라이드. ← → (또는 스페이스)로 넘기고, 아래 막대·화살표 버튼으로도 이동.
+    - 갤러리에서 iframe 으로 열리므로, 열리자마자 키보드 입력을 받도록 자동 포커스를 준다.
+
+  ▶ 내용 고치는 법
+    아래 <section class="slide"> 블록의 글자만 바꾸면 된다. 슬라이드를 더 넣고 싶으면
+    <section class="slide">...</section> 를 통째로 복사해 붙이면 개수·진행막대가 자동으로 늘어난다.
+
+  ▶ 구성: 표지(집념 있는 고등학생) → 기본 소개(강점·약점·취미) → 스토리(기타·엔트리)
+          → 가치와 행복한 순간 → 만들고 싶은 것(생활 패턴 조명) → 마무리
+-->
+<style>
+  :root {
+    --paper: #ECEEF1;
+    --surface: #FFFFFF;
+    --ink: #16181D;
+    --muted: #5C6470;
+    --line: #D3D8DE;
+    --grid: rgba(22, 24, 29, 0.045);
+    --accent: #96560F;
+  }
+
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --paper: #14161A;
+      --surface: #1B1E24;
+      --ink: #ECEEF1;
+      --muted: #969DA9;
+      --line: #2A2E36;
+      --grid: rgba(236, 238, 241, 0.05);
+      --accent: #E0A055;
+    }
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--paper);
+    color: var(--ink);
+    font-family: "Pretendard Variable", Pretendard, -apple-system, BlinkMacSystemFont,
+                 "Apple SD Gothic Neo", "Malgun Gothic", "맑은 고딕", "Noto Sans KR",
+                 system-ui, sans-serif;
+    -webkit-font-smoothing: antialiased;
+    overflow-x: hidden;
+    word-break: keep-all;
+  }
+
+  /* ── 모눈종이 바탕: 중력 시뮬레이션과 공책의 결 ── */
+  .deck { position: relative; min-height: 100dvh; }
+
+  .deck::before {
+    content: "";
+    position: fixed;
+    inset: 0;
+    background-image:
+      linear-gradient(var(--grid) 1px, transparent 1px),
+      linear-gradient(90deg, var(--grid) 1px, transparent 1px);
+    background-size: 34px 34px;
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  .slide {
+    display: none;
+    position: relative;
+    z-index: 1;
+    min-height: 100dvh;
+    flex-direction: column;
+    justify-content: center;
+    padding: clamp(2.5rem, 7vw, 6rem) clamp(1.5rem, 7vw, 6rem) clamp(6rem, 12vh, 8rem);
+    overflow-y: auto;
+  }
+
+  .slide.is-active { display: flex; }
+
+  .inner { width: 100%; max-width: 62rem; }
+
+  /* ── 타이포 ── */
+  .eyebrow {
+    font-size: clamp(0.7rem, 1.1vw, 0.8rem);
+    font-weight: 700;
+    letter-spacing: 0.2em;
+    color: var(--accent);
+    margin: 0 0 clamp(1.2rem, 3vh, 2rem);
+  }
+
+  h1 {
+    font-size: clamp(2.6rem, 8.5vw, 6.5rem);
+    font-weight: 800;
+    letter-spacing: -0.04em;
+    line-height: 1.02;
+    text-wrap: balance;
+  }
+
+  h2 {
+    font-size: clamp(1.8rem, 4.4vw, 3.2rem);
+    font-weight: 800;
+    letter-spacing: -0.035em;
+    line-height: 1.15;
+    margin: 0 0 clamp(1.8rem, 4.5vh, 2.8rem);
+    text-wrap: balance;
+  }
+
+  .lede {
+    font-size: clamp(1rem, 1.8vw, 1.2rem);
+    line-height: 1.75;
+    color: var(--muted);
+    max-width: 42ch;
+  }
+
+  /* ── 표지 ── */
+  .cover-rule {
+    width: clamp(3.5rem, 8vw, 6rem);
+    height: 5px;
+    background: var(--accent);
+    margin: clamp(2rem, 5vh, 3rem) 0 clamp(1.4rem, 3vh, 2rem);
+  }
+
+  .byline {
+    font-size: clamp(1rem, 2vw, 1.35rem);
+    font-weight: 600;
+    letter-spacing: -0.01em;
+  }
+
+  .byline span { color: var(--muted); font-weight: 500; }
+
+  /* ── 앞면 / 뒷면 ── */
+  .facets {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: clamp(1.5rem, 4vh, 2.2rem);
+    padding-bottom: clamp(1.5rem, 4vh, 2.2rem);
+    border-bottom: 1px solid var(--line);
+  }
+
+  @media (min-width: 760px) {
+    .facets { grid-template-columns: 1fr 1fr; gap: clamp(2rem, 5vw, 4rem); }
+    .facet + .facet { padding-left: clamp(2rem, 5vw, 4rem); border-left: 1px solid var(--line); }
+  }
+
+  .facet-label {
+    font-size: 0.78rem;
+    font-weight: 700;
+    letter-spacing: 0.16em;
+    color: var(--muted);
+    margin: 0 0 0.85rem;
+  }
+
+  .facet-body {
+    font-size: clamp(1.25rem, 2.6vw, 1.8rem);
+    font-weight: 700;
+    letter-spacing: -0.025em;
+    line-height: 1.4;
+  }
+
+  .note {
+    margin: clamp(1.5rem, 4vh, 2.2rem) 0 0;
+    font-size: clamp(0.95rem, 1.7vw, 1.1rem);
+    line-height: 1.7;
+    color: var(--muted);
+    max-width: 46ch;
+  }
+
+  .note strong { color: var(--ink); font-weight: 700; }
+
+  .tags {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.6rem;
+    margin-top: clamp(1.8rem, 4.5vh, 2.6rem);
+  }
+
+  .tags-label {
+    font-size: 0.78rem;
+    font-weight: 700;
+    letter-spacing: 0.16em;
+    color: var(--muted);
+    margin-right: 0.4rem;
+  }
+
+  .tag {
+    border: 1px solid var(--line);
+    background: var(--surface);
+    border-radius: 999px;
+    padding: 0.4rem 0.95rem;
+    font-size: clamp(0.85rem, 1.5vw, 0.98rem);
+    font-weight: 600;
+  }
+
+  /* ── 스토리 ── */
+  .scenes { display: grid; grid-template-columns: 1fr; gap: clamp(1rem, 2.5vw, 1.5rem); }
+
+  @media (min-width: 760px) {
+    .scenes { grid-template-columns: 1fr 1fr; }
+  }
+
+  .scene {
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-top: 3px solid var(--accent);
+    padding: clamp(1.4rem, 3vw, 2rem);
+  }
+
+  .scene-kind {
+    font-size: 0.75rem;
+    font-weight: 700;
+    letter-spacing: 0.18em;
+    color: var(--accent);
+    margin: 0 0 0.9rem;
+  }
+
+  .scene-title {
+    font-size: clamp(1.3rem, 2.7vw, 1.8rem);
+    font-weight: 800;
+    letter-spacing: -0.03em;
+    line-height: 1.3;
+    margin: 0 0 0.7rem;
+  }
+
+  .scene-title em { font-style: normal; color: var(--accent); }
+
+  .scene p {
+    font-size: clamp(0.92rem, 1.6vw, 1.05rem);
+    line-height: 1.7;
+    color: var(--muted);
+  }
+
+  .scene p b { color: var(--ink); font-weight: 800; font-variant-numeric: tabular-nums; }
+
+  .punchline {
+    margin: clamp(1.8rem, 4.5vh, 2.4rem) 0 0;
+    padding-top: clamp(1.4rem, 3.5vh, 1.9rem);
+    border-top: 1px solid var(--line);
+    font-size: clamp(1.05rem, 2.1vw, 1.35rem);
+    font-weight: 600;
+    letter-spacing: -0.02em;
+    line-height: 1.6;
+  }
+
+  .punchline b { color: var(--accent); font-weight: 800; }
+
+  /* ── 가치와 꿈 ── */
+  /* 가치 인용구와 행복한 순간은 같은 무게로 읽히도록 크기를 맞춘다 */
+  .quote,
+  .moment-body {
+    font-size: clamp(1.3rem, 2.9vw, 2rem);
+    font-weight: 800;
+    letter-spacing: -0.03em;
+    line-height: 1.4;
+  }
+
+  .quote {
+    margin: 0 0 clamp(1.8rem, 4.5vh, 2.4rem);
+    padding-left: clamp(1.1rem, 2.5vw, 1.8rem);
+    border-left: 4px solid var(--accent);
+  }
+
+  .moment {
+    background: var(--surface);
+    border: 1px solid var(--line);
+    padding: clamp(1.3rem, 3vw, 1.9rem);
+  }
+
+  .moment-label {
+    font-size: clamp(0.7rem, 1.1vw, 0.8rem);
+    font-weight: 700;
+    letter-spacing: 0.2em;
+    color: var(--accent);
+    margin: 0 0 0.8rem;
+  }
+
+  .moment-body { margin: 0 0 0.7rem; }
+
+  .moment-body em { font-style: normal; color: var(--accent); }
+
+  .moment-note {
+    font-size: clamp(0.88rem, 1.5vw, 1rem);
+    color: var(--muted);
+    line-height: 1.7;
+  }
+
+  /* ── 만들고 싶은 것 ── */
+  .big-claim {
+    margin: 0 0 clamp(1.6rem, 4vh, 2.2rem);
+    font-size: clamp(1.3rem, 3vw, 2rem);
+    font-weight: 800;
+    letter-spacing: -0.03em;
+    line-height: 1.4;
+    max-width: 24ch;
+  }
+
+  .big-claim em { font-style: normal; color: var(--accent); }
+
+  .steps {
+    list-style: none;
+    display: grid;
+    gap: clamp(0.8rem, 2vw, 1.1rem);
+    grid-template-columns: 1fr;
+  }
+
+  @media (min-width: 760px) {
+    .steps { grid-template-columns: repeat(3, 1fr); }
+  }
+
+  .steps li {
+    background: var(--surface);
+    border: 1px solid var(--line);
+    padding: clamp(1rem, 2.2vw, 1.3rem);
+    display: flex;
+    flex-direction: column;
+    gap: 0.55rem;
+  }
+
+  .step-n {
+    font-size: 0.78rem;
+    font-weight: 800;
+    letter-spacing: 0.14em;
+    color: var(--accent);
+    font-variant-numeric: tabular-nums;
+  }
+
+  .steps p {
+    font-size: clamp(0.9rem, 1.55vw, 1rem);
+    line-height: 1.65;
+    color: var(--muted);
+  }
+
+  /* ── 진행 표시: 끝까지 가는 게 이 발표의 주제 ── */
+  .rail {
+    position: fixed;
+    left: clamp(1.5rem, 7vw, 6rem);
+    right: clamp(1.5rem, 7vw, 6rem);
+    bottom: clamp(1.6rem, 4vh, 2.4rem);
+    z-index: 5;
+    display: flex;
+    align-items: center;
+    gap: clamp(0.75rem, 2vw, 1.4rem);
+  }
+
+  .segments { display: flex; gap: 6px; flex: 1; }
+
+  .seg {
+    flex: 1;
+    height: 3px;
+    border: 0;
+    background: var(--line);
+    cursor: pointer;
+    transition: background 0.3s ease;
+  }
+
+  .seg.is-done { background: var(--accent); }
+  .seg:focus-visible { outline: 2px solid var(--accent); outline-offset: 4px; }
+
+  .counter {
+    font-size: 0.8rem;
+    font-weight: 700;
+    letter-spacing: 0.1em;
+    color: var(--muted);
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+  }
+
+  .counter b { color: var(--ink); }
+
+  .arrows { display: flex; gap: 4px; }
+
+  .arrows button {
+    width: 38px;
+    height: 32px;
+    border: 1px solid var(--line);
+    background: var(--surface);
+    color: var(--ink);
+    cursor: pointer;
+    font-size: 0.9rem;
+    line-height: 1;
+    transition: border-color 0.2s ease, color 0.2s ease;
+  }
+
+  .arrows button:hover { border-color: var(--accent); color: var(--accent); }
+  .arrows button:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+  .arrows button[disabled] { opacity: 0.35; cursor: default; }
+
+  /* 갤러리(iframe) 안에서 처음 열렸을 때만 잠깐 보이는 조작 안내 */
+  .hint {
+    position: fixed;
+    left: 50%;
+    bottom: clamp(4.2rem, 9vh, 5.4rem);
+    transform: translateX(-50%);
+    z-index: 6;
+    background: var(--surface);
+    border: 1px solid var(--line);
+    color: var(--muted);
+    font-size: 0.8rem;
+    font-weight: 600;
+    padding: 0.45rem 0.9rem;
+    border-radius: 999px;
+    white-space: nowrap;
+    transition: opacity 0.5s ease;
+  }
+
+  .hint.gone { opacity: 0; pointer-events: none; }
+
+  /* ── 등장 ── */
+  .slide.is-active .inner > * {
+    animation: rise 0.55s cubic-bezier(0.22, 1, 0.36, 1) backwards;
+  }
+
+  .slide.is-active .inner > *:nth-child(1) { animation-delay: 0.02s; }
+  .slide.is-active .inner > *:nth-child(2) { animation-delay: 0.08s; }
+  .slide.is-active .inner > *:nth-child(3) { animation-delay: 0.14s; }
+  .slide.is-active .inner > *:nth-child(4) { animation-delay: 0.20s; }
+  .slide.is-active .inner > *:nth-child(5) { animation-delay: 0.26s; }
+
+  @keyframes rise {
+    from { opacity: 0; transform: translateY(14px); }
+    to   { opacity: 1; transform: none; }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .slide.is-active .inner > * { animation: none; }
+    .seg, .hint { transition: none; }
+  }
+</style>
+</head>
+<body>
+
+<div class="deck" id="deck">
+
+  <!-- 01 · 표지 -->
+  <section class="slide is-active">
+    <div class="inner">
+      <p class="eyebrow">자기소개</p>
+      <h1>집념 있는<br>고등학생</h1>
+      <div class="cover-rule"></div>
+      <p class="byline">박효진 <span>· 고등학교 1학년</span></p>
+    </div>
+  </section>
+
+  <!-- 02 · 기본 소개 -->
+  <section class="slide">
+    <div class="inner">
+      <p class="eyebrow">기본 소개</p>
+      <h2>저는 이런 사람입니다</h2>
+
+      <div class="facets">
+        <div class="facet">
+          <p class="facet-label">잘하는 것</p>
+          <p class="facet-body">한번 관심이 생기면<br>끝까지 해보는 것</p>
+        </div>
+        <div class="facet">
+          <p class="facet-label">부족한 것</p>
+          <p class="facet-body">여러 가지를 함께<br>고려하는 것</p>
+        </div>
+      </div>
+
+      <p class="note">
+        사실 이 둘은 <strong>같은 성격의 앞면과 뒷면</strong>입니다.
+        하나에 빠지면 나머지가 잘 안 보여서요.
+        그래서 부족한 부분은 <strong>협력으로 채우려고</strong> 합니다.
+        같이 할 수 있는 방법을 여러 가지 찾아보는 중이에요.
+      </p>
+
+      <div class="tags">
+        <span class="tags-label">취미</span>
+        <span class="tag">기타</span>
+        <span class="tag">피아노</span>
+        <span class="tag">종이접기</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- 03 · 나의 스토리 -->
+  <section class="slide">
+    <div class="inner">
+      <p class="eyebrow">나의 스토리</p>
+      <h2>끝까지 가본 두 가지</h2>
+
+      <div class="scenes">
+        <article class="scene">
+          <p class="scene-kind">악기</p>
+          <h3 class="scene-title">기타로 <em>「Fight!」</em> 한 곡</h3>
+          <p>완벽하게 칠 때까지 <b>3개월</b>. 메인 멜로디가 정말 어려웠는데,
+             꾸준히 하다 보니 되더라고요.</p>
+        </article>
+        <article class="scene">
+          <p class="scene-kind">코딩</p>
+          <h3 class="scene-title">엔트리로 만든<br><em>중력 물리 시뮬레이션</em></h3>
+          <p>블록코딩으로 중력을 직접 구현했습니다. 대상이 아예 움직이지 않거나
+             벽을 뚫고 지나가서 한참 헤맸어요.</p>
+        </article>
+      </div>
+
+      <p class="punchline">
+        하나는 악기, 하나는 코딩.<br>
+        분야는 다른데 하는 일은 똑같았습니다 — <b>될 때까지 하기.</b>
+      </p>
+    </div>
+  </section>
+
+  <!-- 04 · 나의 가치 -->
+  <section class="slide">
+    <div class="inner">
+      <p class="eyebrow">나의 가치</p>
+      <h2>도전, 그리고 겸손</h2>
+
+      <blockquote class="quote">
+        겸손이 없으면<br>배우는 것이 없다.
+      </blockquote>
+
+      <div class="moment">
+        <p class="moment-label">가장 행복한 순간</p>
+        <p class="moment-body">무언가 잘 안되다가,<br><em>갑자기 잘 될 때</em></p>
+        <p class="moment-note">
+          「Fight!」의 메인 멜로디는 3개월 만에 어느 날 갑자기 됐습니다.
+          중력 시뮬레이션도 코드 배열을 바꿔봤더니 갑자기 되더라고요.
+        </p>
+      </div>
+    </div>
+  </section>
+
+  <!-- 05 · 만들고 싶은 것 -->
+  <section class="slide">
+    <div class="inner">
+      <p class="eyebrow">나의 꿈</p>
+      <h2>코딩 AI로<br>만들고 싶은 것</h2>
+
+      <p class="big-claim">
+        내 생활 패턴을 분석해서<br><em>알아서 불을 켜고 꺼주는 장치</em>
+      </p>
+
+      <ol class="steps">
+        <li>
+          <span class="step-n">01</span>
+          <p>언제 자고 언제 일어나는지, 생활 패턴을 모읍니다</p>
+        </li>
+        <li>
+          <span class="step-n">02</span>
+          <p>AI가 그 패턴을 분석합니다</p>
+        </li>
+        <li>
+          <span class="step-n">03</span>
+          <p>따로 말하지 않아도 알아서 불을 켜고 끕니다</p>
+        </li>
+      </ol>
+
+      <p class="punchline">
+        화면 속 중력은 이미 만들어봤으니, <b>이번엔 진짜 방의 불을.</b>
+      </p>
+    </div>
+  </section>
+
+  <!-- 06 · 마무리 -->
+  <section class="slide">
+    <div class="inner">
+      <p class="eyebrow">마무리</p>
+      <h2>잘 부탁드립니다</h2>
+      <p class="lede">
+        관심이 생기면 끝까지 가보는 편입니다. 이번에도 그럴 생각이에요.<br>
+        대신 혼자서는 놓치는 게 많아서, 배우러 왔습니다.
+      </p>
+      <div class="cover-rule"></div>
+      <p class="byline">박효진</p>
+    </div>
+  </section>
+
+</div>
+
+<p class="hint" id="hint">← → 키로 넘기세요</p>
+
+<div class="rail">
+  <div class="segments" id="segments"></div>
+  <p class="counter"><b id="cur">01</b> / <span id="total">06</span></p>
+  <div class="arrows">
+    <button type="button" id="prev" aria-label="이전 슬라이드">←</button>
+    <button type="button" id="next" aria-label="다음 슬라이드">→</button>
+  </div>
+</div>
+
+<script>
+  (function () {
+    var slides = Array.prototype.slice.call(document.querySelectorAll('.slide'));
+    var segWrap = document.getElementById('segments');
+    var curEl = document.getElementById('cur');
+    var totalEl = document.getElementById('total');
+    var prevBtn = document.getElementById('prev');
+    var nextBtn = document.getElementById('next');
+    var hint = document.getElementById('hint');
+    var index = 0;
+
+    var pad = function (n) { return (n < 10 ? '0' : '') + n; };
+    totalEl.textContent = pad(slides.length);
+
+    var segs = slides.map(function (_, i) {
+      var b = document.createElement('button');
+      b.type = 'button';
+      b.className = 'seg';
+      b.setAttribute('aria-label', (i + 1) + '번 슬라이드로 이동');
+      b.addEventListener('click', function () { go(i); });
+      segWrap.appendChild(b);
+      return b;
+    });
+
+    function go(n) {
+      index = Math.max(0, Math.min(slides.length - 1, n));
+      slides.forEach(function (s, i) { s.classList.toggle('is-active', i === index); });
+      segs.forEach(function (s, i) { s.classList.toggle('is-done', i <= index); });
+      curEl.textContent = pad(index + 1);
+      prevBtn.disabled = index === 0;
+      nextBtn.disabled = index === slides.length - 1;
+      window.scrollTo(0, 0);
+      if (index > 0) hideHint();
+    }
+
+    function hideHint() {
+      if (hint && !hint.classList.contains('gone')) hint.classList.add('gone');
+    }
+
+    prevBtn.addEventListener('click', function () { go(index - 1); });
+    nextBtn.addEventListener('click', function () { go(index + 1); });
+
+    document.addEventListener('keydown', function (e) {
+      // Esc 는 처리하지 않는다 — 갤러리(부모 창)가 받아서 작품 창을 닫는다.
+      if (e.key === 'ArrowRight' || e.key === 'PageDown' || e.key === ' ') { e.preventDefault(); go(index + 1); }
+      else if (e.key === 'ArrowLeft' || e.key === 'PageUp') { e.preventDefault(); go(index - 1); }
+      else if (e.key === 'Home') { go(0); }
+      else if (e.key === 'End') { go(slides.length - 1); }
+    });
+
+    // 갤러리에서는 iframe 안에서 열리므로, 포커스가 없으면 방향키가 먹지 않는다.
+    // 열리자마자 한 번 포커스를 가져오고, 사용자가 화면을 누를 때도 다시 가져온다.
+    try { window.focus(); } catch (err) {}
+    document.addEventListener('mousedown', function () {
+      try { window.focus(); } catch (err) {}
+    });
+
+    var startX = null;
+    document.addEventListener('touchstart', function (e) { startX = e.changedTouches[0].clientX; }, { passive: true });
+    document.addEventListener('touchend', function (e) {
+      if (startX === null) return;
+      var dx = e.changedTouches[0].clientX - startX;
+      if (Math.abs(dx) > 60) { go(index + (dx < 0 ? 1 : -1)); }
+      startX = null;
+    }, { passive: true });
+
+    setTimeout(hideHint, 6000);
+    go(0);
+  })();
+</script>
+</body>
+</html>
