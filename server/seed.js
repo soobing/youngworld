@@ -80,6 +80,7 @@ function ensureSeed() {
   //   학생이 늘어나면 이 배열에 한 줄만 추가하면 된다.
   const STUDENT_INTROS = [
     { nickname: '최승찬', url: '/works/seungchan/intro.html', title: '최승찬의 자기소개' },
+    { nickname: '김선우', url: '/works/kim/intro.html', title: '김선우의 자기소개' },
   ];
   for (const s of STUDENT_INTROS) {
     const who = Avatars.byNickname(s.nickname);
