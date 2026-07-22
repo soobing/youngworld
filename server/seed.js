@@ -73,6 +73,26 @@ function ensureSeed() {
     }
   }
 
+  // 학생(안해찬) 자기소개를 작품 갤러리 '자기소개' 칸(slot 0)에 건다(멱등).
+  //   파일은 /works/ahn/intro.html (public 정적 서빙).
+  //   위 선생님 블록과 두 가지가 다르다.
+  //   1) 학생 닉네임은 관리센터나 본인이 바꿀 수 있다. 그러니 아바타를 만들지 않고,
+  //      '안해찬' 이라는 이름의 아바타가 있을 때만 건다(없으면 조용히 넘어간다).
+  //   2) URL 이 아니라 '칸이 비었는지'로 판단한다. 학생이 직접 올린 작품을 덮어쓰지 않기 위해서다.
+  //      (URL 로 보면, 학생이 다른 걸 올려둔 칸을 재시작할 때마다 이 파일로 되돌려버린다)
+  const ahn = Avatars.byNickname('안해찬');
+  if (ahn) {
+    const hasIntroSlot = Gallery.all().some((w) => w.author_id === ahn.id && w.slot === 0);
+    if (!hasIntroSlot) {
+      Gallery.setWork({
+        authorId: ahn.id,
+        slot: 0, // WORK_CATEGORIES[0] = intro(자기소개)
+        url: '/works/ahn/intro.html',
+        title: '안해찬의 자기소개',
+      });
+    }
+  }
+
   // 교실 책장 기본 문서(How-to). 처음 한 번만.
   if (Guides.all().length === 0) {
     Guides.create({ title: 'GitHub 가입하는 법', url: '/guides/github-signup.html', slot: 0 });
