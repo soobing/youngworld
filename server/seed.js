@@ -5,7 +5,17 @@
 // 직접 실행: npm run seed
 // =====================================================================
 
+const fs = require('fs');
+const path = require('path');
 const { Avatars, Materials, Guides, Gallery, db } = require('./db');
+
+// 작품 파일이 실제로 있는지 확인한다.
+//   「나의 꿈은」 같은 영상 작품은 mp4 를 빌드해야 완성되는데(tools/dream-film/build.sh),
+//   아직 안 만든 사람의 칸을 '전시됨' 으로 켜버리면 빈 화면이 열린다.
+//   그래서 파일이 생긴 뒤 서버를 재시작할 때 자동으로 걸리게 한다.
+function publicFileExists(urlPath) {
+  return fs.existsSync(path.join(__dirname, '..', 'public', urlPath));
+}
 
 // 초기 아바타 7명. 색은 서로 잘 구분되게 다르게.
 // 색은 서로 잘 구분되게 다르게 준다. 이름은 예시(가명)이며, 실제 수업에서는
@@ -69,6 +79,20 @@ function ensureSeed() {
         slot: 0, // WORK_CATEGORIES[0] = intro(자기소개)
         url: introUrl,
         title: 'soobing 선생님의 자기소개',
+      });
+    }
+
+    // 선생님 「나의 꿈은」 영상 작품 → slot 1 (멱등).
+    //   영상(dream.mp4)이 아직 없으면 등록하지 않는다. 빌드한 뒤 서버를 다시 켜면 걸린다.
+    //   만드는 법: ./tools/dream-film/build.sh soobing
+    const dreamUrl = '/works/soobing/dream.html';
+    const hasDream = Gallery.all().some((w) => w.author_id === soobing.id && w.url === dreamUrl);
+    if (!hasDream && publicFileExists('/works/soobing/dream/dream.mp4')) {
+      Gallery.setWork({
+        authorId: soobing.id,
+        slot: 1, // WORK_CATEGORIES[1] = dream(나의 꿈은?)
+        url: dreamUrl,
+        title: 'soobing 선생님의 나의 꿈은',
       });
     }
   }

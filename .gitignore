@@ -5,3 +5,12 @@ node_modules/
 *.db-shm
 .DS_Store
 scratchpad/
+
+# 「나의 꿈은」 영상의 원본 소재(그림·음악)는 커밋하지 않는다.
+#   저장소에 두는 건 결과물인 dream.mp4 / poster.jpg 뿐.
+#   사람당 그림 11MB + 음악 5MB 라, 학생 5명이면 금방 100MB 를 넘긴다.
+#   다시 빌드해야 하면: 음악은 credits.txt 를 보고 다시 받고,
+#   그림은 .claude/agents/dream-film.md 의 프롬프트로 다시 생성한다.
+public/works/*/dream/frames/*
+!public/works/*/dream/frames/README.md
+public/works/*/dream/bgm.*
