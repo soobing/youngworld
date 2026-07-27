@@ -5,7 +5,17 @@
 // 직접 실행: npm run seed
 // =====================================================================
 
+const fs = require('fs');
+const path = require('path');
 const { Avatars, Materials, Guides, Gallery, db } = require('./db');
+
+// 작품 파일이 실제로 있는지 확인한다.
+//   「나의 꿈은」 같은 영상 작품은 mp4 를 빌드해야 완성되는데(tools/dream-film/build.sh),
+//   아직 안 만든 사람의 칸을 '전시됨' 으로 켜버리면 빈 화면이 열린다.
+//   그래서 파일이 생긴 뒤 서버를 재시작할 때 자동으로 걸리게 한다.
+function publicFileExists(urlPath) {
+  return fs.existsSync(path.join(__dirname, '..', 'public', urlPath));
+}
 
 // 초기 아바타 7명. 색은 서로 잘 구분되게 다르게.
 // 색은 서로 잘 구분되게 다르게 준다. 이름은 예시(가명)이며, 실제 수업에서는
@@ -57,6 +67,19 @@ function ensureSeed() {
     });
   }
 
+  // 2회차 「나의 꿈은」 실습 안내서: 없을 때만 칠판에 추가(멱등).
+  //   학생이 dream-film 서브에이전트의 도움을 어떻게 받는지 설명하는 자료.
+  //   용어(터미널·빌드·README)를 하나도 모르는 상태를 전제로 쓰였다.
+  const DREAM_FILM_URL = '/lectures/session2-dream-film.html';
+  if (!Materials.all().some((m) => m.url === DREAM_FILM_URL)) {
+    Materials.create({
+      title: '「나의 꿈은」 영상 만들기',
+      url: DREAM_FILM_URL,
+      sessionNo: 2,
+      slot: 2,
+    });
+  }
+
   // 선생님(soobing) 자기소개를 작품 갤러리 '자기소개' 칸(slot 0)에 건다(멱등).
   //   학생들에게 보여줄 모범 예시. 파일은 /works/soobing/intro.html (public 정적 서빙).
   const soobing = Avatars.byNickname('soobing');
@@ -69,6 +92,20 @@ function ensureSeed() {
         slot: 0, // WORK_CATEGORIES[0] = intro(자기소개)
         url: introUrl,
         title: 'soobing 선생님의 자기소개',
+      });
+    }
+
+    // 선생님 「나의 꿈은」 영상 작품 → slot 1 (멱등).
+    //   영상(dream.mp4)이 아직 없으면 등록하지 않는다. 빌드한 뒤 서버를 다시 켜면 걸린다.
+    //   만드는 법: ./tools/dream-film/build.sh soobing
+    const dreamUrl = '/works/soobing/dream.html';
+    const hasDream = Gallery.all().some((w) => w.author_id === soobing.id && w.url === dreamUrl);
+    if (!hasDream && publicFileExists('/works/soobing/dream/dream.mp4')) {
+      Gallery.setWork({
+        authorId: soobing.id,
+        slot: 1, // WORK_CATEGORIES[1] = dream(나의 꿈은?)
+        url: dreamUrl,
+        title: 'soobing 선생님의 나의 꿈은',
       });
     }
   }
@@ -91,6 +128,29 @@ function ensureSeed() {
     if (!who) continue;
     if (Gallery.all().some((w) => w.author_id === who.id && w.slot === 0)) continue;
     Gallery.setWork({ authorId: who.id, slot: 0, url: s.url, title: s.title });
+  }
+
+  // 학생 「나의 꿈은」 영상 작품을 '나의 꿈은?' 칸(slot 1)에 건다(멱등).
+  //   작품을 완성하면 이 배열에 한 줄만 추가하면 된다. (만드는 법: tools/dream-film/README.md)
+  //   - dream.mp4 가 저장소에 없으면 건너뛴다. 영상 없이 칸만 켜지면 빈 화면이 열린다.
+  //     → build.sh 로 만든 mp4 는 반드시 커밋해야 배포 서버에서도 뜬다.
+  //       (frames/ 원본 그림과 bgm.mp3 는 .gitignore 대상이라 안 올라간다. mp4 는 올라간다)
+  //   - 그 닉네임의 아바타가 없으면 조용히 건너뛴다. 닉네임을 바꿨다면 여기도 바꿔야 한다.
+  //   - 이미 slot 1 이 차 있으면 건드리지 않는다(관리센터에서 손수 바꾼 것을 덮어쓰지 않도록).
+  const STUDENT_DREAMS = [
+    // 예) { nickname: '박효진', slug: 'park', title: '박효진의 나의 꿈은' },
+  ];
+  for (const s of STUDENT_DREAMS) {
+    const who = Avatars.byNickname(s.nickname);
+    if (!who) continue;
+    if (Gallery.all().some((w) => w.author_id === who.id && w.slot === 1)) continue;
+    if (!publicFileExists(`/works/${s.slug}/dream/dream.mp4`)) continue;
+    Gallery.setWork({
+      authorId: who.id,
+      slot: 1, // WORK_CATEGORIES[1] = dream(나의 꿈은?)
+      url: `/works/${s.slug}/dream.html`,
+      title: s.title,
+    });
   }
 
   // 교실 책장 기본 문서(How-to). 처음 한 번만.

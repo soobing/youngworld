@@ -1,0 +1,406 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>「나의 꿈은」 영상 만들기 — AI 진로 멘토링</title>
+<!--
+  2회차 「나의 꿈은?」 실습 안내서.
+  대상: 개발 용어를 하나도 모르는 중·고등학생.
+  그래서 '빌드', 'README', '터미널' 같은 말을 처음부터 풀어서 설명한다.
+-->
+<style>
+  :root{
+    --ink:#1f2430; --muted:#5b6472; --accent:#e8590c; --accent2:#1c7ed6;
+    --soft:#fff4e6; --sky:#e7f5ff; --line:#e3e7ee; --bg:#f7f8fb;
+    --green:#2f9e44; --mint:#ebfbee;
+  }
+  *{ box-sizing:border-box; }
+  html,body{ margin:0; padding:0; background:var(--bg); }
+  body{
+    font-family:"Apple SD Gothic Neo","Pretendard","Noto Sans KR",-apple-system,"Malgun Gothic",sans-serif;
+    color:var(--ink); line-height:1.7;
+  }
+  .wrap{ max-width:820px; margin:0 auto; padding:36px 24px 72px; }
+
+  header.hero{
+    background:linear-gradient(135deg,#e8590c,#ff922b); color:#fff;
+    border-radius:18px; padding:30px 28px; margin-bottom:28px;
+    box-shadow:0 10px 30px rgba(232,89,12,.25);
+  }
+  header.hero .tag{ display:inline-block; background:rgba(255,255,255,.22); font-weight:800; font-size:13px; padding:5px 12px; border-radius:20px; }
+  header.hero h1{ margin:12px 0 6px; font-size:30px; }
+  header.hero p{ margin:0; opacity:.95; font-size:15px; }
+
+  h2{ font-size:21px; margin:38px 0 12px; padding-left:12px; border-left:5px solid var(--accent); }
+  h2 .ki{ font-size:15px; color:var(--muted); font-weight:600; margin-left:6px; }
+  h3{ font-size:16.5px; margin:22px 0 8px; color:var(--accent2); }
+  p.lead{ color:var(--muted); margin:0 0 18px; }
+
+  ol.steps{ padding-left:0; list-style:none; counter-reset:step; }
+  ol.steps > li{
+    counter-increment:step; position:relative; padding:16px 18px 16px 60px;
+    margin:12px 0; background:#fff; border:1px solid var(--line); border-radius:14px;
+  }
+  ol.steps > li::before{
+    content:counter(step); position:absolute; left:16px; top:16px;
+    width:30px; height:30px; background:var(--accent); color:#fff; font-weight:800;
+    border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:15px;
+  }
+  li b{ color:var(--accent); }
+
+  .callout{ background:var(--soft); border-left:4px solid var(--accent); border-radius:12px; padding:16px 20px; margin:16px 0; }
+  .callout b{ color:var(--accent); }
+  .callout.sky{ background:var(--sky); border-left-color:var(--accent2); }
+  .callout.sky b{ color:var(--accent2); }
+  .callout.mint{ background:var(--mint); border-left-color:var(--green); }
+  .callout.mint b{ color:var(--green); }
+  .callout p{ margin:6px 0 0; font-size:14.5px; }
+  .callout p:first-child{ margin-top:0; }
+
+  /* 용어 설명 카드 */
+  .words{ display:grid; gap:12px; margin:16px 0; }
+  .word{ background:#fff; border:1px solid var(--line); border-radius:14px; padding:15px 18px; }
+  .word .w{ font-weight:800; font-size:16px; }
+  .word .w em{ font-style:normal; color:#adb5bd; font-weight:600; font-size:13px; margin-left:6px; }
+  .word .d{ margin:5px 0 0; font-size:14.5px; color:var(--muted); }
+  .word .ex{ margin:8px 0 0; font-size:13.5px; background:var(--sky); border-radius:9px; padding:8px 12px; color:#1864ab; }
+
+  /* 흐름도 */
+  .flow{ display:flex; flex-wrap:wrap; gap:8px; align-items:center; margin:16px 0; }
+  .flow .n{ background:#fff; border:2px solid var(--line); border-radius:11px; padding:9px 13px; font-size:13.5px; font-weight:700; }
+  .flow .n.me{ border-color:var(--accent); background:var(--soft); color:#b34700; }
+  .flow .n.ai{ border-color:var(--accent2); background:var(--sky); color:#1864ab; }
+  .flow .ar{ color:#ced4da; font-weight:900; }
+  .legend{ font-size:13px; color:var(--muted); margin:2px 0 0; }
+  .legend .sq{ display:inline-block; width:11px; height:11px; border-radius:3px; vertical-align:-1px; margin:0 4px 0 12px; }
+  .legend .sq.a{ background:var(--soft); border:2px solid var(--accent); }
+  .legend .sq.b{ background:var(--sky); border:2px solid var(--accent2); }
+
+  /* 역할 분담표 */
+  table{ width:100%; border-collapse:collapse; margin:14px 0; font-size:14px; background:#fff; }
+  th,td{ border:1px solid var(--line); padding:10px 12px; text-align:left; vertical-align:top; }
+  th{ background:#f1f3f7; font-size:13.5px; }
+  th.ai{ background:var(--sky); color:#1864ab; }
+  th.me{ background:var(--soft); color:#b34700; }
+  td small{ color:var(--muted); }
+
+  /* 대화 예시 */
+  .chat{ background:#fff; border:1px solid var(--line); border-radius:14px; padding:14px 16px; margin:12px 0; }
+  .chat .msg{ display:flex; gap:9px; margin:9px 0; align-items:flex-start; }
+  .chat .who{ flex:none; width:52px; font-size:11.5px; font-weight:800; padding-top:3px; text-align:right; }
+  .chat .me .who{ color:var(--accent); }
+  .chat .ai .who{ color:var(--accent2); }
+  .chat .bub{ border-radius:11px; padding:8px 12px; font-size:14px; }
+  .chat .me .bub{ background:var(--soft); }
+  .chat .ai .bub{ background:var(--sky); }
+
+  code{ background:#eef1f6; border-radius:6px; padding:2px 6px; font-size:13.5px; font-family:"SF Mono",Menlo,Consolas,monospace; }
+  pre{ background:#12121a; color:#ffd24a; border-radius:11px; padding:13px 16px; overflow-x:auto; font-size:13.5px; margin:10px 0; }
+  pre code{ background:none; color:inherit; padding:0; }
+  .path{ background:#12121a; color:#8ce99a; border-radius:9px; padding:9px 13px; font-size:13px; display:block; overflow-x:auto; margin:8px 0; font-family:"SF Mono",Menlo,Consolas,monospace; }
+
+  .trouble{ background:#fff; border:1px solid var(--line); border-radius:14px; padding:6px 18px; margin:14px 0; }
+  .trouble details{ border-bottom:1px solid var(--line); padding:11px 0; }
+  .trouble details:last-child{ border-bottom:none; }
+  .trouble summary{ cursor:pointer; font-weight:700; font-size:14.5px; }
+  .trouble summary::marker{ color:var(--accent); }
+  .trouble .a{ margin:8px 0 2px; font-size:14px; color:var(--muted); }
+
+  .foot{ margin-top:44px; padding-top:18px; border-top:1px solid var(--line); font-size:13px; color:var(--muted); text-align:center; }
+  @media (max-width:640px){ .flow .n{ font-size:12.5px; } table{ font-size:13px; } }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<header class="hero">
+  <span class="tag">2회차 실습</span>
+  <h1>⭐ 「나의 꿈은」 영상 만들기</h1>
+  <p>내 꿈을 26초짜리 영상으로 만들어 교실 작품 갤러리에 겁니다.<br>
+     그림도 영상도 처음이어도 괜찮아요. AI 도우미가 옆에서 같이 만듭니다.</p>
+</header>
+
+<p class="lead">
+  이 문서는 <b>컴퓨터 용어를 하나도 몰라도</b> 따라올 수 있게 썼습니다.
+  모르는 말이 나오면 그냥 넘기지 말고, 아래 <b>「먼저 알아둘 말 6개」</b>를 다시 보세요.
+  그래도 모르겠으면 <b>선생님이나 AI에게 그냥 물어보면 됩니다.</b>
+</p>
+
+<div class="callout mint">
+  <p><b>완성하면 이렇게 됩니다</b></p>
+  <p>교실 → 오른쪽 작품 구역 → 내 이름표 클릭 → <b>⭐ 나의 꿈은?</b> 칸이 켜지고,
+     누르면 내 영상이 음악과 함께 재생됩니다.
+     먼저 <b>soobing 선생님 작품</b>을 열어보고 오세요. 그게 완성 예시입니다.</p>
+</div>
+
+<h2>1. 먼저 알아둘 말 6개 <span class="ki">이것만 알면 끝</span></h2>
+
+<div class="words">
+  <div class="word">
+    <div class="w">터미널 <em>terminal</em></div>
+    <p class="d">컴퓨터에게 <b>글자로 말을 거는 까만 창</b>이에요. 마우스로 누르는 대신 글을 쳐서 시킵니다.</p>
+    <p class="ex">💬 게임으로 치면 채팅창 같은 거예요. 명령어를 치면 컴퓨터가 그대로 합니다.</p>
+  </div>
+  <div class="word">
+    <div class="w">Claude Code <em>클로드 코드</em></div>
+    <p class="d">그 까만 창 안에서 <b>나랑 대화하는 AI</b>예요. 한국말로 말해도 알아듣고, 파일도 직접 만들어 줍니다.</p>
+    <p class="ex">💬 "내 꿈 영상 만들어줘" 라고 한국말로 치면 됩니다.</p>
+  </div>
+  <div class="word">
+    <div class="w">서브에이전트 <em>subagent · 여기선 이름이 dream-film</em></div>
+    <p class="d">Claude 안에 있는 <b>이 일만 전문으로 하는 도우미</b>예요.
+       그냥 Claude에게 물어보면 이것저것 다 하지만, <b>dream-film</b>을 부르면
+       "꿈 영상 만들기" 순서를 정확히 알고 있는 전문가가 나옵니다.</p>
+    <p class="ex">💬 병원에서 "그냥 의사" 말고 "치과 선생님"을 찾아가는 것과 같아요.</p>
+  </div>
+  <div class="word">
+    <div class="w">빌드 <em>build · 조립</em></div>
+    <p class="d">흩어진 재료를 모아서 <b>완성품 하나로 조립하는 것</b>이에요.
+       우리는 <b>그림 5장 + 자막 5줄 + 음악 1개</b>를 넣으면 <b>영상 1개</b>가 튀어나옵니다.</p>
+    <p class="ex">💬 재료를 냄비에 넣고 끓이면 요리가 나오는 것과 같아요. 명령어 한 줄이면 됩니다.</p>
+  </div>
+  <div class="word">
+    <div class="w">README <em>리드미 · "읽어주세요"</em></div>
+    <p class="d">폴더 안에 들어 있는 <b>사용설명서 파일</b>이에요.
+       "이 폴더엔 뭘 넣어야 한다"가 적혀 있습니다. 컴퓨터가 읽는 게 아니라 <b>사람이 읽으라고</b> 둔 거예요.</p>
+    <p class="ex">💬 새 게임 상자를 열면 들어 있는 설명서와 같아요.</p>
+  </div>
+  <div class="word">
+    <div class="w">경로 <em>path · 파일 주소</em></div>
+    <p class="d">파일이 <b>어느 폴더 안에 있는지</b> 알려주는 주소예요.
+       <code>/</code> 는 "그 안으로 한 칸 들어가라"는 뜻입니다.</p>
+    <p class="ex">💬 <code>public/works/kim/dream/frames/</code>
+       = public 폴더 → works 폴더 → kim 폴더 → dream 폴더 → frames 폴더</p>
+  </div>
+</div>
+
+<h2>2. 전체 흐름 <span class="ki">7단계, 대부분 AI가 합니다</span></h2>
+
+<div class="flow">
+  <span class="n ai">① 내 자기소개 읽기</span><span class="ar">→</span>
+  <span class="n ai">② 5장면 계획</span><span class="ar">→</span>
+  <span class="n ai">③ 그림 주문서 만들기</span><span class="ar">→</span>
+  <span class="n me">④ 그림 5장 뽑기</span><span class="ar">→</span>
+  <span class="n me">⑤ 음악 고르기</span><span class="ar">→</span>
+  <span class="n ai">⑥ 영상 조립</span><span class="ar">→</span>
+  <span class="n ai">⑦ 갤러리에 걸기</span>
+</div>
+<p class="legend">
+  <span class="sq a"></span> 내가 하는 일 (2개)
+  <span class="sq b"></span> AI가 해주는 일 (5개)
+</p>
+
+<div class="callout sky">
+  <p><b>내가 진짜 해야 하는 건 딱 두 가지예요.</b></p>
+  <p>① <b>그림 5장 뽑아서 정해진 폴더에 넣기</b> &nbsp;·&nbsp; ② <b>음악 하나 골라 넣기</b><br>
+     나머지는 AI가 합니다. 대신 <b>내 이야기가 맞는지 확인하고 고쳐 말하는 건 나만 할 수 있어요.</b></p>
+</div>
+
+<h2>3. 누가 뭘 하나 <span class="ki">역할 분담</span></h2>
+
+<table>
+  <tr>
+    <th class="ai" style="width:50%">🤖 dream-film 이 해주는 것</th>
+    <th class="me" style="width:50%">🙋 내가 해야 하는 것</th>
+  </tr>
+  <tr>
+    <td>내 <b>자기소개 작품을 읽고</b> 중요한 사실을 뽑아냄<br>
+        <small>(1회차에 만든 그 자기소개)</small></td>
+    <td>자기소개가 <b>이미 갤러리에 걸려 있어야</b> 함<br>
+        <small>아직 없으면 그것부터</small></td>
+  </tr>
+  <tr>
+    <td><b>5장면 계획</b>을 짜서 표로 보여줌<br>
+        <small>장면 제목 · 자막 한 줄 · 카메라 움직임</small></td>
+    <td>읽어보고 <b>"이건 틀렸어" "이 얘기 넣어줘"</b> 라고 말하기<br>
+        <small>내 인생이니까 내가 제일 잘 알아요</small></td>
+  </tr>
+  <tr>
+    <td>그림 <b>주문서(프롬프트) 5개</b>를 영어로 써 줌<br>
+        <small>그대로 복사해서 쓰면 되게</small></td>
+    <td>그 주문서를 <b>그림 만드는 AI에 붙여넣고</b> 그림 받기<br>
+        <small>nanobanana · ChatGPT 등</small></td>
+  </tr>
+  <tr>
+    <td>—</td>
+    <td>그림을 <b>정해진 폴더에 정해진 이름</b>으로 저장<br>
+        <small>01.png ~ 05.png</small></td>
+  </tr>
+  <tr>
+    <td>음악 <b>어디서 받는지</b> 알려주고, 출처를 기록해 줌</td>
+    <td>음악 하나 <b>골라서 받아 넣기</b><br>
+        <small>bgm.mp3 라는 이름으로</small></td>
+  </tr>
+  <tr>
+    <td><b>영상 조립(빌드)</b> — 자막·음악·화면 움직임까지 전부</td>
+    <td>기다리기 (1~2분)</td>
+  </tr>
+  <tr>
+    <td><b>재생 페이지</b> 만들고 <b>갤러리에 걸기</b></td>
+    <td>게임에 들어가서 <b>진짜 잘 나오는지 확인</b></td>
+  </tr>
+</table>
+
+<h2>4. 어떻게 도움을 요청하나 <span class="ki">이 한 줄이면 시작</span></h2>
+
+<p class="lead">터미널에서 Claude Code를 켜고, <b>이렇게 한국말로 치면 됩니다.</b></p>
+
+<pre><code>dream-film 으로 kim 꺼 만들어줘</code></pre>
+
+<p><code>kim</code> 자리에 <b>내 폴더 이름</b>을 넣으세요. 내 이름이 아니라 <b>영어 폴더 이름</b>이에요.</p>
+
+<table>
+  <tr><th>이름</th><th>내 폴더 이름 (슬러그)</th><th>이렇게 치면 됨</th></tr>
+  <tr><td>안해찬</td><td><code>ahn</code></td><td>dream-film 으로 ahn 꺼 만들어줘</td></tr>
+  <tr><td>최승찬</td><td><code>seungchan</code></td><td>dream-film 으로 seungchan 꺼 만들어줘</td></tr>
+  <tr><td>김선우</td><td><code>kim</code></td><td>dream-film 으로 kim 꺼 만들어줘</td></tr>
+  <tr><td>박효진</td><td><code>park</code></td><td>dream-film 으로 park 꺼 만들어줘</td></tr>
+  <tr><td>김현영</td><td><code>hyunyoung</code></td><td>dream-film 으로 hyunyoung 꺼 만들어줘</td></tr>
+</table>
+
+<div class="callout">
+  <p><b>폴더 이름이 왜 영어예요?</b></p>
+  <p>인터넷 주소에는 한글이 잘 안 들어가서, 사람마다 영어 별명을 하나씩 정해뒀어요.
+     내 자기소개 주소가 <code>/works/kim/intro.html</code> 이면 내 폴더 이름은 <b>kim</b> 입니다.</p>
+</div>
+
+<h3>대화는 이런 식으로 흘러갑니다</h3>
+
+<div class="chat">
+  <div class="msg me"><div class="who">나</div><div class="bub">dream-film 으로 kim 꺼 만들어줘</div></div>
+  <div class="msg ai"><div class="who">AI</div><div class="bub">자기소개를 읽어볼게요. …7년째 영상 편집을 해왔네요.<br>
+    이런 5장면으로 짜봤어요. <b>(표를 보여줌)</b><br>
+    이대로 갈까요, 고칠 데 있나요?</div></div>
+  <div class="msg me"><div class="who">나</div><div class="bub">3번은 학원 말고 <b>방송부에서 체육대회 영상 만든 얘기</b>로 바꿔줘</div></div>
+  <div class="msg ai"><div class="who">AI</div><div class="bub">고쳤어요. 이제 그림 주문서 5개를 드릴게요.<br>
+    <b>01번을 먼저 만들고</b>, 그 그림을 나머지 만들 때 같이 첨부하세요.</div></div>
+  <div class="msg me"><div class="who">나</div><div class="bub">(그림 5장 만들어서 폴더에 넣음) 다 넣었어!</div></div>
+  <div class="msg ai"><div class="who">AI</div><div class="bub">확인했어요. 음악만 넣으면 조립할게요.</div></div>
+</div>
+
+<div class="callout sky">
+  <p><b>AI가 물어보면 꼭 대답해 주세요.</b></p>
+  <p>특히 <b>"어떤 미래를 그리고 싶어요?"</b> 같은 질문이요.
+     자기소개에 안 적힌 걸 AI가 마음대로 지어내면 <b>내 꿈이 아니라 남의 꿈</b>이 됩니다.
+     그래서 일부러 물어보게 해뒀어요.</p>
+</div>
+
+<h2>5. 그림 5장 만들기 <span class="ki">제일 중요한 단계</span></h2>
+
+<ol class="steps">
+  <li><b>주문서(프롬프트)를 복사</b>합니다. AI가 영어로 5개를 줄 거예요. 영어를 몰라도 됩니다. 그냥 복사만 하면 돼요.</li>
+  <li><b>01번 그림을 먼저</b> 만듭니다. 마음에 들 때까지 다시 뽑으세요. 이 한 장이 나머지 4장의 기준이 됩니다.</li>
+  <li><b>02~05번을 만들 때, 01번 그림을 같이 첨부</b>합니다.
+      "이 사람과 같은 그림체로 그려줘" 라고 덧붙이면 더 좋아요.
+      <br><small style="color:#5b6472">이렇게 안 하면 장면마다 <b>얼굴이 딴사람</b>이 됩니다. 이게 제일 흔한 실패예요.</small></li>
+  <li>다 되면 <b>내 폴더 안 frames 폴더</b>에 저장합니다. 이름은 반드시 <code>01.png</code> ~ <code>05.png</code>.</li>
+</ol>
+
+<span class="path">public/works/<b>kim</b>/dream/frames/01.png  02.png  03.png  04.png  05.png</span>
+
+<div class="callout">
+  <p><b>이름을 왜 01, 02 로 해요?</b></p>
+  <p>조립 프로그램이 <b>번호 순서대로</b> 영상을 이어붙이거든요.
+     <code>그림1.png</code> 처럼 쓰면 순서를 못 찾습니다. 꼭 두 자리 숫자로 해주세요.</p>
+  <p>그 폴더에 들어가 보면 <b>README 파일</b>이 있어요. 어떤 그림을 몇 번에 넣어야 하는지 적혀 있으니 열어보세요.</p>
+</div>
+
+<h2>6. 음악 고르기 <span class="ki">출처를 꼭 남겨야 해요</span></h2>
+
+<ol class="steps">
+  <li><a href="https://pixabay.com/music/" target="_blank" rel="noopener"><b>Pixabay Music</b></a> 에 들어갑니다. 무료로 쓸 수 있는 음악이 많아요.</li>
+  <li>26초 영상이니까 <b>잔잔하고 가사 없는 곡</b>이 잘 어울립니다.</li>
+  <li>받은 파일 이름을 <b><code>bgm.mp3</code></b> 로 바꿔서 <code>dream</code> 폴더에 넣습니다.</li>
+  <li>AI에게 <b>그 곡의 인터넷 주소를 알려주세요.</b> 출처를 대신 정리해 줍니다.</li>
+</ol>
+
+<span class="path">public/works/<b>kim</b>/dream/bgm.mp3</span>
+
+<div class="callout">
+  <p><b>출처는 왜 남겨야 하나요?</b></p>
+  <p>우리 작품은 <b>진짜 인터넷에 공개</b>됩니다(youngworld-ai.com).
+     남이 만든 음악을 쓸 땐 "이건 누가 만든 거고 어디서 받았다"를 남기는 게
+     <b>만든 사람에 대한 예의</b>이고, 나중에 문제가 생겼을 때 나를 지켜주는 기록이기도 해요.</p>
+</div>
+
+<h2>7. 조립하고 확인하기 <span class="ki">거의 다 왔어요</span></h2>
+
+<p class="lead">그림과 음악이 다 들어갔으면 AI에게 이렇게 말하면 됩니다.</p>
+
+<pre><code>다 넣었어. 이제 만들어줘</code></pre>
+
+<p>AI가 조립(빌드)합니다. <b>1~2분</b> 걸려요. 다 되면 이런 게 생깁니다.</p>
+
+<span class="path">dream.mp4  ← 완성된 26초 영상
+poster.jpg ← 재생 전에 보이는 첫 화면</span>
+
+<h3>꼭 눈으로 확인하세요</h3>
+<ol class="steps">
+  <li>게임에 들어가서 <b>교실</b>로 갑니다 (왼쪽 위 🏫 문을 밟으면 들어가요).</li>
+  <li>오른쪽 <b>작품 구역</b>에서 <b>내 이름표</b>를 클릭합니다.</li>
+  <li><b>⭐ 나의 꿈은?</b> 칸이 <b>✔ 전시됨</b> 으로 바뀌었는지 봅니다.</li>
+  <li>눌러서 <b>소리까지</b> 잘 나오는지 확인합니다.</li>
+</ol>
+
+<div class="callout mint">
+  <p><b>이게 끝이 아니에요.</b></p>
+  <p>내 컴퓨터에서만 보이면 아직 반쪽입니다. <b>다른 친구들 화면에도 떠야</b> 진짜 완성이에요.
+     AI가 그 부분(갤러리에 거는 작업)까지 해주지만, <b>확인은 꼭 직접</b> 하세요.</p>
+</div>
+
+<h2>8. 막혔을 때 <span class="ki">눌러서 펼쳐보세요</span></h2>
+
+<div class="trouble">
+  <details>
+    <summary>😵 장면마다 얼굴이 딴사람이에요</summary>
+    <p class="a">제일 흔한 문제예요. <b>01번 그림을 참고 이미지로 첨부</b>하지 않아서 그렇습니다.
+      02~05번을 다시 만들 때 01번 그림을 같이 올리고 "같은 사람, 같은 그림체로"라고 써주세요.
+      교복이나 머리 길이처럼 <b>눈에 띄는 특징</b>을 주문서에 적어두면 더 잘 유지됩니다.</p>
+  </details>
+  <details>
+    <summary>🔇 영상에 자막이 안 나와요</summary>
+    <p class="a">한글 글꼴을 못 찾은 경우예요. 영상은 정상이니까 그냥 두어도 되고,
+      AI에게 "자막이 안 나와"라고 말하면 확인해 줍니다.</p>
+  </details>
+  <details>
+    <summary>🖼 그림이 흐릿하고 뿌예요</summary>
+    <p class="a">그림이 너무 작게 만들어졌을 수 있어요. 그림 AI에서 <b>가로로 긴(16:9) 큰 크기</b>로
+      다시 뽑아보세요. AI에게 "그림이 흐릿해"라고 말하면 화면 크기를 맞춰 다시 조립해 줍니다.</p>
+  </details>
+  <details>
+    <summary>👻 갤러리에 내 작품이 안 보여요</summary>
+    <p class="a">보통 두 가지예요. <b>①</b> 영상 파일이 아직 안 만들어졌거나,
+      <b>②</b> 서버를 껐다 켜지 않았거나. AI에게 "갤러리에 안 보여"라고 말하면 찾아줍니다.</p>
+  </details>
+  <details>
+    <summary>🤔 무슨 말인지 하나도 모르겠어요</summary>
+    <p class="a"><b>그냥 물어보세요.</b> AI에게 "빌드가 뭐야?", "이 폴더 어디 있어?",
+      "지금 뭘 해야 해?" 라고 한국말로 치면 됩니다. 몇 번을 물어도 괜찮아요.
+      선생님한테 손 드는 것도 언제든 환영입니다.</p>
+  </details>
+</div>
+
+<h2>9. 꼭 지킬 것 세 가지</h2>
+
+<div class="callout">
+  <p><b>① 사실을 쓰세요.</b> 멋있게 보이려고 없는 일을 지어내지 마세요.
+     "꿈의 씨앗" 같은 폼나는 말보다 <b>"초등학교 5학년 때 스틱맨 영상을 처음 봤다"</b>가
+     백 배 좋습니다. 진짜 있었던 일이 제일 강해요.</p>
+</div>
+<div class="callout">
+  <p><b>② 남의 작품을 베끼지 마세요.</b> 친구 작품이 잘 나왔다고 그림체와 색까지 따라 하면
+     둘 다 시시해집니다. AI에게 <b>"다른 사람들이랑 다른 느낌으로 해줘"</b> 라고 말해도 돼요.</p>
+</div>
+<div class="callout">
+  <p><b>③ 음악 출처를 남기세요.</b> 5번 항목에서 설명한 그거예요. 빠뜨리지 마세요.</p>
+</div>
+
+<div class="foot">
+  이 작품은 작품 갤러리 <b>⭐ 나의 꿈은?</b> 칸에 걸립니다 ·
+  잘 안 되면 언제든 <b>선생님</b>이나 <b>AI</b>에게 물어보세요
+</div>
+
+</div>
+</body>
+</html>
