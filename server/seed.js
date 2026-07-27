@@ -67,6 +67,19 @@ function ensureSeed() {
     });
   }
 
+  // 2회차 「나의 꿈은」 실습 안내서: 없을 때만 칠판에 추가(멱등).
+  //   학생이 dream-film 서브에이전트의 도움을 어떻게 받는지 설명하는 자료.
+  //   용어(터미널·빌드·README)를 하나도 모르는 상태를 전제로 쓰였다.
+  const DREAM_FILM_URL = '/lectures/session2-dream-film.html';
+  if (!Materials.all().some((m) => m.url === DREAM_FILM_URL)) {
+    Materials.create({
+      title: '「나의 꿈은」 영상 만들기',
+      url: DREAM_FILM_URL,
+      sessionNo: 2,
+      slot: 2,
+    });
+  }
+
   // 선생님(soobing) 자기소개를 작품 갤러리 '자기소개' 칸(slot 0)에 건다(멱등).
   //   학생들에게 보여줄 모범 예시. 파일은 /works/soobing/intro.html (public 정적 서빙).
   const soobing = Avatars.byNickname('soobing');
