@@ -10,7 +10,9 @@ tools: Read, Write, Edit, Bash, Glob, Grep
 `docs/lecture-plan.html` 2회차가 *"AI의 생성 기능(이미지·영상·음악)으로 내 꿈을 표현"* 하도록
 설계된 회차이고, 이 에이전트는 그 결과물을 실제 전시물로 만들어 준다.
 
-**결과물**: 26초 mp4 + 재생 페이지 + 갤러리 등록.
+**완료 조건**: 26초 mp4 를 만드는 것으로 끝이 아니다. **main 에 머지되고 배포된 뒤,
+교실 작품 갤러리에서 그 사람의 `⭐ 나의 꿈은?` 칸을 눌렀을 때 영상이 소리와 함께
+재생되는 것**까지가 이 작업이다. 7단계를 끝까지 하고 검증한다.
 
 ---
 
@@ -43,27 +45,74 @@ tools: Read, Write, Edit, Bash, Glob, Grep
 슬라이드마다 다음을 표로 정리한다 — **추측하지 말고 적힌 것만**:
 시기 / 장소 / 소속(학교·회사·학과) / 무슨 일이 있었나 / 왜 그랬나.
 
-### 2. 5컷 스토리보드를 짠다
+### 2. 스토리보드 틀부터 고른다 ⚠️ 여기서 갈린다
 
-인생을 5구간으로 나눈다. 보통 이렇게 떨어진다:
+**절대 하나의 틀을 모두에게 적용하지 마라.** 이 수업의 주인공은 대부분 **10대**다.
+30대 어른의 "인생 회고" 틀을 중학생에게 씌우면, 있지도 않은 커리어를 지어내거나
+6명의 작품이 전부 똑같아진다.
 
-1. **출발점** — 어디서 자랐고 무엇이 아쉬웠나
-2. **첫 이동** — 어디로 갔고 무엇을 선택했나
-3. **전환점** — 무엇을 우연히 만났고 왜 끌렸나
-4. **고생 구간** — 무엇이 어려웠나 (실패·이직·좌절)
-5. **현재와 남은 꿈** — 지금 어디에 있고 아직 뭐가 남았나
+`intro.html` 을 읽고 **그 사람이 가진 재료**로 틀을 고른다:
 
-> **컷1과 컷5는 반드시 같은 구도로 그린다.**
+| 틀 | 언제 쓰나 | 과거 : 미래 | 실제 예 |
+|---|---|---|---|
+| **A 회고형** | 되돌아볼 이력(직장·진학·이사)이 여러 개 있다 | 4 : 1 | soobing — 5개 회사 |
+| **B 출발선형** | 아직 사건은 적고 **되고 싶은 것/가고 싶은 곳**이 뚜렷하다 | 2 : 3 | 외고·국제고 진학이 목표인 학생 |
+| **C 한 우물형** | **한 가지를 오래 파온** 이야기가 이미 있다 | 3 : 2 | 초5부터 7년째 영상 편집 |
+| **D 사람됨형** | 사건이 아니라 **성격·가치관·태도**가 중심이다 | 2 : 3 | "끝까지 가본 두 가지", "도전과 겸손" |
+
+10대는 **B·C·D 중 하나**인 경우가 대부분이다. A 는 어른의 틀이다.
+
+#### 틀별 5컷 뼈대
+
+**A 회고형** — 출발점 → 첫 이동 → 전환점 → 고생 구간 → 지금과 남은 꿈
+
+**B 출발선형** — 미래가 주인공이다
+1. 지금의 나 (사는 곳, 학교, 요즘 하루)
+2. 이 꿈을 갖게 된 순간 (계기 하나. 사실이어야 함)
+3. 가장 가까운 관문 (구체적 진학·시험·도전 하나)
+4. 그걸 해내고 있는 나 (그 학교/현장의 구체적 한 장면)
+5. 그래서 되고 싶은 사람 (꿈의 최종 모습)
+
+**C 한 우물형** — 그 한 가지의 시간축
+1. 처음 만난 날 (몇 학년, 무엇을 보고)
+2. 빠져든 시기 (어디서 뭘 만들었나)
+3. 제대로 배운 계기 (학원·동아리·대회)
+4. 지금 실력과 고민 (무엇이 어렵나)
+5. 이걸로 하고 싶은 일
+
+**D 사람됨형** — 성격을 사건 장면으로 번역한다
+1. 나를 한마디로 말하면 (그걸 보여주는 실제 장면)
+2. 끝까지 해본 일 ①
+3. 끝까지 해본 일 ②
+4. 그래서 배운 것
+5. 그 태도로 가고 싶은 곳
+
+> **모든 틀에 공통: 컷1과 컷5는 같은 구도로 그린다.**
 > 같은 뒷모습, 같은 화면 위치, 같은 시선 방향. 배경만 달라진다.
-> 이게 이 영상의 유일한 연출 장치다 — 마지막에 "그 아이가 자랐다"로 읽힌다.
+> 10대에겐 이게 특히 잘 먹힌다 — "지금의 나"와 "꿈을 이룬 나"가 겹쳐진다.
 > 프롬프트에 이 지시를 **영어로 명시**해야 한다.
 
-표로 정리해 사용자에게 보여준다:
+#### 미래 컷의 톤 규칙
+
+과거·현재 컷은 **적힌 사실만** 쓴다(위 톤 규칙 그대로).
+미래 컷은 아직 일어나지 않았으니 사실일 수 없다. 대신 **그 사람이 실제로 말한 꿈을
+구체적인 한 장면으로** 번역한다. 상징으로 도망가지 마라.
+
+| ❌ | ✅ |
+|---|---|
+| 빛나는 미래를 향해 | 국제고 교복을 입고 원서를 들고 교문에 선 나 |
+| 꿈을 이룬 나 | 내가 편집한 영상이 상영되는 자리에서 뒤에 앉아 보는 나 |
+
+그 사람이 말하지 않은 직업·학교를 **지어내지 마라.** 자기소개에 없으면
+사용자에게 "어떤 미래를 그리고 싶은지" 물어라. 추측해서 채우면 남의 꿈이 된다.
+
+표로 정리해 사용자에게 보여주고, **고른 틀과 그 이유를 먼저 말한다**:
 
 | # | 제목(사실) | intro.html 근거 | 자막 1줄 | 카메라 |
 |---|---|---|---|---|
 
-자막은 **한 줄, 40자 이내**. 화면에 4.2초 떠 있는다.
+자막은 **한 줄, 40자 이내**, 그 사람의 말투로. 화면에 4.2초 떠 있는다.
+중학생 작품에 어른 문장을 쓰지 마라.
 
 ### 3. 이미지 생성 프롬프트를 준다
 
@@ -74,24 +123,46 @@ tools: Read, Write, Edit, Bash, Glob, Grep
 
 ```
 STYLE ANCHOR (do not change between images):
-Semi-realistic hand-painted illustration, soft digital painting with visible
-brush texture, cinematic wide 16:9 composition, 1920x1080.
-Palette: deep navy #1b2f57 shadows, one warm orange #e8590c light source per image.
-Character: the SAME <국적/성별> person throughout — <머리·체형·옷 특징 2~3개>,
+<화풍 한 줄>, cinematic wide 16:9 composition, 1920x1080.
+Palette: <어두운 색 #hex> shadows, one <밝은 색 #hex> light source per image.
+Character: the SAME <나이·성별> Korean person throughout — <머리·체형·옷 특징 2~3개>,
 shown from behind or in three-quarter back view so the face is not the focus.
-Soft natural lighting, shallow depth of field, no harsh outlines.
+<조명 한 줄>.
 NEGATIVE: text, korean letters, english letters, watermark, signature, logo,
 extra fingers, deformed hands, anime big eyes, oversaturated colors, cluttered frame.
 ```
 
-색은 `intro.html` 의 CSS 변수에서 가져온다 (`--accent2` 남색, `--accent` 주황).
+> ⚠️ **`<>` 안을 그 사람에 맞게 반드시 새로 채워라.**
+> soobing 예시(반실사·남색+주황·30대 여성)를 그대로 베끼면, 한 반의 작품 6개가
+> 전부 같은 그림처럼 보인다. 그러면 실패다.
+
+**화풍은 그 사람에 맞춰 고른다.** 예시 — 이 중 하나를 고르거나 더 나은 걸 제안한다:
+
+| 화풍 | 어울리는 사람 |
+|---|---|
+| `Semi-realistic hand-painted illustration, soft digital painting` | 차분한 회고 (soobing 이 씀 — **재사용 자제**) |
+| `Warm watercolor children's-book illustration, visible paper grain` | 따뜻하고 순한 이야기 |
+| `Clean flat vector illustration, bold shapes, limited palette` | 또렷하고 활발한 성격 |
+| `Cel-shaded anime background art, crisp linework, vivid skies` | 10대 취향, 학교 배경 |
+| `Retro pixel art, 16-bit, dithered gradients` | 게임·영상 좋아하는 학생 |
+| `Cinematic 3D render, soft studio lighting, toy-like figures` | 미니어처 느낌 |
+
+**색은 그 사람에게서 가져온다** — 우선순위 순으로:
+1. 그 사람 `intro.html` 의 CSS 변수(`--accent`, `--accent2`)
+2. 자기소개에 나온 좋아하는 것의 색 (좋아하는 운동·과목·장소)
+3. 아바타 색 (`server/seed.js` 의 `INITIAL_AVATARS`)
+
+**시작 전에 반드시 확인**: `ls public/works/*/dream/` 로 이미 만들어진 작품이 있는지
+보고, **화풍과 주 색상이 겹치지 않게** 고른다. 겹치면 다른 걸로 바꾼다.
+
 얼굴을 정면으로 그리지 않는 이유는 **컷마다 얼굴이 딴사람이 되는 걸 막기 위해서다.**
+10대는 교복·체육복·머리 길이 같은 **눈에 띄는 특징 2~3개**를 고정하면 잘 유지된다.
 
 컷별 프롬프트에는 반드시 넣을 것:
-- 구체적 지명·연도·소속 (예: "Yeongwol, Gangwon-do, early 2000s")
-- 화면에 보이는 **실제 사물** 2~3개 (교재, 사원증, 모니터 속 화면, 이삿짐 박스…)
+- 구체적 지명·시기·소속 (예: "a middle school classroom in Yeongwol, present day")
+- 화면에 보이는 **실제 사물** 2~3개 (교과서, 편집 프로그램 화면, 축구공, 급식판…)
 - 인물의 자세와 시선
-- 빛의 방향과 색 (주황 광원 하나)
+- 빛의 방향과 색 (광원 하나)
 - 컷5에는 "SAME back-view pose, SAME placement in frame as 컷1" 지시
 
 마지막에 사용법 4줄을 덧붙인다:
@@ -127,19 +198,71 @@ BGM 은 [Pixabay Music](https://pixabay.com/music/) 을 안내한다. 트랙마�
 ### 6. 재생 페이지를 만든다
 
 `public/works/<슬러그>/dream.html`.
-**`public/works/soobing/dream.html` 을 그대로 복사해서 텍스트만 바꾸면 된다.**
-(제목, 로그라인, 장면 목록 5줄, 마무리 문구, 경로의 슬러그)
+**`public/works/soobing/dream.html` 을 복사해서 시작한다.** 구조(재생 버튼, 장면 점프,
+다시 보기, 영상 없을 때 안내, 404 감지)는 검증된 것이니 건드리지 말고, 아래만 바꾼다:
 
-`intro.html` 과 같은 색 토큰을 쓴다: `--ink #1f2430` · `--accent #e8590c` · `--accent2 #1b2f57`.
+- `<title>` · `.who` 이름 · `h1` · `.logline` 한 줄
+- `SCENES` 배열 5줄 (2단계 스토리보드의 컷 제목)
+- `.outro` 마무리 문구 — 그 사람 자기소개의 마지막 슬라이드에서 가져온다
+- 경로의 슬러그 3곳 (`poster`, `<source>`, `fetch`, `credits.txt` 링크)
+- **`:root` 색 3개** — 3단계에서 고른 그 사람의 색으로. soobing 의 남색+주황을
+  그대로 두면 작품마다 표지가 똑같아진다.
 
-### 7. 갤러리에 건다
+`HOLD = 5` 는 `build.sh` 와 맞춰야 하는 값이니 그대로 둔다.
 
-`server/seed.js` 에 slot 1 등록을 추가한다. **`soobing` 블록을 그대로 따라 쓴다** —
-`fs.existsSync` 로 mp4 가 실제로 있을 때만 등록하는 방식이라, 영상을 아직 안 만든
-사람의 칸이 깨진 채로 켜지지 않는다.
+### 7. 갤러리에 건다 — 여기서 끝내지 말고 반드시 검증까지 한다
 
-끝나면 사용자에게 확인 경로를 알려준다:
-`npm start` → 교실 입장 → 작품 구역에서 그 사람 명패 클릭 → `⭐ 나의 꿈은?` 카드
+**이 단계가 이 작업의 완료 조건이다.** 영상만 만들고 끝내면 작품은 아무에게도 보이지
+않는다. 그리고 로컬에서만 보이는 것도 실패다 — **main 에 머지돼 배포된 뒤에도**
+작품 갤러리에서 정상적으로 열려야 한다.
+
+**등록은 배열에 한 줄 추가로 끝난다.** 학생이면 `server/seed.js` 의 `STUDENT_DREAMS`
+배열에 한 줄을 넣는다. 절대 사람마다 코드 블록을 복사해 붙이지 마라.
+
+```js
+{ nickname: '박효진', slug: 'park', title: '박효진의 나의 꿈은' },
+```
+
+`nickname` 은 **DB 아바타 이름과 정확히 같아야** 하고(다르면 조용히 건너뛴다),
+`slug` 는 `public/works/<슬러그>/` 폴더명이다. 선생님(soobing)만 예외적으로
+파일 위쪽 전용 블록을 쓴다.
+
+#### 완료 전 체크리스트 — 하나라도 어긋나면 배포 후 안 보인다
+
+1. **mp4 가 커밋 대상인가** — `git check-ignore public/works/<슬러그>/dream/dream.mp4`
+   가 아무것도 출력하지 않아야 한다. `.gitignore` 는 `frames/*` 와 `bgm.*` 만
+   제외한다. **mp4 가 커밋되지 않으면 배포 서버엔 파일이 없어서 칸이 영영 안 켜진다.**
+   (`seed.js` 가 파일 존재를 확인해서 등록하기 때문)
+2. **`dream.html` 도 커밋했는가** — 갤러리에 등록되는 주소가 이 파일이다.
+3. **URL 형식** — `/works/<슬러그>/dream.html`. `server/socket.js` 의 `isSafeDocUrl()`
+   이 `^/works/<슬러그>/<파일>.html$` 만 통과시킨다. 하위 폴더를 넣으면 안 된다.
+4. **닉네임이 DB 와 일치하는가** — `node -e "console.log(require('./server/db').Avatars.all().map(a=>a.nickname))"`
+   로 실제 이름을 확인하고 배열에 적은 것과 대조한다.
+5. **실제로 걸리는지 확인** — 서버를 켜고 아래를 돌려 slot 1 이 나오는지 본다.
+
+```bash
+npm start   # 다른 터미널에서
+node -e "
+const {Avatars,Gallery}=require('./server/db');
+const a=Avatars.byNickname('<닉네임>');
+console.log(Gallery.all().filter(w=>w.author_id===a.id).map(w=>w.slot+' → '+w.url));
+"
+```
+
+6. **두 번 켜도 중복되지 않는지** — 서버를 껐다 켜고 5번을 다시 돌려 작품 수가
+   그대로인지 확인한다(멱등).
+7. **눈으로 확인** — 교실 입장 → 작품 구역에서 그 사람 명패 클릭 →
+   `⭐ 나의 꿈은?` 카드가 `✔ 전시됨` 인지 → 클릭해서 **소리까지** 재생되는지.
+
+#### 이미 배포된 서버에서 안 보인다면
+
+배포는 `git pull` 후 재시작이라(`deploy/deploy.sh`), **서버가 재시작돼야 `seed.js` 가
+돌면서 등록된다.** 머지만 하고 재시작이 안 됐으면 칸이 안 켜진다.
+DB(`youngworld.db`)는 git 밖의 파일이라 배포로 덮어써지지 않고, 등록은 멱등이라
+여러 번 재시작해도 안전하다.
+
+마지막으로 사용자에게 **무엇을 커밋해야 하는지** 명시해서 알려준다 —
+`dream.mp4` · `poster.jpg` · `dream.html` · `captions.txt` · `credits.txt` · `seed.js`.
 
 ---
 
@@ -168,10 +291,15 @@ BGM 은 [Pixabay Music](https://pixabay.com/music/) 을 안내한다. 트랙마�
 
 ---
 
-## soobing 예시 (완성된 참고 답안)
+## soobing 예시 — **A 회고형** 하나의 사례일 뿐이다
 
-실제로 이 에이전트가 `soobing` 에게 뽑아낸 결과다. 새 사람에게 적용할 때 **형식만** 따라 하고,
-내용은 그 사람의 `intro.html` 에서 새로 뽑아야 한다.
+⚠️ **이걸 학생에게 그대로 쓰지 마라.** soobing 은 30대이고 회사 5곳을 지나온
+어른이라 A 틀이 맞았다. 학생 대부분은 **B·C·D** 다.
+
+베껴도 되는 것: 표의 **형식**, 자막이 한 줄이라는 점, 컷1↔컷5 구도 대칭 규칙.
+베끼면 안 되는 것: 컷 구성, 화풍(반실사), 색(남색+주황), 장면 소재, 문장 톤.
+
+내용은 반드시 그 사람의 `intro.html` 에서 새로 뽑는다.
 
 | # | 제목 | 자막 | 카메라 |
 |---|---|---|---|

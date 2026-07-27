@@ -117,6 +117,29 @@ function ensureSeed() {
     Gallery.setWork({ authorId: who.id, slot: 0, url: s.url, title: s.title });
   }
 
+  // 학생 「나의 꿈은」 영상 작품을 '나의 꿈은?' 칸(slot 1)에 건다(멱등).
+  //   작품을 완성하면 이 배열에 한 줄만 추가하면 된다. (만드는 법: tools/dream-film/README.md)
+  //   - dream.mp4 가 저장소에 없으면 건너뛴다. 영상 없이 칸만 켜지면 빈 화면이 열린다.
+  //     → build.sh 로 만든 mp4 는 반드시 커밋해야 배포 서버에서도 뜬다.
+  //       (frames/ 원본 그림과 bgm.mp3 는 .gitignore 대상이라 안 올라간다. mp4 는 올라간다)
+  //   - 그 닉네임의 아바타가 없으면 조용히 건너뛴다. 닉네임을 바꿨다면 여기도 바꿔야 한다.
+  //   - 이미 slot 1 이 차 있으면 건드리지 않는다(관리센터에서 손수 바꾼 것을 덮어쓰지 않도록).
+  const STUDENT_DREAMS = [
+    // 예) { nickname: '박효진', slug: 'park', title: '박효진의 나의 꿈은' },
+  ];
+  for (const s of STUDENT_DREAMS) {
+    const who = Avatars.byNickname(s.nickname);
+    if (!who) continue;
+    if (Gallery.all().some((w) => w.author_id === who.id && w.slot === 1)) continue;
+    if (!publicFileExists(`/works/${s.slug}/dream/dream.mp4`)) continue;
+    Gallery.setWork({
+      authorId: who.id,
+      slot: 1, // WORK_CATEGORIES[1] = dream(나의 꿈은?)
+      url: `/works/${s.slug}/dream.html`,
+      title: s.title,
+    });
+  }
+
   // 교실 책장 기본 문서(How-to). 처음 한 번만.
   if (Guides.all().length === 0) {
     Guides.create({ title: 'GitHub 가입하는 법', url: '/guides/github-signup.html', slot: 0 });
