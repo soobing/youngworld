@@ -266,6 +266,97 @@
     </div>
   </div>
 
+  <!-- ================= 캠프파이어 회고 롤링페이퍼 ================= -->
+  <div id="retro-panel" class="pix-overlay hidden">
+    <div class="retro-sheet">
+      <span class="retro-tape retro-tape-l" aria-hidden="true"></span>
+      <span class="retro-tape retro-tape-r" aria-hidden="true"></span>
+      <button id="retro-close" class="retro-x" title="닫기 (Esc)">✕</button>
+
+      <header class="retro-head">
+        <h2 class="retro-title">🔥 캠프파이어 롤링페이퍼</h2>
+        <p class="retro-sub">모닥불에 둘러앉아, 오늘 강의를 돌아보는 시간</p>
+        <div class="retro-tabs" role="tablist">
+          <button class="retro-tab selected" data-rtab="write">✍️ 내 회고 쓰기</button>
+          <button class="retro-tab" data-rtab="read">📖 모두의 회고</button>
+          <button class="retro-tab" data-rtab="mine">💌 나에게 온 편지<span id="retro-mine-badge" class="retro-badge hidden">0</span></button>
+        </div>
+      </header>
+
+      <div class="retro-body">
+        <!-- ---------- 탭: 쓰기 ---------- -->
+        <section class="retro-pane" data-rpane="write">
+          <p class="retro-guide">
+            네 칸을 <b>한 가지씩은 꼭</b> 채워야 종이가 완성돼요. 짧아도 괜찮으니 솔직하게!
+            언제든 다시 열어 <b>고쳐 쓸 수 있어요</b>.
+          </p>
+
+          <div class="retro-block">
+            <label class="retro-label" for="retro-good"><span class="retro-ic">😊</span>좋았던 점</label>
+            <p class="retro-hint">재미있었던 순간, 새로 알게 된 것, 해내서 뿌듯했던 것</p>
+            <textarea id="retro-good" class="retro-input" rows="3" maxlength="600"
+              placeholder="예) AI로 내 꿈 영상을 직접 만든 게 신기했다. 코드가 처음 돌아갔을 때 짜릿했다."></textarea>
+            <span class="retro-count" data-count-for="retro-good">0 / 600</span>
+          </div>
+
+          <div class="retro-block">
+            <label class="retro-label" for="retro-bad"><span class="retro-ic">😥</span>아쉬웠던 점</label>
+            <p class="retro-hint">어려웠던 것, 시간이 부족했던 것, 다음엔 이렇게 해보고 싶은 것</p>
+            <textarea id="retro-bad" class="retro-input" rows="3" maxlength="600"
+              placeholder="예) 설치할 때 오류가 나서 오래 걸렸다. 발표 준비를 더 하고 싶었다."></textarea>
+            <span class="retro-count" data-count-for="retro-bad">0 / 600</span>
+          </div>
+
+          <div class="retro-block">
+            <label class="retro-label" for="retro-next"><span class="retro-ic">🌱</span>앞으로 하고 싶은 것</label>
+            <p class="retro-hint">더 배워보고 싶은 것, 만들어보고 싶은 것, 오늘 이후의 나</p>
+            <textarea id="retro-next" class="retro-input" rows="3" maxlength="600"
+              placeholder="예) 내 게임을 끝까지 완성해보고 싶다. 친구들과 같이 만드는 것도 해보고 싶다."></textarea>
+            <span class="retro-count" data-count-for="retro-next">0 / 600</span>
+          </div>
+
+          <div class="retro-block retro-secret">
+            <label class="retro-label"><span class="retro-ic">💌</span>친구에게 남기는 한마디
+              <span class="retro-lock">🔒 비밀</span>
+            </label>
+            <p class="retro-private-note">
+              <b>여기 쓴 글은 받는 사람에게만 보여요.</b>
+              다른 친구도, 선생님도, 모두의 회고 탭에서도 절대 볼 수 없어요.
+              그러니 마음속에 있던 말을 편하게 적어도 괜찮아요.
+            </p>
+            <p class="retro-hint">
+              뭘 써야 할지 막막하다면 이렇게 시작해보세요 👇<br />
+              ① 그 친구의 <b>작품</b>을 보고 좋았던 점 — "네 영상에서 ○○ 장면이 진짜 멋졌어"<br />
+              ② <b>수업 시간</b>에 본 모습 — "막힐 때 포기 안 하고 계속 물어보는 게 대단했어"<br />
+              ③ <b>고마웠던</b> 순간 — "내 오류 같이 봐줘서 고마웠어"<br />
+              ④ <b>응원</b>하는 말 — "네가 말한 그 꿈, 진짜 잘 어울려!"
+            </p>
+            <p class="retro-hint retro-hint-min">최소 <b>한 명</b>에게는 남겨주세요. (5명 모두에게 써도 좋아요)</p>
+            <div id="retro-people"></div>
+          </div>
+
+          <div class="retro-actions">
+            <div id="retro-checklist" class="retro-checklist"></div>
+            <button id="retro-save" class="retro-btn">🔥 모닥불에 올리기</button>
+            <p id="retro-line" class="retro-line"></p>
+          </div>
+        </section>
+
+        <!-- ---------- 탭: 모두의 회고(공개 3칸만) ---------- -->
+        <section class="retro-pane hidden" data-rpane="read">
+          <p class="retro-guide">모두가 함께 보는 칸이에요. 비밀 한마디는 여기 나오지 않아요 🔒</p>
+          <div id="retro-papers"></div>
+        </section>
+
+        <!-- ---------- 탭: 나에게 온 비밀 편지 ---------- -->
+        <section class="retro-pane hidden" data-rpane="mine">
+          <p class="retro-guide">친구들이 <b>나에게만</b> 남긴 한마디예요. 나 말고는 아무도 못 봐요 🔒</p>
+          <div id="retro-received"></div>
+        </section>
+      </div>
+    </div>
+  </div>
+
   <!-- ================= 영월드 관리센터 패널 ================= -->
   <div id="admin-panel" class="side-panel hidden">
     <div class="side-head">

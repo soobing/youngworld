@@ -4,13 +4,33 @@
 // 권한(게스트/선생님)은 여기서 permissions.can() 으로 강제한다.
 // =====================================================================
 
-const { Avatars, Sessions, Phone, Materials, Gallery, Guides } = require('./db');
+const { Avatars, Sessions, Phone, Materials, Gallery, Guides, Retro } = require('./db');
 const { can } = require('./permissions');
 const phone = require('./phone');
 
 // 씬 이름 → Socket.io Room 이름. 이동/등장/퇴장은 같은 씬 안에서만 방송된다.
 const ROOM = (scene) => `scene:${scene}`;
-const SCENES = ['island', 'classroom'];
+const SCENES = ['island', 'classroom', 'campfire'];
+
+// 회고 롤링페이퍼 글자 수 제한(너무 긴 글로 DB/화면이 망가지지 않게).
+const RETRO_MAX = 600;      // 공개 3칸 한 칸당
+const RETRO_FB_MAX = 400;   // 개인별 비밀 한마디 하나당
+
+// 한 사람에게 보낼 회고 데이터 묶음.
+// 비밀 피드백은 "나에게 온 것(received)" 과 "내가 쓴 것(myFeedbacks)" 만 담는다.
+// 남이 남에게 쓴 한마디는 서버 밖으로 절대 나가지 않는다(선생님도 못 본다).
+function retroPayload(meId) {
+  const mine = Retro.paperOf(meId);
+  return {
+    people: Avatars.allMessageable(meId).map((a) => ({
+      id: a.id, nickname: a.nickname, color: a.color, role: a.role,
+    })),
+    mine: mine || null,
+    myFeedbacks: Retro.feedbackFrom(meId),
+    papers: Retro.allPapers(),
+    received: Retro.feedbackTo(meId),
+  };
+}
 
 // 칠판/책장 문서 URL 안전성 검사.
 //   같은 서버의 /lectures/ 또는 /guides/ 아래 .html 만 허용(외부·javascript:·경로탈출 차단).
@@ -402,6 +422,49 @@ function setup(io) {
       pushDeliveries(deliveries);
       socket.emit('peer:sent', { kind: 'reply', count: deliveries.length });
       socket.emit('phone:alarm', { unreadCount: Phone.unreadCount(avatar.id) });
+    });
+
+    // -----------------------------------------------------------------
+    // 캠프파이어 회고 롤링페이퍼 (텐트 안 모닥불)
+    //   retro:load → 내가 볼 수 있는 것만 담아 retro:data 로 답한다.
+    //   retro:save → 공개 3칸 + 비밀 한마디를 한 번에 저장.
+    // -----------------------------------------------------------------
+    socket.on('retro:load', () => {
+      if (deny('retro:view')) return;
+      socket.emit('retro:data', retroPayload(avatar.id));
+    });
+
+    socket.on('retro:save', ({ good, bad, nextStep, feedbacks }) => {
+      if (deny('retro:write')) return;
+      const cut = (v, max) => String(v == null ? '' : v).trim().slice(0, max);
+      const g = cut(good, RETRO_MAX), b = cut(bad, RETRO_MAX), n = cut(nextStep, RETRO_MAX);
+      if (!g || !b || !n) {
+        socket.emit('error', { code: 'BAD_RETRO', message: '좋았던 점·아쉬웠던 점·앞으로 하고 싶은 것을 모두 적어주세요.' });
+        return;
+      }
+
+      // 피드백 대상은 "쪽지를 주고받을 수 있는 사람"(게스트·나 자신 제외)으로 한정.
+      const allowed = new Set(Avatars.allMessageable(avatar.id).map((a) => a.id));
+      const clean = (Array.isArray(feedbacks) ? feedbacks : [])
+        .map((f) => ({ toId: Number(f && f.toId), body: cut(f && f.body, RETRO_FB_MAX) }))
+        .filter((f) => allowed.has(f.toId));
+      if (!clean.some((f) => f.body)) {
+        socket.emit('error', { code: 'BAD_RETRO_FB', message: '친구 한 명에게라도 비밀 한마디를 남겨주세요.' });
+        return;
+      }
+
+      Retro.save({ authorId: avatar.id, good: g, bad: b, nextStep: n, feedbacks: clean });
+      socket.emit('retro:saved', {});
+      socket.emit('retro:data', retroPayload(avatar.id));
+
+      // 다른 사람들에겐 "새 회고가 올라왔다"는 사실만 알린다(내용은 각자 다시 요청).
+      // 비밀 한마디를 받은 사람에겐 따로 알려 모닥불을 다시 열어보게 한다.
+      socket.broadcast.emit('retro:changed', { by: avatar.nickname });
+      for (const f of clean) {
+        if (!f.body) continue;
+        const target = online.get(f.toId);
+        if (target) io.to(target.socketId).emit('retro:whisper', { count: 1 });
+      }
     });
 
     // -----------------------------------------------------------------

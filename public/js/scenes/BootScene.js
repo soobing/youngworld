@@ -161,11 +161,57 @@ export class BootScene extends Phaser.Scene {
     shelf(7); shelf(28);
     g.generateTexture('bookshelf', 48, 50);
 
+    // 16) 텐트 안 바닥 — 모닥불빛을 받은 따뜻한 모래빛 돗자리(노랑~주황 톤).
+    //     너무 붉으면 벽돌처럼 보여서, 붉은 기를 빼고 노란 기를 넣었다.
+    //     다른 타일과 달리 2px 이 아니라 1px 점을 뿌린다 → 확대해도 네모가 도드라지지 않는다.
+    g.clear(); g.fillStyle(0xd7a75f, 1); g.fillRect(0, 0, TILE, TILE);
+    const dust = (color, alpha, n) => {
+      g.fillStyle(color, alpha);
+      for (let i = 0; i < n; i++) g.fillRect(R(TILE), R(TILE), 1, 1);
+    };
+    dust(0xe6bd76, 1, 110); dust(0xbe8c4a, 0.85, 80); dust(0xf3d79a, 0.7, 55);
+    g.generateTexture('tentfloor', TILE, TILE);
+
+    // 17) 텐트 천(벽) — 주황~빨강 사이 레드. 안쪽이라 밖보다 어둡게(모닥불만 밝다).
+    g.clear(); g.fillStyle(0x7d2418, 1); g.fillRect(0, 0, TILE, TILE);
+    g.fillStyle(0x93301f, 0.9); for (let x = 0; x < TILE; x += 8) g.fillRect(x, 0, 3, TILE); // 주름(밝은 면)
+    g.fillStyle(0x561309, 0.9); for (let x = 5; x < TILE; x += 8) g.fillRect(x, 0, 2, TILE);  // 주름(그늘)
+    g.fillStyle(0x000000, 0.14); for (let i = 0; i < 10; i++) g.fillRect(R(16) * 2, R(16) * 2, 2, 2);
+    g.generateTexture('tentwall', TILE, TILE);
+
+    // 18) 방석 — 모닥불 둘러앉는 자리(각자 색으로 tint).
+    g.clear();
+    g.fillStyle(0x000000, 0.16); g.fillEllipse(13, 17, 22, 7);
+    g.fillStyle(0xffffff, 1); g.fillEllipse(13, 13, 24, 14);
+    g.fillStyle(0x000000, 0.14); g.fillEllipse(13, 15, 18, 7);
+    g.generateTexture('cushion', 26, 22);
+
+    // 19) 불티(모닥불에서 올라가는 작은 입자).
+    g.clear(); g.fillStyle(0xffd24a, 1); g.fillRect(0, 0, 3, 3);
+    g.generateTexture('spark', 3, 3);
+
     g.destroy();
 
-    // 서버가 알려준 마지막 씬으로 시작(없으면 island).
+    // 20) 모닥불 불빛 — 가운데 노랑에서 주황으로 부드럽게 사라지는 원형 그라데이션.
+    //     도형으로 그린 타원은 가장자리가 계단처럼 각지므로, 큰 그라데이션 그림(512px)을
+    //     만들어 화면에선 작게 줄여 쓴다 → 경계가 눈에 띄지 않는다.
+    const LIGHT = 512, LR = LIGHT / 2;
+    const lightTex = this.textures.createCanvas('firelight', LIGHT, LIGHT);
+    const ctx = lightTex.getContext();
+    const grad = ctx.createRadialGradient(LR, LR, 0, LR, LR, LR);
+    grad.addColorStop(0.00, 'rgba(255,244,186,0.62)'); // 심지 쪽: 밝은 노랑
+    grad.addColorStop(0.24, 'rgba(255,214,92,0.50)');
+    grad.addColorStop(0.50, 'rgba(255,164,43,0.32)');  // 바깥으로 갈수록 주황
+    grad.addColorStop(0.76, 'rgba(255,116,26,0.13)');
+    grad.addColorStop(1.00, 'rgba(255,96,16,0)');      // 완전히 사라짐
+    ctx.fillStyle = grad;
+    ctx.fillRect(0, 0, LIGHT, LIGHT);
+    lightTex.refresh();
+
+    // 서버가 알려준 마지막 씬으로 시작(모르는 이름이면 island).
+    // 서버의 씬 이름(socket.js SCENES)과 여기 씬 클래스를 이어주는 표 — 실내를 추가하면 여기도 추가.
     // (환영 애니메이션은 로그인 전에 HTML 인트로로 먼저 보여준다)
-    const start = state.scene === 'classroom' ? 'ClassroomScene' : 'IslandScene';
-    this.scene.start(start);
+    const START_SCENE = { classroom: 'ClassroomScene', campfire: 'CampfireScene' };
+    this.scene.start(START_SCENE[state.scene] || 'IslandScene');
   }
 }
