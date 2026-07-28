@@ -16,7 +16,8 @@
     해가 갈수록 골대가 멀고 높아지고, 4~5년차엔 골대가 움직인다. (마우스/터치 드래그)
 
   ▶▶ 이어쓰기(WIP) 인계 노트 — "최승찬 게임 이어서" 하면 여기부터:
-    [완료] 슛 물리(중력·백보드/림 반사·바닥 바운스)·조준 궤적 미리보기·5스테이지·타이틀/클리어/엔딩
+    [완료] 슛 물리(중력·백보드/림 반사·바닥 바운스)·조준 궤적·5스테이지·타이틀/클리어/엔딩
+           + 상단 스톱워치·해마다 클리어 시간·5년 완주 시 이름 입력→순위 저장(localStorage 'game5_seungchan_ranks')
     [남은 일 / 다듬기]
       1) 슛 손맛 튜닝(K/중력/반발), 골대 움직임 난이도 밸런스
       2) 그래픽: 코트 배경·백보드에 코드화면 느낌·캐릭터를 도트/이미지로
@@ -58,6 +59,20 @@
         box-shadow:0 8px 22px rgba(255,122,46,.4); }
   .btn:hover{ filter:brightness(1.06); }
   .keys{ font-size:clamp(10px,1.7vmin,13px); color:#9a8fc0; }
+  .timer{ font-variant-numeric:tabular-nums; }
+  .overlay .brk{ font-size:clamp(10px,1.7vmin,14px); color:#9a8fc0; }
+  .save{ display:flex; gap:1vmin; align-items:center; }
+  .save input{ font-family:inherit; font-size:clamp(12px,2vmin,16px); padding:.9vmin 1.4vmin; border-radius:10px;
+        border:1px solid #6a5a96; background:#20143b; color:#fff; width:min(46vw,220px); }
+  .save input:disabled{ opacity:.5; }
+  .ranks{ width:min(100%,360px); display:flex; flex-direction:column; gap:.4vmin; max-height:32vh; overflow:auto; }
+  .ranks div{ display:flex; align-items:center; gap:1vmin; background:rgba(20,13,38,.6); border:1px solid #4a3a72;
+        border-radius:8px; padding:.6vmin 1.2vmin; font-size:clamp(11px,1.8vmin,15px); }
+  .ranks .rk{ color:var(--accent); font-weight:900; width:1.6em; }
+  .ranks .nm{ flex:1; text-align:left; }
+  .ranks .tm{ font-variant-numeric:tabular-nums; color:var(--gold); font-weight:800; }
+  .ranks .me{ border-color:var(--gold); background:rgba(255,210,74,.14); }
+  .ranks .empty{ color:#9a8fc0; justify-content:center; }
   .foot{ font-size:clamp(10px,1.5vmin,12px); color:#5b5080; }
 </style>
 </head>
@@ -72,6 +87,7 @@
     <canvas id="c" width="960" height="540"></canvas>
     <div class="hud">
       <div class="quest" id="quest">1년차</div>
+      <div class="timer" id="timer">⏱ 0.0초</div>
       <div class="score" id="score">🏀 0 / 3</div>
     </div>
 
@@ -91,7 +107,13 @@
 
     <div class="overlay hidden" id="ending">
       <h2>5년 뒤, 최승찬 —<br><span style="color:var(--gold)">사람들과 함께 코딩하는 사람</span> 🚀</h2>
-      <p>포기했던 코딩으로 돌아와, 결국 좋아하는 걸 하고 있어요.</p>
+      <p>전체 기록 <b id="finalTime" style="color:var(--gold)">—</b></p>
+      <p class="brk" id="breakdown"></p>
+      <div class="save">
+        <input id="nameInput" maxlength="10" placeholder="이름 (최대 10자)" autocomplete="off">
+        <button class="btn" id="saveScore">순위 저장</button>
+      </div>
+      <div class="ranks" id="ranks"></div>
       <button class="btn" id="replay">↺ 다시 하기</button>
     </div>
   </div>
@@ -123,6 +145,9 @@
   const REST_X = 150, REST_Y = GY - R;
   let stageIdx = 0, makes = 0, frame = 0, running = false;
   let aiming = false, aimPt = {x:0,y:0}, flash = 0;
+  let totalMs = 0, yearStartTime = 0;      // 스톱워치: 완주한 해들의 합 + 현재 해 진행분
+  const yearTimes = [];                     // 해마다 클리어에 걸린 시간(ms)
+  const LB_KEY = 'game5_seungchan_ranks';   // 순위표(localStorage)
 
   const $ = (id) => document.getElementById(id);
   const overlays = { title:$('title'), clear:$('clear'), ending:$('ending') };
@@ -141,6 +166,41 @@
     resetBall();
     $('quest').innerHTML = `<b>${STAGES[i].year}년차</b> · ${STAGES[i].quest}`;
     $('score').textContent = `🏀 0 / ${NEED}`;
+    yearStartTime = performance.now();     // 이 해의 스톱워치 시작
+    showTimer(totalMs);
+  }
+
+  // ---- 시간·순위 ----
+  function fmt(ms){ const s=Math.max(0,ms)/1000; const m=Math.floor(s/60); const r=s-m*60;
+    return m>0 ? m+':'+r.toFixed(1).padStart(4,'0') : r.toFixed(1)+'초'; }
+  function showTimer(ms){ $('timer').textContent = '⏱ ' + fmt(ms); }
+  function loadLB(){ try{ return JSON.parse(localStorage.getItem(LB_KEY)) || []; }catch(e){ return []; } }
+  function saveLB(l){ try{ localStorage.setItem(LB_KEY, JSON.stringify(l)); }catch(e){} }
+  function escapeHtml(s){ return String(s).replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+  function renderRanks(hi){
+    const list = loadLB();
+    $('ranks').innerHTML = list.length
+      ? list.map((e,i)=>{ const me = hi && e.name===hi.name && e.ms===hi.ms;
+          return `<div class="${me?'me':''}"><span class="rk">${i+1}</span><span class="nm">${escapeHtml(e.name)}</span><span class="tm">${fmt(e.ms)}</span></div>`; }).join('')
+      : '<div class="empty">아직 기록이 없어요. 1등이 되어보세요!</div>';
+  }
+  function showEnding(){
+    $('finalTime').textContent = fmt(totalMs);
+    $('breakdown').textContent = yearTimes.map((t,i)=>`${i+1}년차 ${fmt(t)}`).join('  ·  ');
+    const inp=$('nameInput'), btn=$('saveScore');
+    inp.value=''; inp.disabled=false; btn.disabled=false;
+    renderRanks(null);
+    show('ending');
+    setTimeout(()=>{ try{ inp.focus(); }catch(e){} }, 60);
+  }
+  function saveScore(){
+    const inp=$('nameInput'), btn=$('saveScore');
+    let name=(inp.value||'').trim(); if(!name) name='익명'; name=name.slice(0,10);
+    const list=loadLB(); const entry={ name, ms:Math.round(totalMs) };
+    list.push(entry); list.sort((a,b)=>a.ms-b.ms);
+    saveLB(list.slice(0,10));
+    inp.disabled=true; btn.disabled=true;
+    renderRanks(entry);
   }
   function resetBall(){ ball.x=REST_X; ball.y=REST_Y; ball.vx=0; ball.vy=0; ball.rest=true; }
 
@@ -233,17 +293,22 @@
     // 코트 바닥
     ctx.fillStyle='#4a3a72'; ctx.fillRect(0,GY,W,H-GY); ctx.fillStyle='#6a54a0'; ctx.fillRect(0,GY,W,5);
     drawHoop(); drawShooter(); drawAim(); drawBall();
+    showTimer(totalMs + (performance.now() - yearStartTime));   // 스톱워치 갱신
     if(flash>0){ flash--; ctx.fillStyle='rgba(255,210,74,'+(flash/45)+')'; ctx.font='bold 54px sans-serif'; ctx.textAlign='center';
       ctx.fillText('골인! ⭐', W/2, 140); ctx.textAlign='left'; }
   }
 
   function loop(){ if(!running) return; update(); draw(); requestAnimationFrame(loop); }
-  function startGame(){ hideAll(); loadStage(0); running=true; loop(); }
+  function startGame(){ totalMs=0; yearTimes.length=0; hideAll(); loadStage(0); running=true; loop(); }
   function stageClear(){
-    running=false; const s=STAGES[stageIdx];
-    if(stageIdx>=STAGES.length-1){ show('ending'); return; }
+    running=false;
+    const yearMs = performance.now() - yearStartTime;   // 이번 해에 걸린 시간
+    totalMs += yearMs; yearTimes[stageIdx] = yearMs;
+    showTimer(totalMs);
+    const s=STAGES[stageIdx];
+    if(stageIdx>=STAGES.length-1){ showEnding(); return; }
     $('clearTitle').textContent = `${s.year}년차 클리어! 🏀`;
-    $('clearText').textContent = `"${s.quest}" — 골 3개 성공!`;
+    $('clearText').innerHTML = `"${s.quest}" — 골 ${NEED}개!<br>⏱ 이번 해 <b style="color:var(--gold)">${fmt(yearMs)}</b>`;
     show('clear');
   }
   function nextStage(){ hideAll(); loadStage(stageIdx+1); running=true; loop(); }
@@ -251,6 +316,8 @@
   $('start').addEventListener('click', startGame);
   $('next').addEventListener('click', nextStage);
   $('replay').addEventListener('click', startGame);
+  $('saveScore').addEventListener('click', saveScore);
+  $('nameInput').addEventListener('keydown', (e)=>{ if(e.key==='Enter' && !$('saveScore').disabled) saveScore(); });
 
   loadStage(0); draw(); show('title');   // 타이틀 뒤에 첫 화면 그려두기
 })();
