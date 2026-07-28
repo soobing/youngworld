@@ -101,8 +101,10 @@ const Avatars = {
         db.prepare('DELETE FROM phone_messages WHERE id IN (' + mph + ')').run(...sentMsgIds);
       }
 
-      // (3) 이 사람의 작품(갤러리) + 세션.
+      // (3) 이 사람의 작품(갤러리) + 회고 롤링페이퍼(쓴 것·받은 것) + 세션.
       db.prepare('DELETE FROM gallery_works WHERE author_id = ?').run(a.id);
+      db.prepare('DELETE FROM retro_feedbacks WHERE from_id = ? OR to_id = ?').run(a.id, a.id);
+      db.prepare('DELETE FROM retro_papers WHERE author_id = ?').run(a.id);
       db.prepare('DELETE FROM sessions WHERE avatar_id = ?').run(a.id);
 
       // (4) 마지막으로 아바타.
@@ -479,4 +481,76 @@ const Gallery = {
   },
 };
 
-module.exports = { db, Avatars, Sessions, Phone, Materials, Gallery, Guides };
+// ---------------------------------------------------------------------
+// 캠프파이어 회고 롤링페이퍼
+//   공개 3칸(retro_papers)은 모두가 함께 읽고,
+//   개인별 한마디(retro_feedbacks)는 "받는 사람"과 "쓴 사람"만 읽는다.
+//   → 비밀 보장은 화면이 아니라 여기(서버 쿼리)에서 지켜진다.
+// ---------------------------------------------------------------------
+const Retro = {
+  // 내가 쓴 회고 한 장(없으면 undefined).
+  paperOf(authorId) {
+    return db
+      .prepare('SELECT good, bad, next_step AS nextStep, updated_at AS updatedAt FROM retro_papers WHERE author_id = ?')
+      .get(authorId);
+  },
+
+  // 모두의 공개 회고(모닥불에 둘러앉아 함께 읽는 부분). 최신 수정순.
+  allPapers() {
+    return db
+      .prepare(
+        `SELECT p.author_id AS authorId, a.nickname, a.color, a.role,
+                p.good, p.bad, p.next_step AS nextStep, p.updated_at AS updatedAt
+         FROM retro_papers p JOIN avatars a ON a.id = p.author_id
+         ORDER BY p.updated_at DESC, p.id DESC`
+      )
+      .all();
+  },
+
+  // 나에게 온 비밀 한마디(보낸 사람 이름과 함께).
+  feedbackTo(toId) {
+    return db
+      .prepare(
+        `SELECT f.from_id AS fromId, a.nickname, a.color, f.body, f.updated_at AS updatedAt
+         FROM retro_feedbacks f JOIN avatars a ON a.id = f.from_id
+         WHERE f.to_id = ?
+         ORDER BY f.updated_at DESC, f.id DESC`
+      )
+      .all(toId);
+  },
+
+  // 내가 쓴 비밀 한마디들(고쳐 쓸 때 화면에 채워주기 위함).
+  feedbackFrom(fromId) {
+    return db
+      .prepare('SELECT to_id AS toId, body FROM retro_feedbacks WHERE from_id = ?')
+      .all(fromId);
+  },
+
+  // 회고 저장(있으면 수정). feedbacks = [{ toId, body }] — 빈 내용은 지운다.
+  // 공개 3칸과 비밀 한마디를 한 트랜잭션으로 저장해 "반만 저장" 되는 일이 없게 한다.
+  save({ authorId, good, bad, nextStep, feedbacks }) {
+    const tx = db.transaction(() => {
+      db.prepare(
+        `INSERT INTO retro_papers (author_id, good, bad, next_step)
+         VALUES (@authorId, @good, @bad, @nextStep)
+         ON CONFLICT(author_id) DO UPDATE SET
+           good = @good, bad = @bad, next_step = @nextStep, updated_at = datetime('now')`
+      ).run({ authorId, good, bad, nextStep });
+
+      for (const f of feedbacks) {
+        if (!f.body) {
+          db.prepare('DELETE FROM retro_feedbacks WHERE from_id = ? AND to_id = ?').run(authorId, f.toId);
+          continue;
+        }
+        db.prepare(
+          `INSERT INTO retro_feedbacks (from_id, to_id, body)
+           VALUES (@from, @to, @body)
+           ON CONFLICT(from_id, to_id) DO UPDATE SET body = @body, updated_at = datetime('now')`
+        ).run({ from: authorId, to: f.toId, body: f.body });
+      }
+    });
+    tx();
+  },
+};
+
+module.exports = { db, Avatars, Sessions, Phone, Materials, Gallery, Guides, Retro };

@@ -78,6 +78,33 @@ CREATE TABLE IF NOT EXISTS guide_docs (
   created_at  TEXT    NOT NULL DEFAULT (datetime('now'))
 );
 
+-- =====================================================================
+-- 캠프파이어 텐트의 "회고 롤링페이퍼"
+--   retro_papers    = 모두가 함께 보는 회고 3칸(좋았던 점/아쉬웠던 점/앞으로)
+--   retro_feedbacks = 친구 한 명에게 남기는 "비밀" 한마디(받는 사람만 볼 수 있음)
+-- 한 사람이 여러 번 고쳐 쓸 수 있게 UNIQUE 로 한 장(한 통)만 유지한다.
+-- =====================================================================
+CREATE TABLE IF NOT EXISTS retro_papers (
+  id         INTEGER PRIMARY KEY AUTOINCREMENT,
+  author_id  INTEGER NOT NULL UNIQUE REFERENCES avatars(id),
+  good       TEXT    NOT NULL,                 -- 좋았던 점
+  bad        TEXT    NOT NULL,                 -- 아쉬웠던 점
+  next_step  TEXT    NOT NULL,                 -- 앞으로 하고 싶은 것
+  created_at TEXT    NOT NULL DEFAULT (datetime('now')),
+  updated_at TEXT    NOT NULL DEFAULT (datetime('now'))
+);
+
+-- 개인별 비밀 피드백. 서버는 "받는 사람(to_id)" 과 "쓴 사람 본인(from_id)" 에게만 보낸다.
+CREATE TABLE IF NOT EXISTS retro_feedbacks (
+  id         INTEGER PRIMARY KEY AUTOINCREMENT,
+  from_id    INTEGER NOT NULL REFERENCES avatars(id),
+  to_id      INTEGER NOT NULL REFERENCES avatars(id),
+  body       TEXT    NOT NULL,
+  created_at TEXT    NOT NULL DEFAULT (datetime('now')),
+  updated_at TEXT    NOT NULL DEFAULT (datetime('now')),
+  UNIQUE(from_id, to_id)
+);
+
 -- 교실 뒷벽 전시(학생 작품 갤러리). 3회차 미니게임 등을 여기에 건다.
 CREATE TABLE IF NOT EXISTS gallery_works (
   id          INTEGER PRIMARY KEY AUTOINCREMENT,
