@@ -176,6 +176,13 @@ function ensureSeed() {
     Guides.create({ title: 'Windows에 Claude Code 설치하기', url: CC_WIN_URL, slot: 2 });
   }
 
+  // 영상이 기술적으로 어떻게 만들어지는지(2회차 「나의 꿈은」 배경지식).
+  //   숫자는 실제 결과물에서 뽑은 값이라, 작품이 바뀌면 문서도 같이 손봐야 한다.
+  const HOW_VIDEO_URL = '/guides/how-video-works.html';
+  if (!Guides.all().some((g) => g.url === HOW_VIDEO_URL)) {
+    Guides.create({ title: '그림 5장이 영상이 되기까지', url: HOW_VIDEO_URL, slot: 3 });
+  }
+
   if (already === 0) {
     console.log('[seed] 초기 아바타 7명 + 예시 강의자료를 넣었습니다.');
   }
