@@ -192,6 +192,34 @@ function ensureSeed() {
     });
   }
 
+  // 학생 「10년 뒤 나의 미래(웹툰)」 작품을 slot 3 에 건다(멱등).
+  //   이 칸은 방학 숙제(선택 과제)라, 학생이 스스로 올리면 아무도 손대지 않아도 걸려야 한다.
+  //   → 위의 dream/game5 처럼 "완성한 사람을 목록에 추가" 하는 방식이 아니라,
+  //     사람별 폴더에 webtoon10.html 이 있는지 확인해서 있으면 자동으로 건다.
+  //     (방학 중에 선생님이 목록을 고쳐 줘야 한다면 "직접 올리면 걸린다"는 안내가 거짓이 된다)
+  //   폴더 슬러그는 아바타에 저장돼 있지 않아서 여기서 닉네임과 짝지어 둔다.
+  //   학생이 늘어나면 이 표에 한 줄 추가(작품이 아니라 '폴더 이름' 등록이라 미리 넣어 둬도 된다).
+  const WORK_FOLDERS = [
+    { nickname: 'soobing', slug: 'soobing', who: 'soobing 선생님' },
+    { nickname: '최승찬', slug: 'seungchan' },
+    { nickname: '안해찬', slug: 'ahn' },
+    { nickname: '김현영', slug: 'hyunyoung' },
+    { nickname: '김선우', slug: 'kim' },
+    { nickname: '박효진', slug: 'park' },
+  ];
+  for (const s of WORK_FOLDERS) {
+    const who = Avatars.byNickname(s.nickname);
+    if (!who) continue;
+    if (Gallery.all().some((w) => w.author_id === who.id && w.slot === 3)) continue;
+    if (!publicFileExists(`/works/${s.slug}/webtoon10.html`)) continue;
+    Gallery.setWork({
+      authorId: who.id,
+      slot: 3, // WORK_CATEGORIES[3] = webtoon10(10년 뒤 나의 미래·웹툰)
+      url: `/works/${s.slug}/webtoon10.html`,
+      title: `${s.who || s.nickname}의 10년 뒤 나의 미래`,
+    });
+  }
+
   // 교실 책장 기본 문서(How-to). 처음 한 번만.
   if (Guides.all().length === 0) {
     Guides.create({ title: 'GitHub 가입하는 법', url: '/guides/github-signup.html', slot: 0 });
