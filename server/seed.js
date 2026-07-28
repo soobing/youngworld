@@ -154,6 +154,22 @@ function ensureSeed() {
     });
   }
 
+  // 학생 김은준 자기소개를 작품 갤러리 '자기소개' 칸(slot 0)에 건다(멱등).
+  //   파일은 /works/eunjun/intro.html (public 정적 서빙). 프로덕션 DB 에도 재시작 시 걸린다.
+  const eunjun = Avatars.byNickname('김은준');
+  if (eunjun) {
+    const eunjunIntroUrl = '/works/eunjun/intro.html';
+    const hasEunjun = Gallery.all().some((w) => w.author_id === eunjun.id && w.url === eunjunIntroUrl);
+    if (!hasEunjun) {
+      Gallery.setWork({
+        authorId: eunjun.id,
+        slot: 0, // WORK_CATEGORIES[0] = intro(자기소개)
+        url: eunjunIntroUrl,
+        title: '김은준의 자기소개',
+      });
+    }
+  }
+
   // 교실 책장 기본 문서(How-to). 처음 한 번만.
   if (Guides.all().length === 0) {
     Guides.create({ title: 'GitHub 가입하는 법', url: '/guides/github-signup.html', slot: 0 });
