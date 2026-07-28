@@ -142,6 +142,7 @@ function ensureSeed() {
     { nickname: '최승찬', slug: 'seungchan', title: '최승찬의 나의 꿈은' },
     { nickname: '안해찬', slug: 'ahn', title: '안해찬의 나의 꿈은' },
     { nickname: '김현영', slug: 'hyunyoung', title: '김현영의 나의 꿈은' },
+    { nickname: '김선우', slug: 'kim', title: '김선우의 나의 꿈은' },
   ];
   for (const s of STUDENT_DREAMS) {
     const who = Avatars.byNickname(s.nickname);

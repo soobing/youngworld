@@ -152,7 +152,12 @@ fi
 #   겹치므로 이스케이프한다. macOS·리눅스에선 cygpath 가 없어 그대로 통과한다.
 ff_path() {
   if command -v cygpath >/dev/null 2>&1; then
-    cygpath -m "$1" | sed 's/:/\\:/'
+    # 콜론 이스케이프를 sed 로 하면 MSYS(Git Bash) 의 sed 가 치환문의 백슬래시를
+    # 그대로 넣지 않는 경우가 있어(환경마다 다름) C\: 가 아니라 C: 로 새어나간다.
+    # 그러면 필터 파서가 드라이브 콜론을 옵션 구분자로 오해해 빌드가 깨진다.
+    # 그래서 문자열 조립으로 확실하게 'C' + '\:' + 나머지 를 만든다.
+    local m; m=$(cygpath -m "$1")     # 예) C:/Users/.../cap1.txt
+    printf '%s' "${m:0:1}"'\:'"${m:2}"
   else
     printf '%s' "$1"
   fi
