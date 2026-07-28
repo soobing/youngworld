@@ -1,0 +1,353 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>최승찬의 5년 뒤 나의 미래 — 영월드</title>
+<!--
+  ============================================================
+  🎮 slot 2 「5년 뒤 나의 미래(게임)」 — 최승찬
+  ============================================================
+  ▶ 자체 완결형 HTML 1파일(인라인 CSS/JS, 외부 의존성 X).
+    공개 서버가 public/ 을 정적 서빙하므로 /works/seungchan/game5.html 로 열린다.
+    (URL 규칙: server/socket.js isSafeDocUrl → /works/<slug>/<file>.html 만 허용)
+
+  ▶ 게임: 옆으로 가는 플랫포머. 한 스테이지 = 1년차. 그 해의 '퀘스트 아이템(⭐)'을
+    모두 모으면 골(🚩)이 열리고 다음 해로. 5년차를 깨면 "5년 뒤의 나" 엔딩.
+    조작: ← → 이동, ↑/스페이스 점프 (모바일은 화면 버튼).
+
+  ▶▶ 이어쓰기(WIP) 인계 노트 — "최승찬 게임 이어서" 하면 여기부터:
+    [완료] 엔진(이동·점프·충돌·카메라), 5스테이지 데이터, 타이틀/클리어/엔딩, 터치조작
+    [남은 일 / 다듬기]
+      1) 스테이지 레이아웃을 더 재밌게(발판 배치·점프 난이도·함정 다양화)
+      2) 그림/캐릭터를 도트나 이미지로 교체(지금은 도형). 헤드폰 쓴 승찬이 느낌 유지
+      3) 사운드(선택). dream 처럼 CC 음원 쓰면 credits 남기기
+      4) 완성되면 갤러리 등록: server/seed.js 에 STUDENT_GAMES 배열 신설(STUDENT_DREAMS 패턴 복붙,
+         slot 2, url /works/<slug>/game5.html, publicFileExists 로 game5.html 존재 확인) → 최승찬 한 줄 추가
+      5) 로컬 검증(서버 재시작 → 교실 → 최승찬 → 🎮) 후 포크 push + upstream PR
+    ※ 참고: dream(slot1)은 이미 PR soobing/youngworld#19 로 올림. 이 게임은 별도 브랜치 feat/seungchan-game5.
+-->
+<style>
+  :root{ --bg:#2b1b4d; --accent:#ff7a2e; --gold:#ffd24a; --ink:#fff; --dim:#c7bce6; }
+  *{ box-sizing:border-box; margin:0; padding:0; }
+  html,body{ height:100%; }
+  body{
+    font-family:"Apple SD Gothic Neo","Pretendard","Noto Sans KR",-apple-system,"Malgun Gothic",sans-serif;
+    background:#140d26; color:var(--ink); overflow:hidden;
+  }
+  .wrap{ position:fixed; inset:0; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:1.4vmin; padding:2vmin; }
+  .head{ text-align:center; }
+  .who{ font-size:clamp(11px,1.8vmin,15px); font-weight:800; color:var(--dim); letter-spacing:.04em; }
+  h1{ font-size:clamp(18px,3.2vmin,32px); margin-top:.4vmin; }
+  h1 .g{ color:var(--gold); }
+
+  .stage-box{
+    position:relative; width:min(100%,1040px); aspect-ratio:16/9;
+    border-radius:16px; overflow:hidden; border:1px solid #4a3a72;
+    box-shadow:0 18px 50px rgba(0,0,0,.5); background:#000;
+  }
+  canvas{ width:100%; height:100%; display:block; touch-action:none; }
+
+  /* HUD */
+  .hud{ position:absolute; top:0; left:0; right:0; display:flex; justify-content:space-between; align-items:center;
+        padding:1.4vmin 2vmin; gap:1vmin; pointer-events:none; }
+  .hud .quest{ background:rgba(20,13,38,.7); border:1px solid #4a3a72; border-radius:10px; padding:.7vmin 1.4vmin;
+        font-size:clamp(11px,1.9vmin,16px); font-weight:700; }
+  .hud .quest b{ color:var(--gold); }
+  .hud .gems{ background:rgba(20,13,38,.7); border:1px solid #4a3a72; border-radius:10px; padding:.7vmin 1.4vmin;
+        font-size:clamp(11px,1.9vmin,16px); font-weight:800; white-space:nowrap; }
+
+  /* 오버레이(타이틀/클리어/엔딩) */
+  .overlay{ position:absolute; inset:0; display:flex; flex-direction:column; align-items:center; justify-content:center;
+        gap:2vmin; text-align:center; padding:5vmin; background:rgba(20,13,38,.82); }
+  .overlay.hidden{ display:none; }
+  .overlay h2{ font-size:clamp(18px,3.4vmin,34px); line-height:1.3; }
+  .overlay p{ color:var(--dim); font-size:clamp(12px,2vmin,18px); line-height:1.6; max-width:40ch; }
+  .overlay .quests{ text-align:left; display:flex; flex-direction:column; gap:.7vmin; margin:.5vmin 0; }
+  .overlay .quests div{ font-size:clamp(11px,1.9vmin,16px); color:#e6ddff; }
+  .overlay .quests .n{ color:var(--accent); font-weight:900; margin-right:.6em; }
+  .btn{ background:var(--accent); color:#20122e; border:none; font-family:inherit; font-weight:900;
+        font-size:clamp(13px,2.2vmin,18px); border-radius:12px; padding:1.2vmin 3vmin; cursor:pointer;
+        box-shadow:0 8px 22px rgba(255,122,46,.4); }
+  .btn:hover{ filter:brightness(1.06); }
+  .keys{ font-size:clamp(10px,1.7vmin,13px); color:#9a8fc0; }
+
+  /* 모바일 터치 컨트롤 */
+  .touch{ position:absolute; bottom:0; left:0; right:0; display:flex; justify-content:space-between;
+        padding:2vmin; pointer-events:none; }
+  .touch .pad{ display:flex; gap:1.4vmin; pointer-events:auto; }
+  .touch button{ width:clamp(48px,9vmin,74px); height:clamp(48px,9vmin,74px); border-radius:50%;
+        border:1px solid #6a5a96; background:rgba(43,27,77,.72); color:#fff; font-size:clamp(20px,3.6vmin,30px);
+        font-family:inherit; cursor:pointer; user-select:none; -webkit-user-select:none; touch-action:none; }
+  .touch button:active{ background:var(--accent); color:#20122e; }
+  @media (hover:hover) and (pointer:fine){ .touch{ display:none; } }
+
+  .foot{ font-size:clamp(10px,1.5vmin,12px); color:#5b5080; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="head">
+    <div class="who">🙋 최승찬 · 3회차 작품</div>
+    <h1><span class="g">🎮</span> 5년 뒤 나의 미래 — 퀘스트</h1>
+  </div>
+
+  <div class="stage-box">
+    <canvas id="c" width="960" height="540"></canvas>
+
+    <div class="hud">
+      <div class="quest" id="quest">1년차</div>
+      <div class="gems" id="gems">⭐ 0 / 0</div>
+    </div>
+
+    <!-- 타이틀 -->
+    <div class="overlay" id="title">
+      <h2>5년 뒤, 나는 어떤 사람일까?</h2>
+      <p>고1의 지금부터 5년. 한 해가 하나의 <b style="color:#fff">퀘스트</b>예요.<br>그 해의 <b style="color:var(--gold)">⭐ 아이템</b>을 다 모으면 <b style="color:#fff">🚩 다음 해</b>로 갈 수 있어요.</p>
+      <div class="quests" id="questList"></div>
+      <button class="btn" id="start">▶ 시작하기</button>
+      <div class="keys">← → 이동 · ↑ / 스페이스 점프 · (모바일은 화면 버튼)</div>
+    </div>
+
+    <!-- 스테이지 클리어 -->
+    <div class="overlay hidden" id="clear">
+      <h2 id="clearTitle"></h2>
+      <p id="clearText"></p>
+      <button class="btn" id="next">다음 해로 →</button>
+    </div>
+
+    <!-- 엔딩 -->
+    <div class="overlay hidden" id="ending">
+      <h2>5년 뒤, 최승찬 —<br><span style="color:var(--gold)">사람들과 함께 코딩하는 사람</span> 🚀</h2>
+      <p>포기했던 코딩으로 돌아와, 결국 좋아하는 걸 하고 있어요.</p>
+      <button class="btn" id="replay">↺ 다시 하기</button>
+    </div>
+
+    <!-- 터치 조작 -->
+    <div class="touch">
+      <div class="pad">
+        <button id="bl" aria-label="왼쪽">◀</button>
+        <button id="br" aria-label="오른쪽">▶</button>
+      </div>
+      <div class="pad">
+        <button id="bj" aria-label="점프">⤒</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="foot">AI와 함께 만든 5년 퀘스트 게임 · 영월드</div>
+</div>
+
+<script>
+(() => {
+  'use strict';
+  const canvas = document.getElementById('c');
+  const ctx = canvas.getContext('2d');
+  const W = canvas.width, H = canvas.height;
+
+  // ---- 물리 상수 ----
+  const GRAVITY = 0.8, MOVE = 4.4, JUMP = -14.5, GROUND_H = 40;
+
+  // ---- 스테이지(1년차~5년차) ----
+  // 좌표는 월드 기준(가로로 김). 카메라가 플레이어를 따라간다.
+  // ground: 바닥 발판(중간에 구멍=함정). plats: 공중 발판. gems: 모을 ⭐. goalX: 골 위치.
+  const GY = H - GROUND_H; // 바닥 윗면 y=500
+  const STAGES = [
+    {
+      year: 1, quest: 'AI와 함께 코딩 기초 다지기', worldW: 2400, goalX: 2280,
+      ground: [[0,700],[820,600],[1560,900]],
+      plats: [ {x:520,y:400,w:150,h:22}, {x:900,y:360,w:150,h:22}, {x:1240,y:420,w:170,h:22}, {x:1720,y:380,w:150,h:22} ],
+      gems: [ {x:585,y:350}, {x:965,y:310}, {x:1785,y:330} ],
+    },
+    {
+      year: 2, quest: '내가 만들고 싶던 프로그램 하나 완성', worldW: 2600, goalX: 2480,
+      ground: [[0,560],[700,520],[1360,560],[2020,560]],
+      plats: [ {x:430,y:400,w:130,h:22}, {x:640,y:300,w:130,h:22}, {x:1180,y:380,w:150,h:22}, {x:1600,y:330,w:140,h:22}, {x:2140,y:400,w:150,h:22} ],
+      gems: [ {x:700,y:250}, {x:1245,y:330}, {x:2205,y:350} ],
+    },
+    {
+      year: 3, quest: '팀 프로젝트로 협업 경험', worldW: 2800, goalX: 2680,
+      ground: [[0,600],[760,480],[1420,480],[2060,620]],
+      plats: [ {x:520,y:390,w:130,h:22}, {x:980,y:330,w:130,h:22}, {x:1300,y:400,w:140,h:22}, {x:1660,y:340,w:130,h:22}, {x:1980,y:280,w:130,h:22} ],
+      gems: [ {x:1045,y:280}, {x:1725,y:290}, {x:2045,y:230} ],
+    },
+    {
+      year: 4, quest: '더 큰 무대에 도전 (대회·진학)', worldW: 3000, goalX: 2880,
+      ground: [[0,520],[640,420],[1180,420],[1740,420],[2320,560]],
+      plats: [ {x:420,y:380,w:120,h:22}, {x:900,y:320,w:120,h:22}, {x:1400,y:300,w:120,h:22}, {x:1900,y:340,w:120,h:22}, {x:2420,y:380,w:130,h:22} ],
+      gems: [ {x:960,y:270}, {x:1460,y:250}, {x:2480,y:330} ],
+    },
+    {
+      year: 5, quest: '사람들과 함께 코딩하는 개발자', worldW: 3200, goalX: 3080,
+      ground: [[0,560],[700,440],[1260,440],[1820,440],[2380,440]],
+      plats: [ {x:480,y:400,w:120,h:22}, {x:940,y:330,w:120,h:22}, {x:1480,y:300,w:120,h:22}, {x:2040,y:330,w:120,h:22}, {x:2600,y:380,w:140,h:22} ],
+      gems: [ {x:1000,y:280}, {x:1540,y:250}, {x:2660,y:330} ],
+    },
+  ];
+
+  // ---- 상태 ----
+  const player = { x:60, y:GY-44, w:34, h:44, vx:0, vy:0, onGround:false, face:1 };
+  let stageIdx = 0, camX = 0, running = false;
+  let gems = [];      // 현재 스테이지 남은 젬
+  let gemsTotal = 0;
+  const keys = { left:false, right:false, jump:false };
+
+  const $ = (id) => document.getElementById(id);
+  const overlays = { title:$('title'), clear:$('clear'), ending:$('ending') };
+  function show(name){ for(const k in overlays) overlays[k].classList.toggle('hidden', k!==name); }
+  function hideAll(){ for(const k in overlays) overlays[k].classList.add('hidden'); }
+
+  // 타이틀에 퀘스트 목록 채우기
+  $('questList').innerHTML = STAGES.map((s,i)=>`<div><span class="n">${i+1}년차</span>${s.quest}</div>`).join('');
+
+  function loadStage(i){
+    stageIdx = i;
+    const s = STAGES[i];
+    player.x = 60; player.y = GY-44; player.vx = 0; player.vy = 0; player.onGround=false; player.face=1;
+    camX = 0;
+    gems = s.gems.map(g => ({ x:g.x, y:g.y, got:false }));
+    gemsTotal = gems.length;
+    $('quest').innerHTML = `<b>${s.year}년차</b> · ${s.quest}`;
+    updateGemHud();
+  }
+  function gemsGot(){ return gems.filter(g=>g.got).length; }
+  function updateGemHud(){ $('gems').textContent = `⭐ ${gemsGot()} / ${gemsTotal}`; }
+
+  // 현재 스테이지의 바닥 발판을 사각형 리스트로
+  function groundRects(){
+    return STAGES[stageIdx].ground.map(([x,w]) => ({x, y:GY, w, h:GROUND_H}));
+  }
+  function solids(){ return groundRects().concat(STAGES[stageIdx].plats); }
+
+  function overlap(a,b){ return a.x < b.x+b.w && a.x+a.w > b.x && a.y < b.y+b.h && a.y+a.h > b.y; }
+
+  function respawn(){ player.x = 60; player.y = GY-140; player.vx=0; player.vy=0; }
+
+  function update(){
+    const s = STAGES[stageIdx];
+    // 입력 → 속도
+    player.vx = (keys.left?-MOVE:0) + (keys.right?MOVE:0);
+    if(player.vx<0) player.face=-1; else if(player.vx>0) player.face=1;
+    if(keys.jump && player.onGround){ player.vy = JUMP; player.onGround=false; }
+
+    // 수평 이동 + 충돌
+    player.x += player.vx;
+    if(player.x < 0) player.x = 0;
+    if(player.x + player.w > s.worldW) player.x = s.worldW - player.w;
+    for(const r of solids()){
+      if(overlap(player,r)){
+        if(player.vx>0) player.x = r.x - player.w;
+        else if(player.vx<0) player.x = r.x + r.w;
+      }
+    }
+    // 수직 이동 + 충돌
+    player.vy += GRAVITY;
+    player.y += player.vy;
+    player.onGround = false;
+    for(const r of solids()){
+      if(overlap(player,r)){
+        if(player.vy>0){ player.y = r.y - player.h; player.onGround=true; }
+        else if(player.vy<0){ player.y = r.y + r.h; }
+        player.vy = 0;
+      }
+    }
+    // 함정(구멍)에 빠짐
+    if(player.y > H + 160) respawn();
+
+    // 젬 획득
+    for(const g of gems){
+      if(!g.got && Math.abs((player.x+player.w/2)-g.x) < 26 && Math.abs((player.y+player.h/2)-g.y) < 30){
+        g.got = true; updateGemHud();
+      }
+    }
+    // 골 도달(젬 다 모아야 열림)
+    if(gemsGot()===gemsTotal && player.x + player.w > s.goalX){
+      stageClear();
+    }
+    // 카메라
+    camX = Math.max(0, Math.min(s.worldW - W, player.x + player.w/2 - W/2));
+  }
+
+  function roundRect(x,y,w,h,r){ ctx.beginPath(); ctx.moveTo(x+r,y); ctx.arcTo(x+w,y,x+w,y+h,r); ctx.arcTo(x+w,y+h,x,y+h,r); ctx.arcTo(x,y+h,x,y,r); ctx.arcTo(x,y,x+w,y,r); ctx.closePath(); }
+
+  function draw(){
+    const s = STAGES[stageIdx];
+    // 배경(하늘 그라데이션)
+    const g = ctx.createLinearGradient(0,0,0,H);
+    g.addColorStop(0,'#3a2568'); g.addColorStop(1,'#1a1030');
+    ctx.fillStyle=g; ctx.fillRect(0,0,W,H);
+    // 먼 배경 언덕(패럴럭스)
+    ctx.fillStyle='rgba(255,122,46,0.10)';
+    for(let i=0;i<6;i++){ const bx = (i*520 - camX*0.3)%(W+520)-260; ctx.beginPath(); ctx.arc(bx,H-60,180,Math.PI,0); ctx.fill(); }
+
+    ctx.save(); ctx.translate(-camX,0);
+
+    // 골 깃발
+    const goalOpen = gemsGot()===gemsTotal;
+    ctx.fillStyle = goalOpen ? '#69db7c' : '#5b5080';
+    ctx.fillRect(s.goalX, GY-120, 6, 120);
+    ctx.beginPath(); ctx.moveTo(s.goalX+6,GY-120); ctx.lineTo(s.goalX+56,GY-102); ctx.lineTo(s.goalX+6,GY-84); ctx.closePath(); ctx.fill();
+    ctx.font='24px sans-serif'; ctx.fillText('🚩', s.goalX-12, GY-124);
+
+    // 발판
+    for(const r of groundRects()){ ctx.fillStyle='#4a3a72'; ctx.fillRect(r.x,r.y,r.w,r.h); ctx.fillStyle='#6a54a0'; ctx.fillRect(r.x,r.y,r.w,6); }
+    for(const r of STAGES[stageIdx].plats){ ctx.fillStyle='#5a4790'; roundRect(r.x,r.y,r.w,r.h,8); ctx.fill(); ctx.fillStyle='#7a63c0'; ctx.fillRect(r.x,r.y,r.w,4); }
+
+    // 젬 ⭐
+    for(const gm of gems){ if(gm.got) continue; ctx.font='28px sans-serif'; ctx.textAlign='center'; ctx.fillText('⭐', gm.x, gm.y+10); ctx.textAlign='left'; }
+
+    // 플레이어(헤드폰 쓴 캐릭터 느낌)
+    const px=player.x, py=player.y;
+    ctx.fillStyle='#c7cede'; roundRect(px, py+16, player.w, player.h-16, 6); ctx.fill();      // 후드
+    ctx.fillStyle='#f2c9a0'; ctx.beginPath(); ctx.arc(px+player.w/2, py+12, 13, 0, Math.PI*2); ctx.fill(); // 머리
+    ctx.fillStyle='#2b1b4d'; ctx.fillRect(px+3, py+2, player.w-6, 8);                          // 머리카락
+    ctx.fillStyle='#ff7a2e'; ctx.fillRect(px-2, py+6, 5, 12); ctx.fillRect(px+player.w-3, py+6, 5, 12); // 헤드폰
+    ctx.fillStyle='#20122e'; ctx.fillRect(px+player.w/2 + (player.face>0?2:-6), py+10, 4, 4);  // 눈
+
+    ctx.restore();
+  }
+
+  function loop(){
+    if(!running) return;
+    update(); draw();
+    requestAnimationFrame(loop);
+  }
+
+  function startGame(){ hideAll(); loadStage(0); running=true; loop(); }
+  function stageClear(){
+    running=false;
+    const s = STAGES[stageIdx];
+    if(stageIdx >= STAGES.length-1){ show('ending'); return; }
+    $('clearTitle').textContent = `${s.year}년차 클리어! ⭐`;
+    $('clearText').textContent = `"${s.quest}" — 해냈어요.`;
+    show('clear');
+  }
+  function nextStage(){ hideAll(); loadStage(stageIdx+1); running=true; loop(); }
+
+  // ---- 입력 ----
+  const setKey=(e,v)=>{
+    if(e.code==='ArrowLeft'||e.code==='KeyA'){ keys.left=v; e.preventDefault(); }
+    if(e.code==='ArrowRight'||e.code==='KeyD'){ keys.right=v; e.preventDefault(); }
+    if(e.code==='ArrowUp'||e.code==='Space'||e.code==='KeyW'){ keys.jump=v; e.preventDefault(); }
+  };
+  window.addEventListener('keydown', e=>setKey(e,true));
+  window.addEventListener('keyup', e=>setKey(e,false));
+
+  const hold=(el,prop)=>{
+    const on=(e)=>{ keys[prop]=true; e.preventDefault(); };
+    const off=(e)=>{ keys[prop]=false; e.preventDefault(); };
+    el.addEventListener('touchstart',on,{passive:false}); el.addEventListener('touchend',off);
+    el.addEventListener('mousedown',on); el.addEventListener('mouseup',off); el.addEventListener('mouseleave',off);
+  };
+  hold($('bl'),'left'); hold($('br'),'right'); hold($('bj'),'jump');
+
+  $('start').addEventListener('click', startGame);
+  $('next').addEventListener('click', nextStage);
+  $('replay').addEventListener('click', startGame);
+
+  // 초기 화면: 타이틀 위에 첫 스테이지 배경을 그려둔다
+  loadStage(0); draw(); show('title');
+})();
+</script>
+</body>
+</html>
