@@ -46,6 +46,7 @@ server/       백엔드 (Node + Express + Socket.io + SQLite)
   schema.sql    테이블 정의
   seed.js       초기 아바타/자료 심기
   auth.js       로그인/비밀번호 API
+  games.js      작품 게임의 점수 기록(랭킹) API
   permissions.js역할별 권한 규칙
   phone.js      핸드폰(문자/투표/설문) 로직
   socket.js     실시간 이벤트 처리(핵심)
@@ -68,6 +69,16 @@ docs/         강의계획서, 구상 문서
 - **아바타 꾸미기**: `public/js/scenes/BootScene.js` 의 아바타 그리는 코드.
 - **새 핸드폰 기능**: `server/phone.js` + `public/js/ui/phone.js`.
 - **교실 작품 전시**: `gallery_works` 테이블 + `ClassroomScene.drawGallery()` (3회차 미니게임 연계).
+- **내 게임에 랭킹 붙이기**: 서버를 고칠 필요 없이 `/api/game/*` 3개를 부르면 된다.
+  `gameKey` 만 자기 게임 이름으로 정하면 작품별로 기록이 따로 쌓인다(예: `soobing-game5`).
+
+  | 부르는 곳 | 하는 일 |
+  | --- | --- |
+  | `POST /api/game/me` | 내가 로그인 사용자인지 게스트인지 알려준다 |
+  | `POST /api/game/score` | 한 판 점수를 저장한다. 로그인 사용자는 **자기 닉네임으로만** 기록되고, 게스트는 `playerName` 을 같이 보내야 한다 |
+  | `GET /api/game/ranking?gameKey=...` | 기록 보기. 로그인 없이 **누구나** 볼 수 있다 |
+
+  랭킹에는 한 사람당 가장 잘한 판 하나만 올라간다. 예시는 `public/works/soobing/game5.html`.
 
 ## ⚠️ 주의(교육용 단순화)
 비밀번호는 **평문·숫자**로 저장된다(친구들끼리 하는 게임이라 일부러 단순화). 실제 서비스에서는 절대 이렇게 하면 안 되고, 비밀번호는 해시(bcrypt 등)로 저장해야 한다.

@@ -102,20 +102,47 @@ export class ClassroomScene extends WorldScene {
   }
 
   // 칠판: 위쪽에 초록 판 + 강의자료 제목들(클릭 시 전체화면).
+  //   자료가 늘어나면 칠판도 같이 커진다. 높이를 고정해두면 자료가 4개째부터
+  //   제목이 칠판 아래로 삐져나온다(실제로 그랬다).
+  //   한 칸에 6개까지 세로로 놓고, 그보다 많아지면 두 번째 열로 넘긴다
+  //   (아래 책상 줄(row 7)을 침범하지 않도록).
   drawBlackboard() {
     if (this._bb) this._bb.forEach((o) => o.destroy());
     this._bb = [];
-    const cx = 11 * TILE, cy = 2 * TILE, w = 18 * TILE, h = 3 * TILE - 8;
+
+    const items = state.blackboard;
+    const PER_COL = 6;                  // 한 열에 놓는 최대 자료 수
+    const LINE = 22;                    // 줄 간격
+    const TOP = 18;                     // 칠판 위쪽(고정) — 여기서 아래로 자란다
+    const rows = Math.min(Math.max(items.length, 1), PER_COL);
+    const cols = Math.max(1, Math.ceil(items.length / PER_COL));
+
+    const w = 19 * TILE;                // 작품 러그(21열) 앞까지 넓게
+    const h = Math.max(3 * TILE - 8, 34 + rows * LINE + 10);
+    const cx = 11 * TILE, cy = TOP + h / 2;
+
     const board = this.add.rectangle(cx, cy, w, h, 0x1b4332).setStrokeStyle(4, 0x7f5539);
     this._bb.push(board);
-    this._bb.push(this.add.text(cx - w / 2 + 12, cy - h / 2 + 6, '📋 칠판 · 강의자료 (제목을 클릭하세요)', { fontSize: '13px', color: '#d8f3dc' }));
 
-    if (state.blackboard.length === 0) {
+    const left = cx - w / 2;
+    this._bb.push(this.add.text(left + 12, TOP + 6, '📋 칠판 · 강의자료 (제목을 클릭하세요)', { fontSize: '13px', color: '#d8f3dc' }));
+
+    if (items.length === 0) {
       this._bb.push(this.add.text(cx, cy + 8, '(아직 게시된 자료가 없습니다)', { fontSize: '12px', color: '#95d5b2' }).setOrigin(0.5));
     }
-    state.blackboard.forEach((m, i) => {
+
+    const colW = (w - 30) / cols;
+    items.forEach((m, i) => {
+      const col = Math.floor(i / PER_COL);
+      const row = i % PER_COL;
       const t = this.add
-        .text(cx - w / 2 + 18, cy - h / 2 + 30 + i * 20, '• ' + m.title, { fontSize: '13px', color: '#ffffff' })
+        .text(left + 18 + col * colW, TOP + 32 + row * LINE, '• ' + m.title, {
+          fontSize: '13px',
+          color: '#ffffff',
+          // 열이 여러 개면 제목이 옆 열을 침범하지 않게 잘라준다
+          wordWrap: { width: colW - 24 },
+          maxLines: 1,
+        })
         .setInteractive({ useHandCursor: true });
       t.on('pointerover', () => t.setColor('#ffe066'));
       t.on('pointerout', () => t.setColor('#ffffff'));
