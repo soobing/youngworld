@@ -1,0 +1,808 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover" />
+<title>수퍼파워 마미 — soobing</title>
+<style>
+  /* ---------------------------------------------------------------
+     고전 아케이드 느낌: 어두운 배경 + 각진 테두리 + 둥근 모서리 없음.
+     --------------------------------------------------------------- */
+  * { box-sizing: border-box; }
+  html, body {
+    margin: 0; padding: 0; width: 100%; height: 100%;
+    background: #07080f;
+    color: #e8e9f3;
+    font-family: 'Apple SD Gothic Neo', 'Malgun Gothic', system-ui, sans-serif;
+    overflow: hidden;
+    -webkit-user-select: none; user-select: none;
+    touch-action: none;
+  }
+
+  /* 화면 정중앙에 놓고 통째로 축소/확대한다.
+     흐름(layout)에서 빼내고 transform 으로만 키우기 때문에,
+     폰처럼 화면이 420px 보다 좁아도 가로로 삐져나가지 않는다. */
+  #wrap {
+    position: absolute; left: 50%; top: 50%;
+    width: 420px; height: 620px;
+    transform-origin: center center;
+  }
+  canvas {
+    display: block;
+    width: 420px; height: 620px;
+    background: #232946;
+    image-rendering: pixelated;
+    border: 4px solid #4a4e69;
+  }
+
+  .screen {
+    position: absolute; inset: 0;
+    display: none; flex-direction: column;
+    padding: 18px 18px;
+    background: rgba(9, 11, 20, 0.88);
+    border: 4px solid #4a4e69;
+    overflow-y: auto;
+  }
+  .screen.on { display: flex; }
+
+  /* ---- 타이틀 ---- */
+  .logo { text-align: center; margin: 6px 0 2px; }
+  .logo .kr {
+    font-size: 35px; font-weight: 900; letter-spacing: -1px; line-height: 1.1;
+    color: #ffd166;
+    text-shadow: 3px 3px 0 #c9440a, 6px 6px 0 #7a2a06;
+  }
+  .logo .en {
+    font-size: 10px; letter-spacing: 4px; color: #6d7398; margin-top: 8px;
+  }
+  .tagline { text-align: center; font-size: 12px; color: #9aa0c0; margin: 10px 0 14px; }
+
+  .howto { display: flex; flex-direction: column; gap: 7px; margin-bottom: 14px; }
+  .how {
+    display: flex; align-items: center; gap: 10px;
+    background: #141827; border-left: 4px solid #343a5c; padding: 8px 10px;
+    font-size: 13px; color: #d8dbf0;
+  }
+  .how .ico { font-size: 20px; width: 24px; text-align: center; }
+  .how b { color: #ffd166; }
+  .how.danger { border-left-color: #ff4d6d; }
+  .how.good { border-left-color: #4dabf7; }
+  .how.rest { border-left-color: #06d6a0; }
+
+  .gradebox { background: #141827; border: 2px solid #343a5c; padding: 9px 10px; margin-bottom: 14px; }
+  .gradebox .cap { font-size: 10px; color: #8a90b4; margin-bottom: 7px; letter-spacing: 1px; }
+  .scorehint { font-size: 12px; line-height: 1.8; color: #d8dbf0; }
+  .scorehint b { color: #06d6a0; }
+
+  .blink { animation: bl 1.4s ease-in-out infinite; }
+  @keyframes bl { 50% { opacity: 0.62; } }
+
+  button {
+    font: inherit; font-size: 15px; font-weight: 800;
+    color: #0b0d17; background: #ffd166;
+    border: none; border-bottom: 4px solid #c9a03f;
+    padding: 13px 14px; cursor: pointer; width: 100%; margin-top: 8px;
+  }
+  button:active { transform: translateY(2px); border-bottom-width: 2px; }
+  button.ghost { background: #3a3f63; color: #e8e9f3; border-bottom-color: #22263f; }
+
+  input[type=text] {
+    font: inherit; font-size: 15px; width: 100%;
+    padding: 11px 12px; margin-top: 6px;
+    background: #171a2b; color: #fff; border: 3px solid #4a4e69;
+  }
+
+  /* ---- 결과 ---- */
+  h2 { font-size: 15px; margin: 0 0 12px; color: #9aa0c0; font-weight: 600; }
+  .bigscore { text-align: center; margin-bottom: 16px; }
+  .bigscore .cap { font-size: 11px; color: #8a90b4; letter-spacing: 2px; }
+  .bigscore .v { font-size: 62px; font-weight: 900; color: #06d6a0; line-height: 1.05; }
+  .stats { display: flex; gap: 7px; margin-bottom: 14px; }
+  .stat { flex: 1; background: #171a2b; border: 2px solid #343a5c; padding: 8px 4px; text-align: center; }
+  .stat .k { font-size: 10px; color: #8a90b4; display: block; }
+  .stat .v { font-size: 19px; font-weight: 800; color: #fff; }
+  .saved { font-size: 12px; text-align: center; color: #06d6a0; min-height: 18px; margin-bottom: 4px; }
+  .saved.warn { color: #ff8fab; }
+  .sub { font-size: 12px; color: #9aa0c0; margin: 0 0 6px; line-height: 1.6; }
+
+  /* ---- 랭킹 ---- */
+  table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  th, td { padding: 8px 5px; text-align: left; border-bottom: 1px solid #2c3151; }
+  th { color: #8a90b4; font-weight: 600; font-size: 11px; }
+  td.n { color: #ffd166; font-weight: 800; width: 32px; }
+  td.s { text-align: right; font-weight: 900; color: #06d6a0; width: 60px; font-size: 15px; }
+  tr.me td { background: #1e2440; }
+  .empty { color: #8a90b4; font-size: 12px; text-align: center; padding: 26px 0; }
+  .grow { flex: 1; }
+</style>
+</head>
+<body>
+<div id="wrap">
+  <canvas id="cv" width="420" height="620"></canvas>
+
+  <!-- 시작 화면 -->
+  <div class="screen on" id="s-title">
+    <div class="logo">
+      <div class="kr">수퍼파워<br />마미</div>
+      <div class="en">S U P E R P O W E R &nbsp; M O M M Y</div>
+    </div>
+    <div class="tagline">3스텝 · 약 50초</div>
+
+    <div class="howto">
+      <div class="how danger"><span class="ico">👶</span><span><b>아기</b>는 꼭 받는다. 놓치면 목숨 한개를 잃는다.</span></div>
+      <div class="how good"><span class="ico">💻</span><span><b>노트북</b>을 받으면 능력치 +20</span></div>
+      <div class="how rest"><span class="ico">🛋️</span><span><b>소파</b>를 받으면 <b>휴식</b>. 느려져서 받기 쉬워진다</span></div>
+    </div>
+
+    <div class="gradebox">
+      <div class="cap">점 수</div>
+      <div class="scorehint">
+        받은 <b>아기 × 30</b> + <b>능력치</b>(노트북 × 20).<br />
+        끝까지 살아남으면 남은 <b>❤️ × 50</b>을 더 받는다.
+      </div>
+    </div>
+
+    <div class="grow"></div>
+    <button id="btn-start" class="blink">▶ 게임 시작</button>
+    <button class="ghost" id="btn-rank-title">🏆 기록 보기</button>
+  </div>
+
+  <!-- 결과 화면 -->
+  <div class="screen" id="s-end">
+    <div class="bigscore"><span class="cap">점 수</span><div class="v" id="end-score">0</div></div>
+    <div class="stats">
+      <div class="stat"><span class="k">육아</span><span class="v" id="end-care">0</span></div>
+      <div class="stat"><span class="k">개발</span><span class="v" id="end-dev">0</span></div>
+      <div class="stat"><span class="k">휴식</span><span class="v" id="end-rest">0</span></div>
+      <div class="stat"><span class="k">❤️</span><span class="v" id="end-life">0</span></div>
+    </div>
+
+    <div id="name-box" style="display:none">
+      <div class="sub">기록에 남길 이름 (최대 12자)</div>
+      <input type="text" id="name-input" maxlength="12" placeholder="이름" />
+      <button id="btn-save">이 이름으로 기록 남기기</button>
+    </div>
+    <div class="saved" id="save-msg"></div>
+
+    <div class="grow"></div>
+    <button class="ghost" id="btn-rank-end">🏆 기록 보기</button>
+    <button id="btn-retry">다시 하기</button>
+  </div>
+
+  <!-- 랭킹 화면 -->
+  <div class="screen" id="s-rank">
+    <h2>🏆 수퍼파워 마미 — 기록</h2>
+    <div id="rank-body"><div class="empty">불러오는 중…</div></div>
+    <div class="grow"></div>
+    <button id="btn-rank-close">닫기</button>
+  </div>
+</div>
+
+<script>
+(function () {
+  'use strict';
+
+  // =================================================================
+  // 0. 설정값
+  // =================================================================
+  var GAME_KEY = 'soobing-game5';
+  var W = 420, H = 620, BORDER = 8; // BORDER = 캔버스 테두리(4px씩 양쪽)
+  var STAGE_MS = 15000;   // 한 스텝 길이 → 3스텝 = 약 50초 (여기만 바꾸면 전체 길이가 바뀐다)
+  var STORY_MS = 1500;    // 스텝이 바뀔 때 보여주는 시간
+  var MAX_LIFE = 5;
+  var CARE_POINT = 30;    // 아기 한 명 = 30점
+  var DEV_POINT = 20;     // 노트북 하나 = 능력치 +20
+  // 끝까지 다 채우면 남은 목숨 하나당 보너스.
+  //   이게 없으면 '아기를 버리고 노트북만 쓸어담다 중간에 죽는' 쪽이 이득이라
+  //   "아기는 꼭 챙긴다"는 이 게임의 규칙이 무의미해진다(실제로 그렇게 나왔다).
+  var FINISH_BONUS = 50;
+
+  // 3스텝. 스텝마다 배경과 떨어지는 비율이 달라진다.
+  var STAGES = [
+    { title: '둘째가 태어났다',   bg: 'home',
+      w: { baby: 4, laptop: 5, sofa: 2 }, base: 1.7, spawn: 900 },
+    { title: '새 집으로 이사했다', bg: 'newhome',
+      w: { baby: 4, laptop: 6, sofa: 2 }, base: 2.3, spawn: 800 },
+    { title: '발리에서 한 달',    bg: 'bali',
+      w: { baby: 3, laptop: 6, sofa: 3 }, base: 3.0, spawn: 700 }
+  ];
+
+  // =================================================================
+  // 1. 캔버스 · 화면 맞추기
+  // =================================================================
+  var cv = document.getElementById('cv');
+  var ctx = cv.getContext('2d');
+  var wrap = document.getElementById('wrap');
+
+  // 화면(또는 자료 뷰어의 iframe)에 통째로 맞춘다. 폰에서도 가로로 넘치지 않는다.
+  function fit() {
+    var s = Math.min(window.innerWidth / (W + BORDER), window.innerHeight / (H + BORDER));
+    s = Math.min(s, 1.4);
+    wrap.style.transform = 'translate(-50%, -50%) scale(' + s + ')';
+  }
+  window.addEventListener('resize', fit);
+  window.addEventListener('orientationchange', fit);
+  fit();
+
+  // =================================================================
+  // 2. 소리(파일 없이 만드는 8비트 효과음)
+  // =================================================================
+  var AC = window.AudioContext || window.webkitAudioContext;
+  var actx = null;
+  function beep(freq, ms, type, vol) {
+    try {
+      if (!actx) actx = new AC();
+      var o = actx.createOscillator(), g = actx.createGain();
+      o.type = type || 'square';
+      o.frequency.value = freq;
+      g.gain.value = vol == null ? 0.05 : vol;
+      o.connect(g); g.connect(actx.destination);
+      o.start();
+      g.gain.exponentialRampToValueAtTime(0.0001, actx.currentTime + ms / 1000);
+      o.stop(actx.currentTime + ms / 1000);
+    } catch (e) { /* 소리는 없어도 게임은 돌아간다 */ }
+  }
+
+  // =================================================================
+  // 3. 상태
+  // =================================================================
+  var G = null;
+  function newGame(mode) {
+    return {
+      mode: mode || 'story',  // 'attract'(시작화면 데모) | 'story' | 'play' | 'done'
+      yi: 0,
+      timer: STORY_MS,
+      spawnIn: 500,
+      pairIn: 3,
+      items: [],
+      pops: [],
+      px: W / 2 - 32,
+      life: MAX_LIFE,
+      care: 0,      // 육아 — 받은 아기 수
+      dev: 0,       // 개발 — 받은 노트북 수 (점수 = dev * DEV_POINT)
+      rest: 0,      // 휴식 — 받은 소파 수
+      slow: 0,      // 소파로 느려진 정도(0 이하). 낙하 속도에 더해진다
+      shake: 0,
+      flash: 0
+    };
+  }
+  function score(g) {
+    var finished = g.life > 0 && g.yi >= STAGES.length - 1 && g.mode === 'done';
+    return g.care * CARE_POINT + g.dev * DEV_POINT + (finished ? g.life * FINISH_BONUS : 0);
+  }
+
+  var PW = 64, PH = 46;
+  var PY = H - 96;
+  var ARM_Y = PY + 16, ARM_H = 16;
+  var SZ = 30;
+
+  // =================================================================
+  // 4. 조작 — 방향키 / A·D / 손가락·마우스
+  //    "마지막에 쓴 것"만 듣는다. 예전엔 마우스가 한 번이라도 움직이면
+  //    포인터 추적이 매 프레임 캐릭터를 끌어당겨서 방향키를 꾹 눌러도
+  //    제자리였다(실제 버그였다).
+  // =================================================================
+  var keyL = false, keyR = false, pointerX = null;
+
+  function isLeft(k) { return k === 'ArrowLeft' || k === 'a' || k === 'A'; }
+  function isRight(k) { return k === 'ArrowRight' || k === 'd' || k === 'D'; }
+
+  window.addEventListener('keydown', function (e) {
+    if (isLeft(e.key)) { keyL = true; pointerX = null; e.preventDefault(); }
+    else if (isRight(e.key)) { keyR = true; pointerX = null; e.preventDefault(); }
+  });
+  window.addEventListener('keyup', function (e) {
+    if (isLeft(e.key)) keyL = false;
+    if (isRight(e.key)) keyR = false;
+  });
+  // 창이 포커스를 잃으면 눌린 키가 계속 눌린 것으로 남는 것을 막는다
+  window.addEventListener('blur', function () { keyL = keyR = false; });
+
+  function movePointer(clientX) {
+    var r = cv.getBoundingClientRect();
+    pointerX = (clientX - r.left) / r.width * W;
+    keyL = keyR = false;
+  }
+  cv.addEventListener('mousemove', function (e) { movePointer(e.clientX); });
+  cv.addEventListener('touchstart', function (e) { movePointer(e.touches[0].clientX); e.preventDefault(); }, { passive: false });
+  cv.addEventListener('touchmove', function (e) { movePointer(e.touches[0].clientX); e.preventDefault(); }, { passive: false });
+
+  // =================================================================
+  // 5. 그리기 — 전부 사각형으로 찍는다(픽셀 아트)
+  // =================================================================
+  function px(x, y, w, h, c) { ctx.fillStyle = c; ctx.fillRect(x | 0, y | 0, w | 0, h | 0); }
+
+  function drawPlayer(x, y) {
+    px(x + 24, y + 2, 16, 13, '#ffd8b1');
+    px(x + 22, y, 20, 5, '#2b2118');
+    px(x + 22, y + 2, 3, 10, '#2b2118');
+    px(x + 39, y + 2, 3, 10, '#2b2118');
+    px(x + 28, y + 8, 3, 3, '#2b2118');
+    px(x + 34, y + 8, 3, 3, '#2b2118');
+    px(x + 20, y + 15, 24, 20, '#e8590c');
+    px(x + 0,  y + 16, 21, 9, '#ffd8b1');
+    px(x + 43, y + 16, 21, 9, '#ffd8b1');
+    // 팔 아래 그림자 — 연노랑 벽지처럼 밝은 배경에서 팔(살구색)이 묻히지 않게.
+    //   팔이 곧 '받는 부위'라 어디에 있는지 항상 보여야 한다.
+    px(x + 0,  y + 25, 21, 3, '#d9a066');
+    px(x + 43, y + 25, 21, 3, '#d9a066');
+    px(x + 23, y + 35, 7, 11, '#2b3a55');
+    px(x + 34, y + 35, 7, 11, '#2b3a55');
+  }
+
+  function drawItem(it) {
+    var x = it.x, y = it.y;
+    if (it.type === 'baby') {
+      px(x + 4, y + 12, 22, 15, '#ff8fab');
+      px(x + 8, y + 3, 14, 11, '#ffd8b1');
+      px(x + 7, y + 1, 16, 4, '#8b5e3c');
+      px(x + 11, y + 8, 2, 2, '#3a2a1a');
+      px(x + 17, y + 8, 2, 2, '#3a2a1a');
+      px(x + 8, y + 17, 14, 3, '#ffb3c6');
+    } else if (it.type === 'laptop') {
+      px(x + 3, y + 5, 24, 16, '#adb5bd');
+      px(x + 5, y + 7, 20, 12, '#1b2a4a');
+      px(x + 7, y + 9, 9, 2, '#4dabf7');
+      px(x + 7, y + 12, 14, 2, '#06d6a0');
+      px(x + 7, y + 15, 6, 2, '#ffd166');
+      px(x + 1, y + 21, 28, 5, '#868e96');
+    } else {
+      px(x + 2, y + 8, 26, 8, '#8b5e3c');
+      px(x + 2, y + 15, 26, 9, '#c98b5b');
+      px(x + 5, y + 17, 8, 5, '#e0a96d');
+      px(x + 17, y + 17, 8, 5, '#e0a96d');
+      px(x + 2, y + 24, 4, 3, '#5e3f26');
+      px(x + 24, y + 24, 4, 3, '#5e3f26');
+    }
+  }
+
+  function drawLives(g) {
+    for (var i = 0; i < MAX_LIFE; i++) {
+      var on = i < g.life, c = on ? '#ff4d6d' : '#39406b';
+      var x = W - 18 - (MAX_LIFE - 1 - i) * 20, y = 12;
+      px(x, y + 2, 5, 5, c); px(x + 10, y + 2, 5, 5, c);
+      px(x, y + 7, 15, 5, c);
+      px(x + 2, y + 12, 11, 3, c);
+      px(x + 5, y + 15, 5, 3, c);
+    }
+  }
+
+  // ---- 배경 5종. 해가 바뀌면 사는 곳이 바뀐다 ----
+  function bgHome() {            // 지금 살던 집
+    px(0, 0, W, H, '#232946');
+    px(30, 120, 110, 90, '#3a4270'); px(36, 126, 98, 78, '#5a7bb5');
+    px(36, 170, 98, 34, '#7fa3d8'); px(80, 126, 6, 78, '#3a4270'); px(36, 160, 98, 5, '#3a4270');
+    px(W - 120, 150, 40, 60, '#2c3358');
+    px(W - 116, 158, 32, 6, '#c98b5b'); px(W - 116, 172, 32, 6, '#7fa3d8'); px(W - 116, 186, 32, 6, '#e8590c');
+    px(0, H - 58, W, 58, '#3b2f2a'); px(0, H - 58, W, 5, '#4d3d35');
+    px(60, H - 40, W - 120, 26, '#5a4038'); px(70, H - 34, W - 140, 14, '#6b4b41');
+  }
+  function bgNewHome() {         // 새 보금자리 — 연노랑 벽지, 아직 안 푼 이사 박스
+    px(0, 0, W, H, '#f5e7b2');                        // 연노랑 벽지
+    px(0, 90, W, 4, '#e3cd85');                       // 몰딩
+
+    // 창문 (왼쪽)
+    px(24, 116, 128, 96, '#c4a86e'); px(30, 122, 116, 84, '#8fb6e8');
+    px(30, 166, 116, 40, '#b3d1f2'); px(84, 122, 6, 84, '#c4a86e');
+    px(30, 160, 116, 5, '#c4a86e');
+
+    // 아직 안 푼 이사 박스 + 화분 (오른쪽).
+    //   소파·TV 도 놓아봤지만 화면이 정신없어져서 뺐다. 배경은 비어 있는 편이
+    //   떨어지는 것들이 잘 보인다.
+    px(268, 150, 40, 48, '#c98b5b'); px(268, 150, 40, 5, '#a06b43'); px(284, 150, 8, 48, '#a06b43');
+    px(312, 172, 24, 26, '#c98b5b'); px(312, 172, 24, 4, '#a06b43');
+    px(356, 140, 20, 54, '#2f7d4f'); px(360, 194, 12, 12, '#8b5e3c');
+
+    px(0, H - 58, W, 58, '#8a6a4a'); px(0, H - 58, W, 5, '#a3805c');  // 마룻바닥
+    px(0, H - 40, W, 3, '#7a5c40'); px(0, H - 20, W, 3, '#7a5c40');
+  }
+  function bgBali() {            // 발리 — 수평선 너머 야자수 섬
+    px(0, 0, W, H, '#5ec5d6');
+    px(0, 0, W, 132, '#7fd8e8');                      // 하늘
+    px(300, 38, 40, 40, '#fff3bf');                   // 해
+    px(0, 132, W, 74, '#1f7f9e');                     // 바다
+    px(0, 132, W, 5, '#2fa3c4'); px(0, 162, W, 4, '#3badcc'); px(0, 186, W, 4, '#3badcc');
+    px(0, 200, W, 12, '#e8d5a3');                     // 저 멀리 모래톱 — 야자수는 여기 서 있다
+    px(0, 200, W, 3, '#f2e4bf');
+    px(62, 156, 8, 46, '#8b5e3c');                    // 왼쪽 야자수
+    px(36, 148, 30, 8, '#2f7d4f'); px(66, 148, 32, 8, '#2f7d4f');
+    px(44, 140, 20, 7, '#3d9c63'); px(70, 140, 20, 7, '#3d9c63');
+    px(330, 164, 7, 38, '#8b5e3c');                   // 오른쪽 야자수
+    px(308, 157, 26, 7, '#2f7d4f'); px(334, 157, 28, 7, '#2f7d4f');
+    px(316, 150, 18, 6, '#3d9c63'); px(336, 150, 18, 6, '#3d9c63');
+    px(0, H - 58, W, 58, '#e8d5a3'); px(0, H - 58, W, 5, '#f2e4bf');  // 내가 선 모래사장
+    px(120, H - 34, 60, 10, '#d8c08a'); px(250, H - 26, 70, 8, '#d8c08a');
+  }
+  // 아래 두 배경(카페·작업실)은 지금 스텝에는 쓰이지 않는다.
+  //   스텝을 다시 늘리고 싶으면 STAGES 에 bg:'cafe' / bg:'studio' 로 한 줄 추가하면 된다.
+  function bgCafe() {            // 카페 — 남편과 노트북을 뚱땅거리던 곳
+    px(0, 0, W, H, '#2e2419');
+    px(0, 0, W, H, '#2e2419');
+    for (var r = 0; r < 6; r++) px(0, 60 + r * 34, W, 3, '#3d3122');   // 벽돌 줄눈
+    px(70, 70, 8, 40, '#5a4a33'); px(60, 108, 28, 20, '#ffd166');      // 매달린 전구
+    px(300, 70, 8, 56, '#5a4a33'); px(290, 124, 28, 20, '#ffd166');
+    px(150, 150, 120, 60, '#4a3c28'); px(156, 156, 108, 48, '#5e4c34');  // 메뉴판
+    px(168, 168, 30, 8, '#c98b5b'); px(212, 168, 40, 8, '#c98b5b');
+    px(168, 186, 60, 6, '#a8794d');
+    px(30, 150, 46, 34, '#4a3c28'); px(36, 156, 34, 22, '#7fa3d8');      // 벽에 걸린 액자
+    px(348, 156, 42, 30, '#4a3c28'); px(354, 162, 30, 18, '#c98b5b');
+    px(96, 250, 34, 8, '#5e4c34'); px(104, 236, 18, 14, '#e8e9f3');      // 선반 위 커피잔
+    px(122, 240, 5, 6, '#e8e9f3');
+    px(290, 250, 40, 8, '#5e4c34'); px(298, 232, 14, 18, '#2f7d4f');     // 작은 화분
+    px(0, H - 58, W, 58, '#4a3826'); px(0, H - 58, W, 5, '#5e4a33');
+    px(0, H - 30, W, 3, '#3d2e1f');
+  }
+  function bgStudio() {          // 2031 내 작업실
+    px(0, 0, W, H, '#1b2a3d');
+    px(0, 96, W, 4, '#24384f');
+    px(40, 130, 70, 50, '#24384f'); px(46, 136, 58, 38, '#4dabf7');    // 모니터
+    px(66, 180, 18, 8, '#24384f'); px(56, 188, 38, 5, '#24384f');
+    px(150, 140, 54, 40, '#2f4a68'); px(156, 146, 42, 28, '#ffd166');  // 포스터
+    px(250, 150, 60, 34, '#24384f'); px(256, 156, 48, 22, '#06d6a0');
+    px(340, 130, 22, 56, '#2f7d4f'); px(344, 186, 14, 14, '#8b5e3c');  // 화분
+    px(0, H - 58, W, 58, '#33465e'); px(0, H - 58, W, 5, '#415872');
+    px(80, H - 40, W - 160, 28, '#2a3b52');
+  }
+  var BGS = { home: bgHome, newhome: bgNewHome, bali: bgBali, cafe: bgCafe, studio: bgStudio };
+  function drawBackground(g) { (BGS[STAGES[g.yi].bg] || bgHome)(); }
+
+  function drawHud(g) {
+    var Y = STAGES[g.yi];
+    px(0, 0, W, 44, 'rgba(9,11,20,0.86)');
+    ctx.textAlign = 'left';
+    ctx.fillStyle = '#ffd166';
+    ctx.font = 'bold 17px system-ui, sans-serif';
+    ctx.fillText((g.yi + 1) + ' / ' + STAGES.length, 12, 28);
+
+    ctx.font = 'bold 13px system-ui, sans-serif';
+    ctx.fillStyle = '#ff8fab';
+    ctx.fillText('육아 ' + g.care, 62, 27);
+    ctx.fillStyle = '#06d6a0';
+    ctx.fillText('능력치 ' + score(g), 130, 27);
+
+    drawLives(g);
+    var ratio = g.mode === 'play' ? Math.max(0, g.timer / STAGE_MS) : 1;
+    px(0, 44, W, 4, '#171a2b');
+    px(0, 44, W * ratio, 4, '#06d6a0');
+  }
+
+  function drawStory(g) {
+    var Y = STAGES[g.yi];
+    ctx.fillStyle = 'rgba(9,11,20,0.86)';
+    ctx.fillRect(0, 0, W, H);
+    ctx.textAlign = 'center';
+    ctx.fillStyle = '#ffd166';
+    ctx.font = 'bold 15px system-ui, sans-serif';
+    ctx.fillText('STEP ' + (g.yi + 1) + ' / ' + STAGES.length, W / 2, H / 2 - 34);
+    ctx.fillStyle = '#ffffff';
+    ctx.font = 'bold 24px system-ui, sans-serif';
+    ctx.fillText(Y.title, W / 2, H / 2 + 6);
+    ctx.textAlign = 'left';
+  }
+
+  // =================================================================
+  // 6. 규칙 — 아기는 목숨, 노트북은 점수, 소파는 속도
+  // =================================================================
+  function pickType(weights) {
+    var total = 0, k;
+    for (k in weights) total += weights[k];
+    var r = Math.random() * total;
+    for (k in weights) { r -= weights[k]; if (r <= 0) return k; }
+    return 'baby';
+  }
+
+  function spawn(g) {
+    var Y = STAGES[g.yi];
+    var t = pickType(Y.w);
+    var x = 14 + Math.random() * (W - 28 - SZ);
+    g.items.push({ x: x, y: -SZ, type: t });
+
+    // 가끔 아기와 노트북이 양쪽 끝에서 동시에 떨어진다(무엇을 포기할지 고르는 순간).
+    g.pairIn--;
+    if (g.pairIn <= 0) {
+      g.pairIn = 4 + (Math.random() * 3 | 0);
+      var other = t === 'baby' ? 'laptop' : 'baby';
+      var farX = x < W / 2 ? W - 30 - SZ : 14;
+      g.items.push({ x: farX, y: -SZ - 10, type: other });
+    }
+  }
+
+  function pop(g, x, y, text, color) {
+    g.pops.push({ x: x, y: y, text: text, color: color, life: 700 });
+  }
+
+  // 낙하 속도: 해가 갈수록 빨라지고, 소파를 받으면 느려진다.
+  //   노트북(능력치)은 속도에 영향을 주지 않는다.
+  function fallSpeed(g) {
+    // 스텝이 올라갈수록 확 빨라지고(base), 한 스텝 안에서도 끝으로 갈수록 조금씩 조여온다.
+    var within = g.mode === 'play' ? (1 - Math.max(0, g.timer) / STAGE_MS) * 0.35 : 0;
+    return Math.max(1.0, Math.min(6.0, STAGES[g.yi].base + within + g.slow)) * 100; // px/초
+  }
+
+  function catchItem(g, it) {
+    if (it.type === 'baby') {
+      g.care++;
+      pop(g, it.x, it.y, '+육아', '#ff8fab');
+      beep(880, 70);
+    } else if (it.type === 'laptop') {
+      g.dev++;
+      pop(g, it.x, it.y, '+' + DEV_POINT, '#06d6a0');
+      beep(1200, 70);
+    } else {
+      g.rest++;
+      g.slow = Math.max(-0.5, g.slow - 0.08); // 느려진다 = 받기 쉬워진다(단계 상승분을 지우지 못하게 한계를 둔다)
+      pop(g, it.x, it.y, '휴식', '#c98b5b');
+      beep(520, 120, 'triangle');
+    }
+  }
+
+  function missItem(g, it) {
+    if (it.type !== 'baby') return; // 노트북·소파는 놓쳐도 아프지 않다
+    g.life--;
+    g.shake = 320;
+    g.flash = 220;
+    beep(150, 260, 'sawtooth', 0.08);
+    if (g.life <= 0) finish(g);
+  }
+
+  function update(g, dt) {
+    // 시작 화면 데모: 아무도 받지 않고 배경으로 떨어지기만 한다
+    if (g.mode === 'attract') {
+      g.spawnIn -= dt;
+      if (g.spawnIn <= 0) { spawn(g); g.spawnIn = 700; }
+      var av = fallSpeed(g) * dt / 1000;
+      for (var a = g.items.length - 1; a >= 0; a--) {
+        g.items[a].y += av;
+        if (g.items[a].y > H) g.items.splice(a, 1);
+      }
+      return;
+    }
+
+    if (g.mode === 'story') {
+      g.timer -= dt;
+      if (g.timer <= 0) { g.mode = 'play'; g.timer = STAGE_MS; g.spawnIn = 500; }
+      return;
+    }
+    if (g.mode !== 'play') return;
+
+    // 이동 — 방향키와 손가락 모두 같은 속도. 마지막에 쓴 쪽만 듣는다.
+    var step = 380 * dt / 1000;
+    if (pointerX != null) {
+      var d = (pointerX - PW / 2) - g.px;
+      g.px += Math.max(-step, Math.min(step, d));
+    }
+    if (keyL) g.px -= step;
+    if (keyR) g.px += step;
+    g.px = Math.max(0, Math.min(W - PW, g.px));
+
+    g.spawnIn -= dt;
+    if (g.spawnIn <= 0) {
+      spawn(g);
+      g.spawnIn = STAGES[g.yi].spawn * (0.75 + Math.random() * 0.5);
+    }
+
+    var v = fallSpeed(g) * dt / 1000;
+    for (var i = g.items.length - 1; i >= 0; i--) {
+      var it = g.items[i];
+      it.y += v;
+      var caught = it.y + SZ >= ARM_Y && it.y <= ARM_Y + ARM_H &&
+                   it.x + SZ > g.px + 2 && it.x < g.px + PW - 2;
+      if (caught) { catchItem(g, it); g.items.splice(i, 1); continue; }
+      if (it.y > H) {
+        missItem(g, it);
+        g.items.splice(i, 1);
+        if (g.mode === 'done') return; // 마지막 목숨이 사라지면 그 자리에서 끝
+      }
+    }
+
+    for (var j = g.pops.length - 1; j >= 0; j--) {
+      g.pops[j].life -= dt;
+      g.pops[j].y -= dt * 0.03;
+      if (g.pops[j].life <= 0) g.pops.splice(j, 1);
+    }
+    if (g.shake > 0) g.shake -= dt;
+    if (g.flash > 0) g.flash -= dt;
+
+    g.timer -= dt;
+    if (g.timer <= 0) {
+      if (g.yi >= STAGES.length - 1) { finish(g); return; }
+      g.yi++;
+      g.mode = 'story';
+      g.timer = STORY_MS;
+      g.items = [];
+      g.life = Math.min(MAX_LIFE, g.life + 1); // 새해엔 힘을 하나 돌려받는다
+      beep(660, 90); setTimeout(function () { beep(990, 140); }, 100);
+    }
+  }
+
+  function render(g) {
+    ctx.save();
+    if (g.shake > 0) ctx.translate((Math.random() - 0.5) * 7, (Math.random() - 0.5) * 7);
+
+    if (g.mode === 'attract') px(0, 0, W, H, '#11142a'); else drawBackground(g);
+    for (var i = 0; i < g.items.length; i++) drawItem(g.items[i]);
+
+    if (g.mode !== 'attract') {
+      drawPlayer(g.px, PY);
+
+      ctx.textAlign = 'center';
+      ctx.font = 'bold 13px system-ui, sans-serif';
+      for (var j = 0; j < g.pops.length; j++) {
+        var p = g.pops[j];
+        ctx.globalAlpha = Math.max(0, p.life / 700);
+        ctx.fillStyle = p.color;
+        ctx.fillText(p.text, p.x + SZ / 2, p.y);
+        ctx.globalAlpha = 1;
+      }
+      ctx.textAlign = 'left';
+
+      if (g.flash > 0) {
+        ctx.fillStyle = 'rgba(255,77,109,' + (g.flash / 220 * 0.28) + ')';
+        ctx.fillRect(0, 0, W, H);
+      }
+      drawHud(g);
+      if (g.mode === 'story') drawStory(g);
+    }
+    ctx.restore();
+  }
+
+  var last = 0;
+  function loop(ts) {
+    if (!last) last = ts;
+    var dt = Math.min(50, ts - last);
+    last = ts;
+    if (G && G.mode !== 'done') { update(G, dt); render(G); }
+    requestAnimationFrame(loop);
+  }
+  G = newGame('attract'); // 시작 화면 뒤로 아이템이 떨어지는 데모
+  requestAnimationFrame(loop);
+
+  // =================================================================
+  // 7. 화면 전환 · 기록
+  // =================================================================
+  var $ = function (id) { return document.getElementById(id); };
+  function show(id) {
+    ['s-title', 's-end', 's-rank'].forEach(function (k) { $(k).classList.toggle('on', k === id); });
+  }
+
+  var me = { needsName: true, nickname: null };
+  var lastResult = null;
+  var savedName = null;
+
+  function token() { try { return localStorage.getItem('yw_token'); } catch (e) { return null; } }
+
+  // 내가 누구인지 서버에 물어본다. 결과 화면에서 이 답을 기다렸다가 이름칸을 띄울지 정한다.
+  //   (기다리지 않으면, 답이 늦게 올 때 로그인한 사람에게도 이름을 물어보게 된다)
+  var meReady = fetch('/api/game/me', {
+    method: 'POST', headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ token: token() })
+  }).then(function (r) { return r.json(); })
+    .then(function (d) { me = d; })
+    .catch(function () { me = { needsName: true, nickname: null }; });
+
+  function start() {
+    G = newGame('story');
+    pointerX = null; keyL = keyR = false;
+    show('');
+    beep(700, 80); setTimeout(function () { beep(1050, 120); }, 90);
+  }
+
+  function finish(g) {
+    g.mode = 'done';
+    var sc = score(g);
+    lastResult = { score: sc, care: g.care, dev: g.dev, rest: g.rest,
+                   life: g.life, stage: g.yi + 1 };
+
+    $('end-score').textContent = sc;
+    $('end-care').textContent = g.care;
+    $('end-dev').textContent = g.dev;
+    $('end-rest').textContent = g.rest;
+    $('end-life').textContent = g.life;
+    $('save-msg').textContent = '';
+    $('save-msg').className = 'saved';
+    render(g);
+    show('s-end');
+    beep(520, 160, 'triangle'); setTimeout(function () { beep(780, 260, 'triangle'); }, 170);
+
+    meReady.then(function () {
+      if (me.needsName) {
+        // 게스트 / 비로그인 → 이름을 받아야 기록이 남는다
+        $('name-box').style.display = 'block';
+        $('name-input').value = savedName || '';
+        $('save-msg').textContent = '이름을 적으면 기록에 남습니다.';
+        $('save-msg').className = 'saved warn';
+      } else {
+        // 로그인 사용자 → 묻지 않고 본인 이름으로 바로 기록
+        $('name-box').style.display = 'none';
+        submit(null);
+      }
+    });
+  }
+
+  function submit(playerName) {
+    if (!lastResult) return;
+    $('save-msg').textContent = '기록하는 중…';
+    $('save-msg').className = 'saved';
+    fetch('/api/game/score', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        gameKey: GAME_KEY, token: token(), playerName: playerName,
+        score: lastResult.score, grade: '', // 등급은 쓰지 않는다. 점수만 남긴다
+        detail: JSON.stringify({ care: lastResult.care, dev: lastResult.dev,
+                                 rest: lastResult.rest, life: lastResult.life, stage: lastResult.stage })
+      })
+    }).then(function (r) { return r.json().then(function (d) { return { ok: r.ok, d: d }; }); })
+      .then(function (res) {
+        if (!res.ok) {
+          $('save-msg').textContent = (res.d && res.d.message) || '기록을 남기지 못했습니다.';
+          $('save-msg').className = 'saved warn';
+          return;
+        }
+        savedName = res.d.playerName;
+        $('name-box').style.display = 'none';
+        $('save-msg').textContent = '✔ ' + res.d.playerName + ' · ' + lastResult.score + '점 · ' +
+          (res.d.rank ? res.d.rank + '등 / ' + res.d.total + '명' : '기록됨');
+        $('save-msg').className = 'saved';
+      })
+      .catch(function () {
+        $('save-msg').textContent = '서버에 연결하지 못했습니다(기록은 저장되지 않음).';
+        $('save-msg').className = 'saved warn';
+      });
+  }
+
+  var rankFrom = 's-title';
+  function openRank(from) {
+    rankFrom = from;
+    show('s-rank');
+    $('rank-body').innerHTML = '<div class="empty">불러오는 중…</div>';
+    fetch('/api/game/ranking?gameKey=' + GAME_KEY + '&limit=20')
+      .then(function (r) { return r.json(); })
+      .then(function (d) { drawRank(d.ranking || []); })
+      .catch(function () { $('rank-body').innerHTML = '<div class="empty">기록을 불러오지 못했습니다.</div>'; });
+  }
+
+  function esc(s) {
+    return String(s).replace(/[&<>"']/g, function (c) {
+      return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
+    });
+  }
+
+  function drawRank(list) {
+    if (!list.length) {
+      $('rank-body').innerHTML = '<div class="empty">아직 아무도 기록을 남기지 않았습니다.<br />첫 번째가 되어보세요!</div>';
+      return;
+    }
+    var myName = savedName || me.nickname;
+    var html = '<table><tr><th></th><th>이름</th><th style="text-align:right">점수</th></tr>';
+    for (var i = 0; i < list.length; i++) {
+      var r = list[i];
+      var medal = i === 0 ? '🥇' : i === 1 ? '🥈' : i === 2 ? '🥉' : (i + 1);
+      var mine = myName && r.player_name === myName ? ' class="me"' : '';
+      html += '<tr' + mine + '><td class="n">' + medal + '</td>' +
+              '<td>' + esc(r.player_name) + (r.avatar_id == null ? ' <span style="color:#6d7398;font-size:10px">게스트</span>' : '') + '</td>' +
+              '<td class="s">' + r.score + '</td></tr>';
+    }
+    $('rank-body').innerHTML = html + '</table>';
+  }
+
+  $('btn-start').addEventListener('click', start);
+  $('btn-retry').addEventListener('click', start);
+  $('btn-rank-title').addEventListener('click', function () { openRank('s-title'); });
+  $('btn-rank-end').addEventListener('click', function () { openRank('s-end'); });
+  $('btn-rank-close').addEventListener('click', function () { show(rankFrom); });
+  $('btn-save').addEventListener('click', function () {
+    var v = $('name-input').value.trim();
+    if (!v) {
+      $('save-msg').textContent = '이름을 적어주세요.';
+      $('save-msg').className = 'saved warn';
+      return;
+    }
+    submit(v);
+  });
+  $('name-input').addEventListener('keydown', function (e) {
+    if (e.key === 'Enter') $('btn-save').click();
+  });
+})();
+</script>
+</body>
+</html>

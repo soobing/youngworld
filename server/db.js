@@ -491,6 +491,54 @@ const Gallery = {
   },
 };
 
+// 작품 게임의 점수 기록(랭킹).
+//   게임마다 gameKey 를 하나씩 쓴다. 학생이 만든 게임도 같은 함수를 그대로 쓸 수 있다.
+const GameScores = {
+  // 기록 한 줄 추가. 로그인 사용자는 avatarId 가 들어오고, 게스트는 null 이다.
+  add({ gameKey, avatarId, playerName, score, grade, detail }) {
+    const info = db
+      .prepare(
+        `INSERT INTO game_scores (game_key, avatar_id, player_name, score, grade, detail)
+         VALUES (?, ?, ?, ?, ?, ?)`
+      )
+      .run(gameKey, avatarId ?? null, playerName, score, grade ?? '', detail ?? null);
+    return info.lastInsertRowid;
+  },
+
+  // 랭킹: "사람 한 명당 가장 잘한 판 하나"만 남겨서 점수 순으로 준다.
+  //   같은 사람이 여러 번 해서 1~5등을 다 차지하면 다른 친구 기록이 안 보이기 때문이다.
+  //   사람 구분 기준: 로그인 사용자는 아바타 id, 게스트는 입력한 이름.
+  ranking(gameKey, limit = 20) {
+    return db
+      .prepare(
+        `SELECT player_name, avatar_id, score, grade, created_at FROM (
+           SELECT *,
+                  ROW_NUMBER() OVER (
+                    PARTITION BY CASE WHEN avatar_id IS NULL THEN 'g:' || player_name
+                                      ELSE 'a:' || avatar_id END
+                    ORDER BY score DESC, created_at ASC
+                  ) AS rn
+             FROM game_scores
+            WHERE game_key = ?
+         )
+         WHERE rn = 1
+         ORDER BY score DESC, created_at ASC
+         LIMIT ?`
+      )
+      .all(gameKey, limit);
+  },
+
+  // 방금 기록한 사람이 전체에서 몇 등인지. (상위 20등 밖이어도 등수는 알려주고 싶다)
+  //   ranking() 과 같은 기준으로 전체를 뽑아 순서를 센다. 수업 규모(수십~수백 건)라 충분히 빠르다.
+  rankOf(gameKey, { avatarId, playerName }) {
+    const all = GameScores.ranking(gameKey, 100000);
+    const idx = all.findIndex((r) =>
+      avatarId != null ? r.avatar_id === avatarId : r.avatar_id === null && r.player_name === playerName
+    );
+    return { rank: idx < 0 ? null : idx + 1, total: all.length };
+  },
+};
+
 // ---------------------------------------------------------------------
 // 캠프파이어 회고 롤링페이퍼
 //   공개 3칸(retro_papers)은 모두가 함께 읽고,
@@ -563,4 +611,4 @@ const Retro = {
   },
 };
 
-module.exports = { db, Avatars, Sessions, Phone, Materials, Gallery, Guides, Retro };
+module.exports = { db, Avatars, Sessions, Phone, Materials, Gallery, Guides, GameScores, Retro };

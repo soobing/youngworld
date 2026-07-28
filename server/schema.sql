@@ -78,6 +78,25 @@ CREATE TABLE IF NOT EXISTS guide_docs (
   created_at  TEXT    NOT NULL DEFAULT (datetime('now'))
 );
 
+-- 학생 작품 게임의 점수 기록(랭킹).
+--   게임 하나당 game_key 하나를 쓴다(예: 'soobing-game5'). 작품마다 랭킹이 따로 쌓인다.
+--   - 로그인한 학생/선생님: avatar_id 가 채워지고 player_name 은 그때의 닉네임.
+--   - 게스트: avatar_id 는 NULL 이고, 게임이 끝난 뒤 직접 입력한 이름이 player_name 에 들어간다.
+--   기록 조회는 로그인 없이 누구나 할 수 있다(읽기 전용 API).
+CREATE TABLE IF NOT EXISTS game_scores (
+  id          INTEGER PRIMARY KEY AUTOINCREMENT,
+  game_key    TEXT    NOT NULL,               -- 어떤 게임의 기록인가(작품별로 구분)
+  avatar_id   INTEGER REFERENCES avatars(id), -- 로그인 사용자면 아바타 id, 게스트면 NULL
+  player_name TEXT    NOT NULL,               -- 화면에 보여줄 이름(닉네임 또는 게스트가 입력한 이름)
+  score       INTEGER NOT NULL,               -- 점수(높을수록 위)
+  grade       TEXT    NOT NULL DEFAULT '',    -- 등급을 쓰는 게임만 채운다(안 쓰면 빈 문자열)
+  detail      TEXT,                           -- 게임이 남기고 싶은 부가 정보(JSON 문자열, 선택)
+  created_at  TEXT    NOT NULL DEFAULT (datetime('now'))
+);
+
+-- 랭킹은 "게임별 + 점수 내림차순"으로만 읽으므로 그 순서로 인덱스를 만든다.
+CREATE INDEX IF NOT EXISTS idx_game_scores_rank ON game_scores (game_key, score DESC);
+
 -- =====================================================================
 -- 캠프파이어 텐트의 "회고 롤링페이퍼"
 --   retro_papers    = 모두가 함께 보는 회고 3칸(좋았던 점/아쉬웠던 점/앞으로)

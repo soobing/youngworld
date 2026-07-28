@@ -12,6 +12,7 @@ const { Server } = require('socket.io');
 const { Sessions } = require('./db'); // DB 열기 + 스키마 생성(첫 실행 시 테이블 만듦)
 const { ensureSeed } = require('./seed');
 const { mountAuthRoutes } = require('./auth');
+const { mountGameRoutes } = require('./games');
 const { setup: setupSockets } = require('./socket');
 
 // 첫 실행이면 초기 아바타 7명 + 맵/강의자료를 넣는다(이미 있으면 무시).
@@ -25,6 +26,9 @@ app.use(express.json());
 
 // 로그인/비밀번호 HTTP API (/api/...)
 mountAuthRoutes(app);
+
+// 작품 게임의 점수 기록/랭킹 API (/api/game/...)
+mountGameRoutes(app);
 
 // 정적 파일: public/ 을 웹 루트로.
 app.use(express.static(path.join(__dirname, '..', 'public')));

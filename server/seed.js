@@ -80,6 +80,19 @@ function ensureSeed() {
     });
   }
 
+  // 3회차 「5년 뒤 나의 미래」 실습 안내서: 없을 때만 칠판에 추가(멱등).
+  //   게임 형태를 알려주는 문서가 아니라, 무엇을 먼저 정해야 하는지(단계 수·규칙·밸런스)와
+  //   랭킹·전시가 어떻게 붙는지를 설명하는 문서다. 만드는 것은 game5-future 서브에이전트가 돕는다.
+  const GAME5_URL = '/lectures/session3-game5.html';
+  if (!Materials.all().some((m) => m.url === GAME5_URL)) {
+    Materials.create({
+      title: '「5년 뒤 나의 미래」 게임 만들기',
+      url: GAME5_URL,
+      sessionNo: 3,
+      slot: 3,
+    });
+  }
+
   // 선생님(soobing) 자기소개를 작품 갤러리 '자기소개' 칸(slot 0)에 건다(멱등).
   //   학생들에게 보여줄 모범 예시. 파일은 /works/soobing/intro.html (public 정적 서빙).
   const soobing = Avatars.byNickname('soobing');
@@ -92,6 +105,20 @@ function ensureSeed() {
         slot: 0, // WORK_CATEGORIES[0] = intro(자기소개)
         url: introUrl,
         title: 'soobing 선생님의 자기소개',
+      });
+    }
+
+    // 선생님 「5년 뒤 나의 미래(게임)」 → slot 2 (멱등).
+    //   game5.html 은 자체 완결형 HTML 게임이라 따로 빌드할 게 없다.
+    //   점수 기록은 server/games.js 의 /api/game/* 로 저장된다(gameKey: 'soobing-game5').
+    const game5Url = '/works/soobing/game5.html';
+    const hasGame5 = Gallery.all().some((w) => w.author_id === soobing.id && w.url === game5Url);
+    if (!hasGame5 && publicFileExists(game5Url)) {
+      Gallery.setWork({
+        authorId: soobing.id,
+        slot: 2, // WORK_CATEGORIES[2] = game5(5년 뒤 나의 미래·게임)
+        url: game5Url,
+        title: 'soobing 선생님의 수퍼파워 마미',
       });
     }
 
