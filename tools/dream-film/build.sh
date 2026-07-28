@@ -131,6 +131,15 @@ done
 TMP="$(mktemp -d)"
 trap 'rm -rf "$TMP"' EXIT
 
+# drawtext 의 textfile 은 필터 문자열 안이라, 네이티브 Windows ffmpeg 에는
+# POSIX 경로(/tmp/..)도 Git Bash 자동 경로변환도 통하지 않는다. Windows 형(mixed)
+# 으로 바꾸고 드라이브 문자 뒤 콜론을 백슬래시로 이스케이프한다(C\:/..). 다른 OS 는 그대로.
+TMP_FF="$TMP"
+if command -v cygpath >/dev/null 2>&1; then
+  _m=$(cygpath -m "$TMP")            # 예) C:/Users/.../tmp.xxxx
+  TMP_FF="${_m:0:1}"'\:'"${_m:2}"    # C + \: + 나머지 = C\:/Users/.../tmp.xxxx
+fi
+
 # 한글 자막을 그리려면 한글 폰트가 필요하다. 없으면 자막만 빼고 계속 간다.
 FONT=""
 if command -v fc-list >/dev/null 2>&1 && fc-list : family 2>/dev/null | grep -qi "Apple SD Gothic Neo"; then
@@ -139,6 +148,10 @@ elif [ -f /System/Library/Fonts/AppleSDGothicNeo.ttc ]; then
   FONT="fontfile='/System/Library/Fonts/AppleSDGothicNeo.ttc'"
 elif [ -f /System/Library/Fonts/Supplemental/AppleGothic.ttf ]; then
   FONT="fontfile='/System/Library/Fonts/Supplemental/AppleGothic.ttf'"
+elif [ -f /c/Windows/Fonts/malgun.ttf ]; then
+  # Windows(Git Bash). 네이티브 ffmpeg 이라 drawtext 에는 Windows 경로를 주되
+  # C: 의 콜론을 이스케이프해야 필터 파서가 오해하지 않는다: C\:/Windows/...
+  FONT="fontfile='C\:/Windows/Fonts/malgun.ttf'"
 fi
 
 # ---------------------------------------------------------------- 입력 인자
@@ -239,7 +252,7 @@ if [ -n "$FONT" ] && [ -f "$CAPTIONS" ]; then
     else
       EN=$(awk "BEGIN{printf \"%.2f\", ($ci-1)*$HOLD+$HOLD}")
     fi
-    FG="$FG[$LAST]drawtext=$FONT:textfile='$TMP/cap$ci.txt':"
+    FG="$FG[$LAST]drawtext=$FONT:textfile='$TMP_FF/cap$ci.txt':"
     FG="${FG}fontcolor=white:fontsize=$FS:line_spacing=10:"
     FG="${FG}box=1:boxcolor=0x1b2f57@0.55:boxborderw=$CAP_PAD:"   # intro.html 의 남색 --accent2
     FG="${FG}x=(w-tw)/2:y=$CAP_Y:fix_bounds=1:"
