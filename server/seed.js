@@ -172,6 +172,25 @@ function ensureSeed() {
     }
   }
 
+  // 학생 「5년 뒤 나의 미래(게임)」 작품을 '5년 뒤 나의 미래' 칸(slot 2)에 건다(멱등).
+  //   game5.html 은 자체 완결형 HTML 게임(별도 빌드 없음). 파일이 저장소에 있어야 등록된다.
+  //   - 그 닉네임의 아바타가 없으면 조용히 건너뛴다. 이미 slot 2 가 차 있으면 건드리지 않는다.
+  const STUDENT_GAMES = [
+    { nickname: '최승찬', slug: 'seungchan', title: '최승찬의 5년 뒤 나의 미래' },
+  ];
+  for (const s of STUDENT_GAMES) {
+    const who = Avatars.byNickname(s.nickname);
+    if (!who) continue;
+    if (Gallery.all().some((w) => w.author_id === who.id && w.slot === 2)) continue;
+    if (!publicFileExists(`/works/${s.slug}/game5.html`)) continue;
+    Gallery.setWork({
+      authorId: who.id,
+      slot: 2, // WORK_CATEGORIES[2] = game5(5년 뒤 나의 미래·게임)
+      url: `/works/${s.slug}/game5.html`,
+      title: s.title,
+    });
+  }
+
   // 교실 책장 기본 문서(How-to). 처음 한 번만.
   if (Guides.all().length === 0) {
     Guides.create({ title: 'GitHub 가입하는 법', url: '/guides/github-signup.html', slot: 0 });
