@@ -197,16 +197,15 @@ function ensureSeed() {
     Guides.create({ title: 'GitHub 가입하는 법', url: '/guides/github-signup.html', slot: 0 });
   }
 
-  // 정리: 더 이상 쓰지 않는 'Claude 가입하는 법' 문서를 책장에서 제거(있으면).
-  // 이미 시드된 기존 DB(운영 포함)에서도 서버가 켜질 때 한 번 지운다. 멱등.
+  // 정리: 더 이상 책장에 두지 않는 문서들. 이미 시드된 기존 DB(운영 포함)에서도
+  // 서버가 켜질 때 한 번 지운다. 멱등.
+  //   - claude-signup   : 쓰지 않게 된 가입 안내
+  //   - dev-basics      : 한 문서에 주제가 너무 많아 주제별로 쪼갬. 아래 세 문서로 대체.
+  //                       '개발자는 어떻게 함께 일할까?' + 'AI로 코딩하기' + 'Youngworld 아키텍처'
+  //                       파일 자체는 남겨둔다 — 예전 링크로 열면 그대로 보이게.
+  const RETIRED_GUIDES = ['/guides/claude-signup.html', '/guides/dev-basics.html'];
   for (const g of Guides.all()) {
-    if (g.url === '/guides/claude-signup.html') Guides.deleteById(g.id);
-  }
-
-  // 개발 지식 자료: 없을 때만 책장에 추가(멱등). 기존 DB(운영 포함)에도 재시작 시 걸린다.
-  const DEV_BASICS_URL = '/guides/dev-basics.html';
-  if (!Guides.all().some((g) => g.url === DEV_BASICS_URL)) {
-    Guides.create({ title: '처음 만나는 개발 지식', url: DEV_BASICS_URL, slot: 1 });
+    if (RETIRED_GUIDES.includes(g.url)) Guides.deleteById(g.id);
   }
 
   // Windows에 Claude Code 설치 가이드(WSL 없이). 없을 때만 책장에 추가(멱등).
@@ -222,10 +221,24 @@ function ensureSeed() {
     Guides.create({ title: '그림 5장이 영상이 되기까지', url: HOW_VIDEO_URL, slot: 3 });
   }
 
-  // 협업 실전편(브랜치 → PR → 코드리뷰 + worktree/resume). 단독으로 읽어도 완결되게 썼다.
+  // ── '처음 만나는 개발 지식'을 주제별로 쪼갠 문서 셋. 읽는 순서대로 slot 을 준다.
+  //   협업 편 : 브랜치 → PR → 코드리뷰 (개발자들이 함께 일하는 방법)
+  //   AI 편   : 채팅 vs 에이전트 · 서브에이전트 · resume · worktree (도구 쓰는 법)
+  //   구조 편 : 프론트/백엔드 · 소켓 · 빌드 · 배포 · DNS · HTTPS (우리 게임의 속)
+  //   협업 편은 Claude Code 활용법을 AI 편으로 넘겼으니 둘은 짝으로 읽힌다.
   const TEAM_URL = '/guides/team-workflow.html';
   if (!Guides.all().some((g) => g.url === TEAM_URL)) {
     Guides.create({ title: '개발자는 어떻게 함께 일할까?', url: TEAM_URL, slot: 4 });
+  }
+
+  const AI_CODING_URL = '/guides/ai-coding.html';
+  if (!Guides.all().some((g) => g.url === AI_CODING_URL)) {
+    Guides.create({ title: 'AI로 코딩하기', url: AI_CODING_URL, slot: 5 });
+  }
+
+  const ARCHITECTURE_URL = '/guides/youngworld-architecture.html';
+  if (!Guides.all().some((g) => g.url === ARCHITECTURE_URL)) {
+    Guides.create({ title: 'Youngworld 아키텍처', url: ARCHITECTURE_URL, slot: 6 });
   }
 
   if (already === 0) {
