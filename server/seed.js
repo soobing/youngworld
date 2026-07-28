@@ -139,6 +139,7 @@ function ensureSeed() {
   //   - 이미 slot 1 이 차 있으면 건드리지 않는다(관리센터에서 손수 바꾼 것을 덮어쓰지 않도록).
   const STUDENT_DREAMS = [
     // 예) { nickname: '박효진', slug: 'park', title: '박효진의 나의 꿈은' },
+    { nickname: '최승찬', slug: 'seungchan', title: '최승찬의 나의 꿈은' },
     { nickname: '안해찬', slug: 'ahn', title: '안해찬의 나의 꿈은' },
   ];
   for (const s of STUDENT_DREAMS) {
@@ -152,6 +153,22 @@ function ensureSeed() {
       url: `/works/${s.slug}/dream.html`,
       title: s.title,
     });
+  }
+
+  // 학생 김은준 자기소개를 작품 갤러리 '자기소개' 칸(slot 0)에 건다(멱등).
+  //   파일은 /works/eunjun/intro.html (public 정적 서빙). 프로덕션 DB 에도 재시작 시 걸린다.
+  const eunjun = Avatars.byNickname('김은준');
+  if (eunjun) {
+    const eunjunIntroUrl = '/works/eunjun/intro.html';
+    const hasEunjun = Gallery.all().some((w) => w.author_id === eunjun.id && w.url === eunjunIntroUrl);
+    if (!hasEunjun) {
+      Gallery.setWork({
+        authorId: eunjun.id,
+        slot: 0, // WORK_CATEGORIES[0] = intro(자기소개)
+        url: eunjunIntroUrl,
+        title: '김은준의 자기소개',
+      });
+    }
   }
 
   // 교실 책장 기본 문서(How-to). 처음 한 번만.
