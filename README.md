@@ -20,6 +20,10 @@ npm start       # 서버 시작 → http://localhost:3000
 - **이동**: 방향키 또는 WASD
 - **학교 입장**: 왼쪽 위 학교(🏫) 문을 밟으면 교실로 들어간다. 교실 아래 문으로 나온다.
 - **칠판**: 교실 앞 칠판의 자료 제목을 클릭 → 강의자료가 크게 열림(Esc로 닫기)
+- **캠프파이어 텐트(회고)**: 청소년수련관 오른쪽 텐트(⛺) 입구를 밟거나 클릭하면 텐트 안으로 들어간다.
+  좁은 텐트 안 모닥불 위에 📜 가 깜빡이고, 누르면 **회고 롤링페이퍼**가 열린다.
+  좋았던 점 · 아쉬웠던 점 · 앞으로 하고 싶은 것은 모두가 함께 읽고,
+  **친구별 한마디는 받는 사람만** 볼 수 있다(선생님도 못 봄).
 - 오른쪽 아래 버튼: 📱 핸드폰(학생) · 🛠️ 관리(선생님) · 🔒 비번변경
 
 ## 수업 날 다른 노트북에서 접속하기 (LAN)
@@ -57,8 +61,8 @@ public/       프론트엔드 (브라우저에서 그대로 실행, 빌드 없�
     main.js       시작점(로그인→게임)
     net.js        서버 통신
     state.js      공유 상태
-    scenes/       Phaser 씬 (Boot / World / Island / Classroom)
-    ui/           HTML UI (login / phone / admin / ppt)
+    scenes/       Phaser 씬 (Boot / World / Island / Classroom / Campfire)
+    ui/           HTML UI (login / phone / admin / ppt / retro)
   lectures/     칠판에 거는 강의자료(HTML)
 docs/         강의계획서, 구상 문서
 ```

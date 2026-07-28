@@ -67,6 +67,7 @@ export function connect(token, onReady) {
     'player:renamed', 'player:recolored', 'me:updated', 'peer:sent',
     'survey:mine', 'survey:changed',
     'mission:mine', 'mission:received', 'mission:changed', 'mission:remind',
+    'retro:data', 'retro:saved', 'retro:changed', 'retro:whisper',
     'blackboard:update', 'gallery:update', 'guides:update', 'admin:done', 'error',
   ];
   passthrough.forEach((ev) => socket.on(ev, (d) => emitLocal(ev, d)));

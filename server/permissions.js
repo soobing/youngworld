@@ -22,6 +22,9 @@ const RULES = {
     'survey:view',
     'mission:complete',
     'mission:view',
+    // 캠프파이어 회고 롤링페이퍼(읽기/쓰기)
+    'retro:view',
+    'retro:write',
   ]),
   guest: new Set([
     // 게스트는 돌아다니며 관람만 가능. 핸드폰/생성/admin 전부 불가.

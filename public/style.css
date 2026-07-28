@@ -910,3 +910,170 @@ select.pix-input { padding: 6px 8px; font-size: 12px; margin-top: 5px; }
   #intro-screen .intro-sub, #intro-screen .intro-prompt { animation: none; opacity: 1; }
   #intro-screen .intro-emojis .ie1, #intro-screen .intro-emojis .ie2, #intro-screen .intro-stars { animation: none; }
 }
+
+/* =====================================================================
+   캠프파이어 회고 롤링페이퍼(#retro-panel)
+   창 자체를 "책상 위에 놓인 종이 한 장"처럼 보이게 한다.
+   줄노트 무늬 + 왼쪽 빨간 여백선 + 위쪽 마스킹테이프 두 조각.
+   ===================================================================== */
+#retro-panel { z-index: 120; background: rgba(30,12,6,.62); }
+
+.retro-sheet {
+  position: relative;
+  width: 580px; max-width: 100%;
+  max-height: calc(100vh - 32px);
+  display: flex; flex-direction: column;
+  color: #4a3418;
+  /* 줄노트(가로줄) + 살짝 누런 종이 */
+  background:
+    repeating-linear-gradient(0deg, transparent 0 27px, rgba(150,115,70,.18) 27px 28px),
+    linear-gradient(160deg, #fffdf3 0%, #fdf6e4 55%, #f6ead0 100%);
+  box-shadow:
+    0 0 0 2px #e3d3ae,
+    18px 18px 0 -6px rgba(43,20,10,.22),
+    0 18px 40px rgba(0,0,0,.45);
+}
+/* 왼쪽 여백선(공책처럼) */
+.retro-sheet::before {
+  content: ""; position: absolute; top: 0; bottom: 0; left: 26px;
+  width: 2px; background: rgba(224,90,60,.45); pointer-events: none;
+}
+/* 위쪽 마스킹테이프 두 조각 */
+.retro-tape {
+  position: absolute; top: -13px; width: 92px; height: 26px;
+  background: rgba(255,224,138,.72);
+  box-shadow: inset 0 0 0 1px rgba(255,255,255,.5);
+}
+.retro-tape-l { left: 26px; transform: rotate(-3.5deg); }
+.retro-tape-r { right: 26px; transform: rotate(3deg); }
+
+.retro-x {
+  position: absolute; top: 10px; right: 10px; z-index: 2;
+  background: #c0392b; color: #fff; font-weight: 900; font-size: 13px;
+  padding: 5px 10px; border: 0; cursor: pointer;
+  box-shadow: 0 0 0 2px #4a1c12, inset 2px 2px 0 0 #f08a5d, inset -2px -2px 0 0 #8e2318;
+}
+.retro-x:active { transform: translate(1px,1px); }
+
+/* ---- 머리말 + 탭 ---- */
+.retro-head { padding: 20px 22px 0 40px; }
+.retro-title {
+  margin: 0; font-size: 21px; font-weight: 900; color: #a8341c;
+  text-shadow: 1px 1px 0 rgba(255,255,255,.7);
+}
+.retro-sub { margin: 5px 0 0; font-size: 12px; font-weight: 700; color: #97795a; }
+.retro-tabs { display: flex; flex-wrap: wrap; gap: 6px; margin: 14px 0 0; }
+.retro-tab {
+  position: relative;
+  background: #f3e4c4; color: #6b4f2a; font-weight: 900; font-size: 12px;
+  padding: 8px 12px; border: 0; cursor: pointer;
+  box-shadow: 0 0 0 2px #c9a978;
+}
+.retro-tab:hover { background: #fff7e6; }
+.retro-tab.selected { background: #c0392b; color: #fff3e0; box-shadow: 0 0 0 2px #6b1f12; }
+.retro-badge {
+  display: inline-block; margin-left: 6px; padding: 0 6px;
+  background: #e8590c; color: #fff; font-size: 11px; border-radius: 9px;
+}
+.retro-tab.selected .retro-badge { background: #ffe066; color: #6b1f12; }
+
+/* ---- 본문(스크롤) ---- */
+.retro-body { flex: 1; overflow-y: auto; padding: 16px 22px 22px 40px; }
+.retro-pane { display: block; }
+
+.retro-guide {
+  margin: 0 0 16px; padding: 10px 12px; font-size: 12.5px; line-height: 1.65;
+  color: #6b4f2a; background: rgba(255,236,196,.75);
+  box-shadow: 0 0 0 2px #e0c893;
+}
+.retro-guide b { color: #a8341c; }
+
+/* ---- 입력 블록 ---- */
+.retro-block { margin-bottom: 22px; }
+.retro-label {
+  display: flex; align-items: center; gap: 7px; flex-wrap: wrap;
+  font-size: 15px; font-weight: 900; color: #4a3418;
+}
+.retro-ic { font-size: 17px; }
+.retro-hint { margin: 5px 0 8px; font-size: 11.5px; line-height: 1.7; color: #97795a; font-weight: 600; }
+.retro-hint b { color: #a8341c; }
+.retro-hint-min { margin-top: -2px; }
+
+.retro-input {
+  display: block; width: 100%; resize: vertical;
+  padding: 10px 11px; font-size: 13.5px; line-height: 1.6; color: #3a2a12;
+  font-family: inherit;
+  background: rgba(255,255,255,.72);
+  border: 0; box-shadow: 0 0 0 2px #d7bd8e;
+}
+.retro-input::placeholder { color: #b9a385; }
+.retro-input:focus { outline: none; background: #fff; box-shadow: 0 0 0 3px #e2603a; }
+.retro-input-sm { font-size: 13px; }
+.retro-count { display: block; margin-top: 4px; text-align: right; font-size: 11px; color: #b09873; font-weight: 700; }
+
+/* ---- 비밀(친구별) 구역 ---- */
+.retro-secret {
+  padding: 14px 14px 6px; margin-top: 26px;
+  background: rgba(255,243,224,.7);
+  box-shadow: 0 0 0 2px #e2603a, inset 0 0 0 2px rgba(255,255,255,.6);
+}
+.retro-lock {
+  font-size: 11px; font-weight: 900; color: #fff; background: #c0392b;
+  padding: 2px 8px; box-shadow: 0 0 0 2px #6b1f12;
+}
+.retro-private-note {
+  margin: 8px 0 10px; padding: 9px 11px; font-size: 12px; line-height: 1.7;
+  color: #6b1f12; background: #ffe3d1; box-shadow: 0 0 0 2px #f0a68a;
+}
+.retro-private-note b { color: #a8341c; }
+
+.retro-person { margin-bottom: 12px; }
+.retro-person-head { display: flex; align-items: center; gap: 7px; flex-wrap: wrap; margin-bottom: 5px; }
+.retro-person-name { font-size: 13px; font-weight: 900; color: #4a3418; }
+.retro-person-lock { font-size: 10.5px; font-weight: 800; color: #a8341c; }
+.retro-dot { width: 13px; height: 13px; flex: 0 0 auto; box-shadow: 0 0 0 2px #4a3418; border-radius: 50%; }
+
+/* ---- 저장 영역 ---- */
+.retro-actions { margin-top: 22px; padding-top: 16px; border-top: 2px dashed #d8b98a; }
+.retro-checklist { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 12px; }
+.retro-chip {
+  font-size: 11.5px; font-weight: 800; padding: 4px 9px;
+  color: #97795a; background: #f3e9d4; box-shadow: 0 0 0 2px #ddc9a2;
+}
+.retro-chip.done { color: #1f7a3a; background: #d8f5d8; box-shadow: 0 0 0 2px #7fc98a; }
+.retro-btn {
+  display: block; width: 100%; padding: 13px; cursor: pointer; border: 0;
+  font-family: inherit; font-size: 15px; font-weight: 900; color: #fff3e0;
+  background: #c0392b;
+  box-shadow: 0 0 0 3px #6b1f12, inset 3px 3px 0 0 #f08a5d, inset -3px -3px 0 0 #8e2318;
+}
+.retro-btn:hover { background: #d9452f; }
+.retro-btn:active { transform: translate(2px,2px); box-shadow: 0 0 0 3px #6b1f12; }
+.retro-line { min-height: 18px; margin: 10px 0 0; font-size: 12.5px; font-weight: 900; text-align: center; }
+.retro-line.ok { color: #1f7a3a; }
+.retro-line.err { color: #c92a2a; }
+
+/* ---- 읽기: 모두의 회고 / 나에게 온 편지 ---- */
+.retro-empty { margin: 26px 0; text-align: center; font-size: 13px; font-weight: 800; color: #a68b64; }
+.retro-card, .retro-letter {
+  margin-bottom: 14px; padding: 13px 14px;
+  background: rgba(255,255,255,.72);
+  box-shadow: 0 0 0 2px #ddc9a2, 5px 5px 0 -1px rgba(43,20,10,.1);
+}
+.retro-letter { background: #fff4e6; box-shadow: 0 0 0 2px #f0a68a, 5px 5px 0 -1px rgba(120,30,10,.12); }
+.retro-card-head { display: flex; align-items: center; gap: 7px; margin-bottom: 9px; font-size: 13.5px; color: #4a3418; }
+.retro-metag { font-size: 10.5px; font-weight: 900; color: #fff; background: #e2603a; padding: 1px 7px; }
+.retro-sec { margin-top: 9px; }
+.retro-sec-t { font-size: 12px; font-weight: 900; color: #a8341c; margin-bottom: 3px; }
+.retro-sec-b { margin: 0; font-size: 13px; line-height: 1.65; color: #3a2a12; white-space: pre-wrap; word-break: break-word; }
+.retro-letter-b { margin: 0; font-size: 13.5px; line-height: 1.75; color: #52210f; white-space: pre-wrap; word-break: break-word; }
+
+@media (max-width: 520px) {
+  .retro-head { padding: 18px 16px 0 32px; }
+  .retro-body { padding: 14px 16px 18px 32px; }
+  .retro-title { font-size: 18px; }
+  .retro-tab { font-size: 11px; padding: 7px 9px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .retro-tape { transform: none; }
+}

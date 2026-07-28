@@ -89,13 +89,40 @@ CREATE TABLE IF NOT EXISTS game_scores (
   avatar_id   INTEGER REFERENCES avatars(id), -- 로그인 사용자면 아바타 id, 게스트면 NULL
   player_name TEXT    NOT NULL,               -- 화면에 보여줄 이름(닉네임 또는 게스트가 입력한 이름)
   score       INTEGER NOT NULL,               -- 점수(높을수록 위)
-  grade       TEXT    NOT NULL DEFAULT '',    -- 등급 이름(예: '두 개를 다 든 사람')
+  grade       TEXT    NOT NULL DEFAULT '',    -- 등급을 쓰는 게임만 채운다(안 쓰면 빈 문자열)
   detail      TEXT,                           -- 게임이 남기고 싶은 부가 정보(JSON 문자열, 선택)
   created_at  TEXT    NOT NULL DEFAULT (datetime('now'))
 );
 
 -- 랭킹은 "게임별 + 점수 내림차순"으로만 읽으므로 그 순서로 인덱스를 만든다.
 CREATE INDEX IF NOT EXISTS idx_game_scores_rank ON game_scores (game_key, score DESC);
+
+-- =====================================================================
+-- 캠프파이어 텐트의 "회고 롤링페이퍼"
+--   retro_papers    = 모두가 함께 보는 회고 3칸(좋았던 점/아쉬웠던 점/앞으로)
+--   retro_feedbacks = 친구 한 명에게 남기는 "비밀" 한마디(받는 사람만 볼 수 있음)
+-- 한 사람이 여러 번 고쳐 쓸 수 있게 UNIQUE 로 한 장(한 통)만 유지한다.
+-- =====================================================================
+CREATE TABLE IF NOT EXISTS retro_papers (
+  id         INTEGER PRIMARY KEY AUTOINCREMENT,
+  author_id  INTEGER NOT NULL UNIQUE REFERENCES avatars(id),
+  good       TEXT    NOT NULL,                 -- 좋았던 점
+  bad        TEXT    NOT NULL,                 -- 아쉬웠던 점
+  next_step  TEXT    NOT NULL,                 -- 앞으로 하고 싶은 것
+  created_at TEXT    NOT NULL DEFAULT (datetime('now')),
+  updated_at TEXT    NOT NULL DEFAULT (datetime('now'))
+);
+
+-- 개인별 비밀 피드백. 서버는 "받는 사람(to_id)" 과 "쓴 사람 본인(from_id)" 에게만 보낸다.
+CREATE TABLE IF NOT EXISTS retro_feedbacks (
+  id         INTEGER PRIMARY KEY AUTOINCREMENT,
+  from_id    INTEGER NOT NULL REFERENCES avatars(id),
+  to_id      INTEGER NOT NULL REFERENCES avatars(id),
+  body       TEXT    NOT NULL,
+  created_at TEXT    NOT NULL DEFAULT (datetime('now')),
+  updated_at TEXT    NOT NULL DEFAULT (datetime('now')),
+  UNIQUE(from_id, to_id)
+);
 
 -- 교실 뒷벽 전시(학생 작품 갤러리). 3회차 미니게임 등을 여기에 건다.
 CREATE TABLE IF NOT EXISTS gallery_works (

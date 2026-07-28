@@ -54,6 +54,11 @@ const TREES = [
   [7,18],[9,19],[20,18],[22,19],
 ];
 
+// 청소년수련관 오른쪽 캠프파이어 텐트.
+//   cx = 가운데 x, baseY = 바닥(아랫변) y, apexY = 꼭대기 y, halfW = 아랫변 반폭.
+//   입구는 아랫변 가운데. 밟거나 클릭하면 텐트 안(CampfireScene)으로 들어간다.
+const TENT = { cx: 21 * TILE, baseY: 6 * TILE, apexY: 4 * TILE - 8, halfW: 40 };
+
 export class IslandScene extends WorldScene {
   constructor() {
     super('IslandScene');
@@ -118,14 +123,23 @@ export class IslandScene extends WorldScene {
     }
     this.drawGrid(grid, TILES);
 
-    // 교실에서 나왔을 땐 학교 문 아래에서 시작.
-    if (this.transition) this.spawn = { x: 5 * TILE + TILE / 2, y: 7 * TILE + TILE / 2 };
+    // 실내에서 나왔을 땐 그 문 앞에서 시작(교실=학교 문 아래 / 텐트=텐트 입구 앞).
+    if (this.transition) {
+      this.spawn = this.fromScene === 'campfire'
+        ? { x: TENT.cx, y: TENT.baseY + 26 }
+        : { x: 5 * TILE + TILE / 2, y: 7 * TILE + TILE / 2 };
+    }
 
     this.decorate(treeSet, grid);
 
     // 학교 문 → 교실 입장(문 1칸).
     this.makeDoor(5 * TILE + TILE / 2, 5 * TILE + TILE / 2, TILE, TILE, () => {
       this.scene.start('ClassroomScene', { transition: true });
+    });
+
+    // 텐트 입구 → 캠프파이어(회고) 입장.
+    this.makeDoor(TENT.cx, TENT.baseY - 10, 46, 26, () => {
+      this.scene.start('CampfireScene', { transition: true });
     });
   }
 
@@ -182,6 +196,9 @@ export class IslandScene extends WorldScene {
     // 학교 건물(3x2, 행 4~5 에 맞춤).
     this.drawSchool(4 * TILE, 4 * TILE, 3 * TILE, 2 * TILE);
 
+    // 봉래산 앞 꽃밭 옆: 캠프파이어 텐트(회고하는 곳) + 텐트 앞 모닥불.
+    this.drawTent();
+
     // 이정표: 동강 다리를 건넌 직후(강 북쪽), 학교로 꺾이는 길목에서 "← 학교".
     this.drawSignpost(15 * TILE + 8, 8 * TILE + 4);
 
@@ -202,6 +219,67 @@ export class IslandScene extends WorldScene {
       && !treeSet.has(c + ',' + r);
   }
 
+  // 캠프파이어 텐트(청소년수련관 오른쪽). 삼각 텐트 + 걷어올린 입구 + 밧줄/말뚝.
+  // 색은 주황~빨강 사이 레드 계열(#e2603a → #8e2318)로 캠프파이어 분위기를 낸다.
+  drawTent() {
+    const { cx, baseY, apexY, halfW } = TENT;
+    const L = cx - halfW, R = cx + halfW;
+    const g = this.add.graphics();
+    g.setDepth(3);
+
+    // 바닥 그림자.
+    g.fillStyle(0x000000, 0.16); g.fillEllipse(cx, baseY + 3, halfW * 2 + 10, 10);
+
+    // 밧줄 + 말뚝(양쪽으로 팽팽하게).
+    g.lineStyle(2, 0xf1e0bd, 0.9);
+    g.lineBetween(cx, apexY + 6, L - 16, baseY);
+    g.lineBetween(cx, apexY + 6, R + 16, baseY);
+    g.fillStyle(0x6b4a30, 1);
+    g.fillRect(L - 18, baseY - 3, 4, 7); g.fillRect(R + 14, baseY - 3, 4, 7);
+
+    // 천 몸통: 왼쪽은 빛을 받은 주황, 오른쪽은 그늘진 빨강.
+    g.fillStyle(0xe2603a, 1); g.fillTriangle(L, baseY, cx, apexY, cx, baseY);
+    g.fillStyle(0xc0392b, 1); g.fillTriangle(cx, baseY, cx, apexY, R, baseY);
+    // 아랫단(땅에 닿는 부분) 짙게 + 천 주름 몇 줄.
+    g.fillStyle(0x8e2318, 0.35); g.fillTriangle(L, baseY, R, baseY, cx, baseY - 12);
+    g.lineStyle(2, 0xffffff, 0.14);
+    g.lineBetween(cx - 18, baseY, cx - 6, apexY + 16);
+    g.lineBetween(cx + 18, baseY, cx + 6, apexY + 16);
+
+    // 입구: 안쪽은 어둡고, 걷어올린 문짝 두 장이 양옆으로 묶여 있다.
+    const dw = 15, dh = 34;
+    g.fillStyle(0x3a1a12, 1); g.fillTriangle(cx - dw, baseY, cx, baseY - dh, cx + dw, baseY);
+    g.fillStyle(0xffb17a, 0.5); g.fillTriangle(cx - 5, baseY, cx, baseY - dh + 6, cx + 5, baseY); // 안쪽 불빛
+    g.fillStyle(0xf08a5d, 1);
+    g.fillTriangle(cx - dw - 9, baseY, cx - dw + 1, baseY - dh + 4, cx - dw + 1, baseY); // 왼쪽 문짝
+    g.fillTriangle(cx + dw + 9, baseY, cx + dw - 1, baseY - dh + 4, cx + dw - 1, baseY); // 오른쪽 문짝
+
+    // 용마루(가운데 기둥선)와 꼭대기 깃발.
+    g.fillStyle(0x8e2318, 1); g.fillRect(cx - 1, apexY, 2, baseY - apexY);
+    g.fillStyle(0x6b4a30, 1); g.fillRect(cx - 1, apexY - 12, 2, 13);
+    g.fillStyle(0xffd24a, 1); g.fillTriangle(cx + 1, apexY - 12, cx + 14, apexY - 8, cx + 1, apexY - 4);
+
+    // 천은 지나갈 수 없다(입구만 열려 있음). 보이지 않는 충돌 몸통.
+    const body = this.solids.create(cx, apexY + 34, 'tile');
+    body.setVisible(false); body.setDisplaySize(halfW * 2 - 6, 40); body.refreshBody();
+
+    // 텐트 앞 모닥불 + 통나무 의자(밖에서도 캠프파이어 분위기).
+    this.drawCampfire(cx + 78, baseY - 14);
+    const logs = this.add.graphics();
+    logs.fillStyle(0xb98a53, 1);
+    logs.fillRect(cx + 52, baseY - 4, 20, 6);
+    logs.fillRect(cx + 90, baseY - 26, 6, 20);
+
+    // 안내 라벨(꼭대기 위).
+    this.add
+      .text(cx, apexY - 14, '⛺ 캠프파이어', {
+        fontSize: '11px', fontStyle: 'bold', color: '#7a2a12',
+        backgroundColor: '#fff3e0dd', padding: { x: 5, y: 2 },
+      })
+      .setOrigin(0.5, 1)
+      .setDepth(500);
+  }
+
   drawCampfire(x, y) {
     const g = this.add.graphics();
     g.fillStyle(0x6b4b2f, 1); g.fillRect(x - 8, y + 4, 16, 4);
@@ -211,9 +289,12 @@ export class IslandScene extends WorldScene {
 
   drawSignpost(x, y) {
     const g = this.add.graphics();
-    g.fillStyle(0x946b3c, 1); g.fillRect(x - 2, y, 4, 18);
+    g.fillStyle(0x946b3c, 1); g.fillRect(x - 2, y, 4, 30);
+    // 위 판 = 왼쪽의 수련관, 아래 판 = 오른쪽(봉래산 앞)의 캠프파이어 텐트.
     g.fillStyle(0xb98a53, 1); g.fillRect(x - 30, y - 5, 60, 12);
+    g.fillStyle(0xc07a4a, 1); g.fillRect(x - 30, y + 10, 60, 12);
     this.add.text(x, y + 1, '← 청소년수련관', { fontSize: '8px', color: '#4a3418' }).setOrigin(0.5, 0.5);
+    this.add.text(x, y + 16, '⛺ 캠프파이어 →', { fontSize: '8px', color: '#3f1d10' }).setOrigin(0.5, 0.5);
   }
 
   // 작은 3x2 학교 건물. (bx,by)=벽 몸통 왼쪽 위, bw×bh=벽 크기.

@@ -8,11 +8,13 @@ import { connect, onNet } from './net.js';
 import { BootScene } from './scenes/BootScene.js';
 import { IslandScene } from './scenes/IslandScene.js';
 import { ClassroomScene } from './scenes/ClassroomScene.js';
+import { CampfireScene } from './scenes/CampfireScene.js';
 import { initLogin, showLogin, hideLogin } from './ui/login.js';
 import { initPhone } from './ui/phone.js';
 import { initMe } from './ui/me.js';
 import { initGallery } from './ui/gallery.js';
 import { initGuide } from './ui/guide.js';
+import { initRetro } from './ui/retro.js';
 import { initAdmin } from './ui/admin.js';
 import { initPPT } from './ui/ppt.js';
 import { showIntro } from './ui/intro.js';
@@ -38,7 +40,7 @@ function startGame() {
       roundPixels: true,
       physics: { default: 'arcade', arcade: { debug: false } },
       scale: { mode: scaleMode, autoCenter: Phaser.Scale.CENTER_BOTH },
-      scene: [BootScene, IslandScene, ClassroomScene],
+      scene: [BootScene, IslandScene, ClassroomScene, CampfireScene],
     });
   }
 
@@ -49,6 +51,7 @@ function startGame() {
     initMe();
     initGallery();
     initGuide();
+    initRetro();
     initAdmin();
     initTouch();   // 모바일 이동 D-패드(터치 기기에서만)
   }

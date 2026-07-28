@@ -23,6 +23,7 @@ export class WorldScene extends Phaser.Scene {
   // data.transition === true 이면 "씬 이동으로 들어온 것" → 서버에 scene:enter 를 보낸다.
   create(data) {
     this.transition = !!(data && data.transition);
+    this.fromScene = (data && data.from) || null; // 어느 씬에서 왔는지(복귀 위치 결정용)
     this.others = new Map();     // id -> { sprite, label, tx, ty }
     this.solids = this.physics.add.staticGroup(); // 충돌(벽/물/산/책상)
     this.doors = [];             // makeDoor 로 등록된 문들(아바타 생성 후 연결)
