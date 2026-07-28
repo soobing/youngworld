@@ -131,15 +131,6 @@ done
 TMP="$(mktemp -d)"
 trap 'rm -rf "$TMP"' EXIT
 
-# drawtext 의 textfile 은 필터 문자열 안이라, 네이티브 Windows ffmpeg 에는
-# POSIX 경로(/tmp/..)도 Git Bash 자동 경로변환도 통하지 않는다. Windows 형(mixed)
-# 으로 바꾸고 드라이브 문자 뒤 콜론을 백슬래시로 이스케이프한다(C\:/..). 다른 OS 는 그대로.
-TMP_FF="$TMP"
-if command -v cygpath >/dev/null 2>&1; then
-  _m=$(cygpath -m "$TMP")            # 예) C:/Users/.../tmp.xxxx
-  TMP_FF="${_m:0:1}"'\:'"${_m:2}"    # C + \: + 나머지 = C\:/Users/.../tmp.xxxx
-fi
-
 # 한글 자막을 그리려면 한글 폰트가 필요하다. 없으면 자막만 빼고 계속 간다.
 FONT=""
 if command -v fc-list >/dev/null 2>&1 && fc-list : family 2>/dev/null | grep -qi "Apple SD Gothic Neo"; then
@@ -149,10 +140,28 @@ elif [ -f /System/Library/Fonts/AppleSDGothicNeo.ttc ]; then
 elif [ -f /System/Library/Fonts/Supplemental/AppleGothic.ttf ]; then
   FONT="fontfile='/System/Library/Fonts/Supplemental/AppleGothic.ttf'"
 elif [ -f /c/Windows/Fonts/malgun.ttf ]; then
-  # Windows(Git Bash). 네이티브 ffmpeg 이라 drawtext 에는 Windows 경로를 주되
-  # C: 의 콜론을 이스케이프해야 필터 파서가 오해하지 않는다: C\:/Windows/...
-  FONT="fontfile='C\:/Windows/Fonts/malgun.ttf'"
+  # Windows(Git Bash) — 맑은 고딕. 찾을 때는 /c/... 로 보지만, ffmpeg 는 네이티브
+  # exe 라 그 경로를 못 읽으니 넘길 때는 C:/... 로 준다.
+  # 드라이브 문자 뒤의 ':' 가 필터 옵션 구분자와 겹치므로 반드시 이스케이프한다.
+  FONT="fontfile='C\\:/Windows/Fonts/malgun.ttf'"
 fi
+
+# 필터그래프 안에 넣을 파일 경로를 ffmpeg 가 읽을 수 있는 형태로 바꾼다.
+#   Windows 의 ffmpeg 는 네이티브 exe 라 Git Bash 의 /tmp/... 를 못 읽는다.
+#   그래서 C:/... 로 바꾸고, 드라이브 문자 뒤의 ':' 는 필터 옵션 구분자와
+#   겹치므로 이스케이프한다. macOS·리눅스에선 cygpath 가 없어 그대로 통과한다.
+ff_path() {
+  if command -v cygpath >/dev/null 2>&1; then
+    # 콜론 이스케이프를 sed 로 하면 MSYS(Git Bash) 의 sed 가 치환문의 백슬래시를
+    # 그대로 넣지 않는 경우가 있어(환경마다 다름) C\: 가 아니라 C: 로 새어나간다.
+    # 그러면 필터 파서가 드라이브 콜론을 옵션 구분자로 오해해 빌드가 깨진다.
+    # 그래서 문자열 조립으로 확실하게 'C' + '\:' + 나머지 를 만든다.
+    local m; m=$(cygpath -m "$1")     # 예) C:/Users/.../cap1.txt
+    printf '%s' "${m:0:1}"'\:'"${m:2}"
+  else
+    printf '%s' "$1"
+  fi
+}
 
 # ---------------------------------------------------------------- 입력 인자
 INPUTS=()
@@ -252,7 +261,7 @@ if [ -n "$FONT" ] && [ -f "$CAPTIONS" ]; then
     else
       EN=$(awk "BEGIN{printf \"%.2f\", ($ci-1)*$HOLD+$HOLD}")
     fi
-    FG="$FG[$LAST]drawtext=$FONT:textfile='$TMP_FF/cap$ci.txt':"
+    FG="$FG[$LAST]drawtext=$FONT:textfile='$(ff_path "$TMP/cap$ci.txt")':"
     FG="${FG}fontcolor=white:fontsize=$FS:line_spacing=10:"
     FG="${FG}box=1:boxcolor=0x1b2f57@0.55:boxborderw=$CAP_PAD:"   # intro.html 의 남색 --accent2
     FG="${FG}x=(w-tw)/2:y=$CAP_Y:fix_bounds=1:"
