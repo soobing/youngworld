@@ -1,0 +1,326 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>최승찬의 5년 뒤 나의 미래 — 영월드</title>
+<!--
+  ============================================================
+  🎮🏀 slot 2 「5년 뒤 나의 미래(게임)」 — 최승찬 · 농구 × 코딩 슈팅
+  ============================================================
+  ▶ 자체 완결형 HTML 1파일(인라인 CSS/JS, 외부 의존성 X).
+    /works/seungchan/game5.html 로 열림 (URL 규칙: isSafeDocUrl).
+
+  ▶ 게임: 공을 드래그(끌었다 놓기)해서 각도·힘을 정해 슛. 한 스테이지 = 1년차.
+    그 해의 골을 3번 넣으면 퀘스트 클리어 → 다음 해. 5년차까지 깨면 "5년 뒤의 나" 엔딩.
+    해가 갈수록 골대가 멀고 높아지고, 4~5년차엔 골대가 움직인다. (마우스/터치 드래그)
+
+  ▶▶ 이어쓰기(WIP) 인계 노트 — "최승찬 게임 이어서" 하면 여기부터:
+    [완료] 슛 물리(중력·백보드/림 반사·바닥 바운스)·조준 궤적·5스테이지·타이틀/클리어/엔딩
+           + 상단 스톱워치·해마다 클리어 시간·5년 완주 시 이름 입력→순위 저장(localStorage 'game5_seungchan_ranks')
+    [남은 일 / 다듬기]
+      1) 슛 손맛 튜닝(K/중력/반발), 골대 움직임 난이도 밸런스
+      2) 그래픽: 코트 배경·백보드에 코드화면 느낌·캐릭터를 도트/이미지로
+      3) 소리(선택, CC 음원이면 credits)
+      4) 완성되면 갤러리 등록: server/seed.js 에 STUDENT_GAMES 배열 신설(STUDENT_DREAMS 패턴 복붙,
+         slot 2, url /works/<slug>/game5.html, publicFileExists 로 game5.html 존재 확인) → 최승찬 한 줄
+      5) 로컬 검증(서버 재시작 → 교실 → 최승찬 → 🎮) 후 포크 push + upstream PR
+    ※ dream(slot1)은 이미 PR soobing/youngworld#19. 이 게임은 브랜치 feat/seungchan-game5.
+-->
+<style>
+  :root{ --bg:#2b1b4d; --accent:#ff7a2e; --gold:#ffd24a; --ink:#fff; --dim:#c7bce6; }
+  *{ box-sizing:border-box; margin:0; padding:0; }
+  html,body{ height:100%; }
+  body{ font-family:"Apple SD Gothic Neo","Pretendard","Noto Sans KR",-apple-system,"Malgun Gothic",sans-serif;
+        background:#140d26; color:var(--ink); overflow:hidden; }
+  .wrap{ position:fixed; inset:0; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:1.4vmin; padding:2vmin; }
+  .head{ text-align:center; }
+  .who{ font-size:clamp(11px,1.8vmin,15px); font-weight:800; color:var(--dim); letter-spacing:.04em; }
+  h1{ font-size:clamp(18px,3.2vmin,32px); margin-top:.4vmin; }
+  h1 .g{ color:var(--gold); }
+  .stage-box{ position:relative; width:min(100%,1040px); aspect-ratio:16/9; border-radius:16px; overflow:hidden;
+        border:1px solid #4a3a72; box-shadow:0 18px 50px rgba(0,0,0,.5); background:#000; }
+  canvas{ width:100%; height:100%; display:block; touch-action:none; cursor:crosshair; }
+  .hud{ position:absolute; top:0; left:0; right:0; display:flex; justify-content:space-between; align-items:center;
+        padding:1.4vmin 2vmin; gap:1vmin; pointer-events:none; }
+  .hud div{ background:rgba(20,13,38,.7); border:1px solid #4a3a72; border-radius:10px; padding:.7vmin 1.4vmin;
+        font-size:clamp(11px,1.9vmin,16px); font-weight:700; }
+  .hud .quest b{ color:var(--gold); } .hud .score{ font-weight:900; white-space:nowrap; }
+  .overlay{ position:absolute; inset:0; display:flex; flex-direction:column; align-items:center; justify-content:center;
+        gap:2vmin; text-align:center; padding:5vmin; background:rgba(20,13,38,.82); }
+  .overlay.hidden{ display:none; }
+  .overlay h2{ font-size:clamp(18px,3.4vmin,34px); line-height:1.3; }
+  .overlay p{ color:var(--dim); font-size:clamp(12px,2vmin,18px); line-height:1.6; max-width:42ch; }
+  .overlay .quests{ text-align:left; display:flex; flex-direction:column; gap:.7vmin; margin:.5vmin 0; }
+  .overlay .quests div{ font-size:clamp(11px,1.9vmin,16px); color:#e6ddff; }
+  .overlay .quests .n{ color:var(--accent); font-weight:900; margin-right:.6em; }
+  .btn{ background:var(--accent); color:#20122e; border:none; font-family:inherit; font-weight:900;
+        font-size:clamp(13px,2.2vmin,18px); border-radius:12px; padding:1.2vmin 3vmin; cursor:pointer;
+        box-shadow:0 8px 22px rgba(255,122,46,.4); }
+  .btn:hover{ filter:brightness(1.06); }
+  .keys{ font-size:clamp(10px,1.7vmin,13px); color:#9a8fc0; }
+  .timer{ font-variant-numeric:tabular-nums; }
+  .overlay .brk{ font-size:clamp(10px,1.7vmin,14px); color:#9a8fc0; }
+  .save{ display:flex; gap:1vmin; align-items:center; }
+  .save input{ font-family:inherit; font-size:clamp(12px,2vmin,16px); padding:.9vmin 1.4vmin; border-radius:10px;
+        border:1px solid #6a5a96; background:#20143b; color:#fff; width:min(46vw,220px); }
+  .save input:disabled{ opacity:.5; }
+  .ranks{ width:min(100%,360px); display:flex; flex-direction:column; gap:.4vmin; max-height:32vh; overflow:auto; }
+  .ranks div{ display:flex; align-items:center; gap:1vmin; background:rgba(20,13,38,.6); border:1px solid #4a3a72;
+        border-radius:8px; padding:.6vmin 1.2vmin; font-size:clamp(11px,1.8vmin,15px); }
+  .ranks .rk{ color:var(--accent); font-weight:900; width:1.6em; }
+  .ranks .nm{ flex:1; text-align:left; }
+  .ranks .tm{ font-variant-numeric:tabular-nums; color:var(--gold); font-weight:800; }
+  .ranks .me{ border-color:var(--gold); background:rgba(255,210,74,.14); }
+  .ranks .empty{ color:#9a8fc0; justify-content:center; }
+  .foot{ font-size:clamp(10px,1.5vmin,12px); color:#5b5080; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="head">
+    <div class="who">🙋 최승찬 · 3회차 작품</div>
+    <h1><span class="g">🏀</span> 5년 뒤 나의 미래 — 코딩 슈팅</h1>
+  </div>
+
+  <div class="stage-box">
+    <canvas id="c" width="960" height="540"></canvas>
+    <div class="hud">
+      <div class="quest" id="quest">1년차</div>
+      <div class="timer" id="timer">⏱ 0.0초</div>
+      <div class="score" id="score">🏀 0 / 3</div>
+    </div>
+
+    <div class="overlay" id="title">
+      <h2>5년 뒤, 나는 어떤 사람일까?</h2>
+      <p>한 해가 하나의 <b style="color:#fff">퀘스트</b>예요. 공을 <b style="color:var(--gold)">끌었다 놓아</b> 각도·힘을 정하고,<br>그 해의 골을 <b style="color:#fff">3번</b> 넣으면 다음 해로 갑니다. 🏀→🥅</p>
+      <div class="quests" id="questList"></div>
+      <button class="btn" id="start">▶ 시작하기</button>
+      <div class="keys">공을 드래그해서 놓으면 슛 · 마우스/터치 모두 OK</div>
+    </div>
+
+    <div class="overlay hidden" id="clear">
+      <h2 id="clearTitle"></h2>
+      <p id="clearText"></p>
+      <button class="btn" id="next">다음 해로 →</button>
+    </div>
+
+    <div class="overlay hidden" id="ending">
+      <h2>5년 뒤, 최승찬 —<br><span style="color:var(--gold)">사람들과 함께 코딩하는 사람</span> 🚀</h2>
+      <p>전체 기록 <b id="finalTime" style="color:var(--gold)">—</b></p>
+      <p class="brk" id="breakdown"></p>
+      <div class="save">
+        <input id="nameInput" maxlength="10" placeholder="이름 (최대 10자)" autocomplete="off">
+        <button class="btn" id="saveScore">순위 저장</button>
+      </div>
+      <div class="ranks" id="ranks"></div>
+      <button class="btn" id="replay">↺ 다시 하기</button>
+    </div>
+  </div>
+  <div class="foot">농구로 5년 퀘스트 깨기 · AI와 함께 만든 게임 · 영월드</div>
+</div>
+
+<script>
+(() => {
+  'use strict';
+  const canvas = document.getElementById('c');
+  const ctx = canvas.getContext('2d');
+  const W = canvas.width, H = canvas.height;
+  const GY = H - 40;                 // 바닥 윗면
+  const GRAV = 0.5, K = 0.135, MAXV = 23, REST = 0.62;
+  const R = 16;                      // 공 반지름
+  const RIMW = 78;                   // 림 폭
+  const NEED = 3;                    // 한 해에 넣어야 할 골 수
+
+  // 스테이지: 골대 기본 위치 + 움직임(진폭·속도). 해가 갈수록 멀고 높고, 뒤로 갈수록 움직임.
+  const STAGES = [
+    { year:1, quest:'AI와 함께 코딩 기초 다지기',        hx:720, hy:250, ax:0,   ay:0,  sp:0.00 },
+    { year:2, quest:'내가 만들고 싶던 프로그램 완성',     hx:780, hy:220, ax:0,   ay:0,  sp:0.00 },
+    { year:3, quest:'팀 프로젝트로 협업 경험',           hx:800, hy:210, ax:0,   ay:42, sp:0.020 },
+    { year:4, quest:'더 큰 무대에 도전 (대회·진학)',      hx:830, hy:195, ax:0,   ay:70, sp:0.028 },
+    { year:5, quest:'사람들과 함께 코딩하는 개발자',      hx:840, hy:185, ax:60,  ay:70, sp:0.032 },
+  ];
+
+  const ball = { x:150, y:GY-R, vx:0, vy:0, rest:true };
+  const REST_X = 150, REST_Y = GY - R;
+  let stageIdx = 0, makes = 0, frame = 0, running = false;
+  let aiming = false, aimPt = {x:0,y:0}, flash = 0;
+  let totalMs = 0, yearStartTime = 0;      // 스톱워치: 완주한 해들의 합 + 현재 해 진행분
+  const yearTimes = [];                     // 해마다 클리어에 걸린 시간(ms)
+  const LB_KEY = 'game5_seungchan_ranks';   // 순위표(localStorage)
+
+  const $ = (id) => document.getElementById(id);
+  const overlays = { title:$('title'), clear:$('clear'), ending:$('ending') };
+  const show = (n) => { for(const k in overlays) overlays[k].classList.toggle('hidden', k!==n); };
+  const hideAll = () => { for(const k in overlays) overlays[k].classList.add('hidden'); };
+  $('questList').innerHTML = STAGES.map((s,i)=>`<div><span class="n">${i+1}년차</span>${s.quest}</div>`).join('');
+
+  // 골대 현재 위치(움직이는 골대 포함)
+  function hoop(){
+    const s = STAGES[stageIdx];
+    const t = frame * s.sp;
+    return { x: s.hx + Math.sin(t*0.8)*s.ax, y: s.hy + Math.sin(t)*s.ay };
+  }
+  function loadStage(i){
+    stageIdx = i; makes = 0; frame = 0;
+    resetBall();
+    $('quest').innerHTML = `<b>${STAGES[i].year}년차</b> · ${STAGES[i].quest}`;
+    $('score').textContent = `🏀 0 / ${NEED}`;
+    yearStartTime = performance.now();     // 이 해의 스톱워치 시작
+    showTimer(totalMs);
+  }
+
+  // ---- 시간·순위 ----
+  function fmt(ms){ const s=Math.max(0,ms)/1000; const m=Math.floor(s/60); const r=s-m*60;
+    return m>0 ? m+':'+r.toFixed(1).padStart(4,'0') : r.toFixed(1)+'초'; }
+  function showTimer(ms){ $('timer').textContent = '⏱ ' + fmt(ms); }
+  function loadLB(){ try{ return JSON.parse(localStorage.getItem(LB_KEY)) || []; }catch(e){ return []; } }
+  function saveLB(l){ try{ localStorage.setItem(LB_KEY, JSON.stringify(l)); }catch(e){} }
+  function escapeHtml(s){ return String(s).replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+  function renderRanks(hi){
+    const list = loadLB();
+    $('ranks').innerHTML = list.length
+      ? list.map((e,i)=>{ const me = hi && e.name===hi.name && e.ms===hi.ms;
+          return `<div class="${me?'me':''}"><span class="rk">${i+1}</span><span class="nm">${escapeHtml(e.name)}</span><span class="tm">${fmt(e.ms)}</span></div>`; }).join('')
+      : '<div class="empty">아직 기록이 없어요. 1등이 되어보세요!</div>';
+  }
+  function showEnding(){
+    $('finalTime').textContent = fmt(totalMs);
+    $('breakdown').textContent = yearTimes.map((t,i)=>`${i+1}년차 ${fmt(t)}`).join('  ·  ');
+    const inp=$('nameInput'), btn=$('saveScore');
+    inp.value=''; inp.disabled=false; btn.disabled=false;
+    renderRanks(null);
+    show('ending');
+    setTimeout(()=>{ try{ inp.focus(); }catch(e){} }, 60);
+  }
+  function saveScore(){
+    const inp=$('nameInput'), btn=$('saveScore');
+    let name=(inp.value||'').trim(); if(!name) name='익명'; name=name.slice(0,10);
+    const list=loadLB(); const entry={ name, ms:Math.round(totalMs) };
+    list.push(entry); list.sort((a,b)=>a.ms-b.ms);
+    saveLB(list.slice(0,10));
+    inp.disabled=true; btn.disabled=true;
+    renderRanks(entry);
+  }
+  function resetBall(){ ball.x=REST_X; ball.y=REST_Y; ball.vx=0; ball.vy=0; ball.rest=true; }
+
+  // ---- 입력(드래그 슛) ----
+  function toCanvas(e){ const r=canvas.getBoundingClientRect(); return { x:(e.clientX-r.left)*(W/r.width), y:(e.clientY-r.top)*(H/r.height) }; }
+  canvas.addEventListener('pointerdown', (e)=>{ if(!running || !ball.rest) return; aiming=true; aimPt=toCanvas(e); e.preventDefault(); });
+  canvas.addEventListener('pointermove', (e)=>{ if(aiming){ aimPt=toCanvas(e); e.preventDefault(); } });
+  canvas.addEventListener('pointerup', (e)=>{
+    if(!aiming) return; aiming=false;
+    let vx=(aimPt.x-ball.x)*K, vy=(aimPt.y-ball.y)*K;
+    const m=Math.hypot(vx,vy); if(m>MAXV){ vx=vx/m*MAXV; vy=vy/m*MAXV; }
+    ball.vx=vx; ball.vy=vy; ball.rest=false;
+  });
+
+  function scored(prevY){
+    const h = hoop();
+    // 림 높이를 아래로 통과 + 림 개구부 안 + 아래로 이동
+    return ball.vy>0 && prevY < h.y && ball.y >= h.y && ball.x > h.x+6 && ball.x < h.x+RIMW-6;
+  }
+  function makeShot(){
+    makes++; flash=45; $('score').textContent = `🏀 ${makes} / ${NEED}`;
+    if(makes>=NEED) stageClear(); else resetBall();
+  }
+
+  function update(){
+    frame++;
+    if(ball.rest) return;
+    const prevY = ball.y, h = hoop();
+    ball.vy += GRAV; ball.x += ball.vx; ball.y += ball.vy;
+
+    // 골인 판정
+    if(scored(prevY)){ makeShot(); return; }
+
+    // 백보드(림 뒤 세로벽) 반사
+    const bx = h.x + RIMW + 6;
+    if(ball.x+R > bx && ball.x < bx+14 && ball.y > h.y-96 && ball.y < h.y+14 && ball.vx>0){
+      ball.x = bx - R; ball.vx = -ball.vx*REST;
+    }
+    // 림 양 끝(원) 튕김
+    for(const rx of [h.x, h.x+RIMW]){
+      const dx=ball.x-rx, dy=ball.y-h.y, d=Math.hypot(dx,dy);
+      if(d < R+5){ const nx=dx/d, ny=dy/d; ball.x=rx+nx*(R+5); ball.y=h.y+ny*(R+5);
+        const dot=ball.vx*nx+ball.vy*ny; ball.vx=(ball.vx-2*dot*nx)*REST; ball.vy=(ball.vy-2*dot*ny)*REST; }
+    }
+    // 바닥 바운스 → 잦아들면 리셋(놓친 슛)
+    if(ball.y+R > GY){ ball.y=GY-R; ball.vy=-ball.vy*REST; ball.vx*=0.82;
+      if(Math.abs(ball.vy)<1.4 && Math.abs(ball.vx)<1.2) resetBall(); }
+    // 화면 밖
+    if(ball.x < -60 || ball.x > W+60 || ball.y > H+120) resetBall();
+  }
+
+  function drawHoop(){
+    const h = hoop();
+    // 백보드(코드 화면 느낌)
+    ctx.fillStyle='#20143b'; ctx.fillRect(h.x+RIMW-2, h.y-96, 18, 108);
+    ctx.strokeStyle='#4a3a72'; ctx.strokeRect(h.x+RIMW-2, h.y-96, 18, 108);
+    ctx.fillStyle='#5a4790'; for(let i=0;i<5;i++) ctx.fillRect(h.x+RIMW+2, h.y-86+i*16, 10, 4);
+    // 림
+    ctx.strokeStyle='#ff7a2e'; ctx.lineWidth=5; ctx.beginPath(); ctx.moveTo(h.x,h.y); ctx.lineTo(h.x+RIMW,h.y); ctx.stroke();
+    // 네트
+    ctx.strokeStyle='rgba(255,255,255,.55)'; ctx.lineWidth=1.5;
+    for(let i=0;i<=6;i++){ const t=i/6; ctx.beginPath(); ctx.moveTo(h.x+RIMW*t, h.y); ctx.lineTo(h.x+RIMW*(0.25+0.5*t), h.y+34); ctx.stroke(); }
+    ctx.lineWidth=1;
+  }
+  function drawBall(){
+    ctx.fillStyle='#ff7a2e'; ctx.beginPath(); ctx.arc(ball.x,ball.y,R,0,Math.PI*2); ctx.fill();
+    ctx.strokeStyle='#b8480a'; ctx.lineWidth=2;
+    ctx.beginPath(); ctx.moveTo(ball.x-R,ball.y); ctx.lineTo(ball.x+R,ball.y);
+    ctx.moveTo(ball.x,ball.y-R); ctx.lineTo(ball.x,ball.y+R); ctx.stroke(); ctx.lineWidth=1;
+  }
+  function drawAim(){
+    if(!aiming) return;
+    let vx=(aimPt.x-ball.x)*K, vy=(aimPt.y-ball.y)*K;
+    const m=Math.hypot(vx,vy); if(m>MAXV){ vx=vx/m*MAXV; vy=vy/m*MAXV; }
+    let sx=ball.x, sy=ball.y, svx=vx, svy=vy;
+    ctx.fillStyle='rgba(255,210,74,.8)';
+    for(let i=0;i<20;i++){ svy+=GRAV; sx+=svx; sy+=svy; if(i%2===0){ ctx.beginPath(); ctx.arc(sx,sy,3,0,Math.PI*2); ctx.fill(); } }
+  }
+  function drawShooter(){
+    const x=REST_X, y=GY;
+    ctx.fillStyle='#c7cede'; ctx.fillRect(x-16, y-46, 32, 46);           // 몸(후드)
+    ctx.fillStyle='#f2c9a0'; ctx.beginPath(); ctx.arc(x, y-54, 12, 0, Math.PI*2); ctx.fill(); // 머리
+    ctx.fillStyle='#2b1b4d'; ctx.fillRect(x-11, y-64, 22, 7);            // 머리카락
+    ctx.fillStyle='#ff7a2e'; ctx.fillRect(x-16, y-58, 4, 10); ctx.fillRect(x+12, y-58, 4, 10); // 헤드폰
+  }
+
+  function draw(){
+    const g=ctx.createLinearGradient(0,0,0,H); g.addColorStop(0,'#3a2568'); g.addColorStop(1,'#1a1030');
+    ctx.fillStyle=g; ctx.fillRect(0,0,W,H);
+    // 코트 바닥
+    ctx.fillStyle='#4a3a72'; ctx.fillRect(0,GY,W,H-GY); ctx.fillStyle='#6a54a0'; ctx.fillRect(0,GY,W,5);
+    drawHoop(); drawShooter(); drawAim(); drawBall();
+    showTimer(totalMs + (performance.now() - yearStartTime));   // 스톱워치 갱신
+    if(flash>0){ flash--; ctx.fillStyle='rgba(255,210,74,'+(flash/45)+')'; ctx.font='bold 54px sans-serif'; ctx.textAlign='center';
+      ctx.fillText('골인! ⭐', W/2, 140); ctx.textAlign='left'; }
+  }
+
+  function loop(){ if(!running) return; update(); draw(); requestAnimationFrame(loop); }
+  function startGame(){ totalMs=0; yearTimes.length=0; hideAll(); loadStage(0); running=true; loop(); }
+  function stageClear(){
+    running=false;
+    const yearMs = performance.now() - yearStartTime;   // 이번 해에 걸린 시간
+    totalMs += yearMs; yearTimes[stageIdx] = yearMs;
+    showTimer(totalMs);
+    const s=STAGES[stageIdx];
+    if(stageIdx>=STAGES.length-1){ showEnding(); return; }
+    $('clearTitle').textContent = `${s.year}년차 클리어! 🏀`;
+    $('clearText').innerHTML = `"${s.quest}" — 골 ${NEED}개!<br>⏱ 이번 해 <b style="color:var(--gold)">${fmt(yearMs)}</b>`;
+    show('clear');
+  }
+  function nextStage(){ hideAll(); loadStage(stageIdx+1); running=true; loop(); }
+
+  $('start').addEventListener('click', startGame);
+  $('next').addEventListener('click', nextStage);
+  $('replay').addEventListener('click', startGame);
+  $('saveScore').addEventListener('click', saveScore);
+  $('nameInput').addEventListener('keydown', (e)=>{ if(e.key==='Enter' && !$('saveScore').disabled) saveScore(); });
+
+  loadStage(0); draw(); show('title');   // 타이틀 뒤에 첫 화면 그려두기
+})();
+</script>
+</body>
+</html>
