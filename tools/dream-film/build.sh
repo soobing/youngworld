@@ -29,7 +29,7 @@ set -euo pipefail
 FPS=30            # 초당 프레임
 CLIP=6            # 컷 하나의 길이(초). 5초 노출 + 1초는 다음 컷과 겹침
 XF=1              # 크로스페이드 길이(초)
-CRF="${CRF:-23}"  # 화질(낮을수록 고화질·큰 용량). 18~28. 용량 크면 CRF=27 처럼 올려라
+CRF=23            # 화질(낮을수록 고화질·큰 용량). 18~28 사이에서 조절
 WARN_MB=15        # 이 용량을 넘으면 경고(git 에 커밋할 파일이라)
 
 # 최종 해상도. 원본 그림보다 크게 잡으면 물러지기만 하니, 그림이 작으면 낮춰라.
@@ -131,17 +131,7 @@ done
 TMP="$(mktemp -d)"
 trap 'rm -rf "$TMP"' EXIT
 
-# ffmpeg 는 macOS·Linux 에선 유닉스 경로를 그대로 읽지만, Windows 네이티브 빌드는
-# Git Bash 의 /c/... · /tmp/... (MSYS) 경로를 못 읽는다. cygpath 로 C:/... 형식으로
-# 바꿔 넘긴다. cygpath 가 없는 macOS·Linux 에선 경로를 그대로 돌려준다.
-fpath() {
-  if command -v cygpath >/dev/null 2>&1; then cygpath -m "$1"; else printf '%s' "$1"; fi
-}
-
 # 한글 자막을 그리려면 한글 폰트가 필요하다. 없으면 자막만 빼고 계속 간다.
-#   macOS: Apple SD Gothic Neo / AppleGothic
-#   Windows(Git Bash): 맑은 고딕(malgun.ttf). ffmpeg 는 네이티브 exe 라 경로의
-#     드라이브 콜론을 filtergraph 구분자와 헷갈리지 않게 'C\:/...' 로 이스케이프한다.
 FONT=""
 if command -v fc-list >/dev/null 2>&1 && fc-list : family 2>/dev/null | grep -qi "Apple SD Gothic Neo"; then
   FONT="font='Apple SD Gothic Neo'"
@@ -150,10 +140,23 @@ elif [ -f /System/Library/Fonts/AppleSDGothicNeo.ttc ]; then
 elif [ -f /System/Library/Fonts/Supplemental/AppleGothic.ttf ]; then
   FONT="fontfile='/System/Library/Fonts/Supplemental/AppleGothic.ttf'"
 elif [ -f /c/Windows/Fonts/malgun.ttf ]; then
-  FONT="fontfile='C\\:/Windows/Fonts/malgun.ttf'"
-elif [ -f "${WINDIR:-/c/Windows}/Fonts/malgun.ttf" ]; then
+  # Windows(Git Bash) — 맑은 고딕. 찾을 때는 /c/... 로 보지만, ffmpeg 는 네이티브
+  # exe 라 그 경로를 못 읽으니 넘길 때는 C:/... 로 준다.
+  # 드라이브 문자 뒤의 ':' 가 필터 옵션 구분자와 겹치므로 반드시 이스케이프한다.
   FONT="fontfile='C\\:/Windows/Fonts/malgun.ttf'"
 fi
+
+# 필터그래프 안에 넣을 파일 경로를 ffmpeg 가 읽을 수 있는 형태로 바꾼다.
+#   Windows 의 ffmpeg 는 네이티브 exe 라 Git Bash 의 /tmp/... 를 못 읽는다.
+#   그래서 C:/... 로 바꾸고, 드라이브 문자 뒤의 ':' 는 필터 옵션 구분자와
+#   겹치므로 이스케이프한다. macOS·리눅스에선 cygpath 가 없어 그대로 통과한다.
+ff_path() {
+  if command -v cygpath >/dev/null 2>&1; then
+    cygpath -m "$1" | sed 's/:/\\:/'
+  else
+    printf '%s' "$1"
+  fi
+}
 
 # ---------------------------------------------------------------- 입력 인자
 INPUTS=()
@@ -161,9 +164,9 @@ i=0
 while [ "$i" -lt "$N" ]; do
   if [ "${KIND[$i]}" = "img" ]; then
     # 그림 1장을 6초짜리 30fps 영상처럼 읽어들인다
-    INPUTS+=(-loop 1 -framerate "$FPS" -t "$CLIP" -i "$(fpath "${SRC[$i]}")")
+    INPUTS+=(-loop 1 -framerate "$FPS" -t "$CLIP" -i "${SRC[$i]}")
   else
-    INPUTS+=(-i "$(fpath "${SRC[$i]}")")
+    INPUTS+=(-i "${SRC[$i]}")
   fi
   i=$((i + 1))
 done
@@ -171,7 +174,7 @@ done
 HAS_AUDIO=0
 if [ -n "$BGM" ]; then
   # 음악이 영상보다 짧아도 되도록 무한 반복해서 읽고, 뒤에서 잘라낸다
-  INPUTS+=(-stream_loop -1 -i "$(fpath "$BGM")")
+  INPUTS+=(-stream_loop -1 -i "$BGM")
   HAS_AUDIO=1
   echo "   🎵 배경음악: $(basename "$BGM")"
 else
@@ -238,9 +241,6 @@ done
 FG="$FG[vmix]noise=alls=6:allf=t,vignette=PI/5[vtone];"
 
 # (4) 자막 — 컷이 온전히 보이는 구간에만 띄운다(크로스페이드 중엔 숨김).
-#     자막 텍스트는 파일로 넘기는데, 그 경로도 ffmpeg 가 읽을 수 있게 변환하고
-#     filtergraph 안에서 드라이브 콜론이 구분자로 오해되지 않게 이스케이프한다.
-FTMP_ESC="$(fpath "$TMP" | sed 's/:/\\:/g')"
 LAST="vtone"
 if [ -n "$FONT" ] && [ -f "$CAPTIONS" ]; then
   ci=0
@@ -256,7 +256,7 @@ if [ -n "$FONT" ] && [ -f "$CAPTIONS" ]; then
     else
       EN=$(awk "BEGIN{printf \"%.2f\", ($ci-1)*$HOLD+$HOLD}")
     fi
-    FG="$FG[$LAST]drawtext=$FONT:textfile='$FTMP_ESC/cap$ci.txt':"
+    FG="$FG[$LAST]drawtext=$FONT:textfile='$(ff_path "$TMP/cap$ci.txt")':"
     FG="${FG}fontcolor=white:fontsize=$FS:line_spacing=10:"
     FG="${FG}box=1:boxcolor=0x1b2f57@0.55:boxborderw=$CAP_PAD:"   # intro.html 의 남색 --accent2
     FG="${FG}x=(w-tw)/2:y=$CAP_Y:fix_bounds=1:"
@@ -288,14 +288,14 @@ ffmpeg -hide_banner -loglevel error -stats -y \
   -t "$TOTAL" \
   -c:v libx264 -crf "$CRF" -preset slow -pix_fmt yuv420p -r "$FPS" \
   -movflags +faststart \
-  "$(fpath "$OUT")"
+  "$OUT"
 
 # 포스터(첫 화면 정지컷) — <video poster> 에 쓴다
-ffmpeg -hide_banner -loglevel error -y -ss 1.5 -i "$(fpath "$OUT")" -frames:v 1 -q:v 3 "$(fpath "$POSTER")"
+ffmpeg -hide_banner -loglevel error -y -ss 1.5 -i "$OUT" -frames:v 1 -q:v 3 "$POSTER"
 
 # ---------------------------------------------------------------- 결과
 SIZE_MB=$(($(wc -c < "$OUT") / 1024 / 1024))
-DUR=$(ffprobe -v error -show_entries format=duration -of csv=p=0 "$(fpath "$OUT")" | cut -d. -f1)
+DUR=$(ffprobe -v error -show_entries format=duration -of csv=p=0 "$OUT" | cut -d. -f1)
 echo ""
 echo "✅ 완성:  $OUT"
 echo "   ${DUR}초 · ${W}x${H} · ${SIZE_MB}MB"

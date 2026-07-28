@@ -1,0 +1,376 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>김은준의 자기소개 — 영월드</title>
+<!--
+  ▶ 실제 사진 넣는 법
+    1) 사진 파일을 public/works/eunjun/img/ 폴더에 넣으세요. (예: me.jpg, travel1.jpg)
+    2) 사진을 넣을 자리(.frame 안)에 있는 .ph(플레이스홀더)를
+       <figure class="pslide on"><img src="/works/eunjun/img/me.jpg" alt="설명"></figure> 로 바꾸면 됩니다.
+    3) 사진이 여러 장이면 .pslide 를 여러 개 두고, .frame 에 data-auto="1" 을 주면
+       클릭/자동으로 순환됩니다. (soobing 선생님 자기소개 참고)
+
+  ▶ 구성: 표지 → 코딩과의 첫 만남(초3 엔트리) → 언어 여정(엔트리·스크래치·파이썬·C)
+          → 나의 성격(몰입·끈기) → 장래희망(소프트웨어 개발자) → 왜 개발자?(상상을 현실로)
+          → 진짜 꿈(세계여행) → 마무리("하고 싶은 건 해보면서!")
+-->
+<style>
+  :root{
+    --ink:#1f2430; --muted:#5b6472; --accent:#1c7ed6; --accent2:#364fc7; /* 파랑·인디고 */
+    --green:#2f9e44; --soft:#e7f2fd; --sky:#eaedf4; --line:#e2e8f4; --bg:#f4f7fc;
+  }
+  *{ box-sizing:border-box; margin:0; padding:0; }
+  html,body{ height:100%; }
+  body{
+    font-family:"Apple SD Gothic Neo","Pretendard","Noto Sans KR",-apple-system,"Malgun Gothic",sans-serif;
+    color:var(--ink); background:#0e1220; overflow:hidden;
+  }
+  .deck{ position:fixed; inset:0; }
+
+  /* ---- 슬라이드 공통 ---- */
+  .slide{
+    position:absolute; inset:0; display:flex; align-items:center; justify-content:center;
+    padding:5vmin 6.5vmin 10.5vmin; background:var(--bg);
+    opacity:0; visibility:hidden; transform:translateY(12px);
+    transition:opacity .35s ease, transform .35s ease;
+  }
+  .slide.active{ opacity:1; visibility:visible; transform:none; }
+  .inner{ width:min(100%,1060px); max-height:100%; overflow-y:auto; text-align:left; padding-right:.5vmin; }
+  .inner::-webkit-scrollbar{ width:8px; }
+  .inner::-webkit-scrollbar-thumb{ background:#cdd3df; border-radius:4px; }
+
+  h1{ font-size:clamp(26px,5.4vmin,52px); line-height:1.16; }
+  h2{ font-size:clamp(21px,4vmin,38px); line-height:1.22; margin-bottom:2.2vmin; }
+  .kicker{ font-size:clamp(12px,2vmin,16px); font-weight:800; letter-spacing:.02em; color:var(--accent2); margin-bottom:1.2vmin; }
+  p{ font-size:clamp(15px,2.4vmin,21px); line-height:1.68; color:var(--muted); }
+  .narr{ font-size:clamp(14px,2.15vmin,19px); line-height:1.72; margin-top:1.2vmin; }
+  .narr + .narr{ margin-top:1vmin; }
+  .big{ font-size:clamp(17px,3vmin,26px); color:var(--ink); }
+  .accent{ color:var(--accent); font-weight:800; }
+  .accent2{ color:var(--accent2); font-weight:800; }
+  .narr b, .goal b, .lead-c b, p b{ color:var(--accent2); }
+  .punch{ margin-top:2.2vmin; font-size:clamp(16px,2.7vmin,24px); font-weight:800; color:var(--ink); }
+
+  /* ---- 표지 / 마무리 (컬러 배경) ---- */
+  .slide.cover{ background:linear-gradient(135deg,#0a1330,#173a7a); color:#fff; }
+  .slide.cover p{ color:rgba(255,255,255,.92); }
+  .slide.closing{ background:linear-gradient(135deg,#1c7ed6,#4dabf7); color:#fff; }
+  .slide.closing p{ color:rgba(255,255,255,.95); }
+  .tag{ display:inline-block; background:rgba(255,255,255,.22); font-weight:800; font-size:clamp(12px,2vmin,15px); padding:6px 14px; border-radius:22px; margin-bottom:2.6vmin; }
+  .brand{ display:inline-block; background:#fff; color:var(--accent2); font-weight:900; border-radius:12px; padding:10px 18px; font-size:clamp(14px,2.4vmin,22px); margin-top:3vmin; }
+
+  /* ---- 레이아웃 ---- */
+  .row{ display:grid; grid-template-columns:1.05fr .95fr; gap:3.2vmin; align-items:center; }
+  .stack{ display:flex; flex-direction:column; gap:1.4vmin; }
+
+  /* 근거 pill */
+  .pills{ display:flex; flex-wrap:wrap; gap:1.2vmin; margin-top:1.4vmin; }
+  .pill{ background:var(--sky); color:var(--accent2); font-weight:700; border-radius:10px; padding:1vmin 1.7vmin; font-size:clamp(13px,2vmin,18px); }
+
+  /* 언어 여정 경로 (엔트리 → 스크래치 → 파이썬 → C) */
+  .ljourney{ display:flex; flex-direction:column; gap:1.4vmin; }
+  .lang{ display:flex; align-items:center; gap:1.8vmin; background:#fff; border:1px solid var(--line); border-radius:14px; padding:1.4vmin 2vmin; }
+  .lang .li{ flex:none; width:clamp(38px,6vmin,54px); height:clamp(38px,6vmin,54px); border-radius:12px; display:flex; align-items:center; justify-content:center; font-size:clamp(20px,3.6vmin,30px); background:var(--soft); }
+  .lang .lt{ font-size:clamp(15px,2.5vmin,22px); font-weight:800; color:var(--ink); }
+  .lang .ls{ font-size:clamp(12px,1.9vmin,16px); color:var(--muted); margin-top:.2vmin; }
+  .lang .num{ margin-left:auto; font-size:clamp(13px,2vmin,17px); font-weight:900; color:var(--accent); }
+  .lang.cur{ border-color:var(--accent); background:var(--soft); }
+
+  /* 성격 / 개념 카드 */
+  .cards{ display:flex; flex-direction:column; gap:1.2vmin; margin-top:1vmin; }
+  .card{ display:flex; align-items:center; gap:1.6vmin; background:#fff; border:1px solid var(--line); border-radius:12px; padding:1.4vmin 2vmin; font-size:clamp(14px,2.3vmin,20px); color:var(--ink); }
+  .card .mk{ flex:none; width:clamp(28px,4vmin,38px); height:clamp(28px,4vmin,38px); border-radius:50%; background:var(--soft); color:var(--accent); display:flex; align-items:center; justify-content:center; font-weight:900; font-size:clamp(15px,2.4vmin,22px); }
+
+  /* 상상 → 현실 화살표 도식 */
+  .imagine{ display:flex; align-items:stretch; gap:1.4vmin; }
+  .ibox{ flex:1; text-align:center; border-radius:14px; padding:2vmin 1.4vmin; border:2px solid; display:flex; flex-direction:column; justify-content:center; gap:.6vmin; }
+  .ibox.dream{ background:#f1f3f7; border-color:#d5dae4; }
+  .ibox.real{ background:var(--soft); border-color:var(--accent); }
+  .ibox .ic{ font-size:clamp(26px,5vmin,42px); }
+  .ibox b{ font-size:clamp(13px,2vmin,18px); color:var(--ink); }
+  .ibox small{ font-size:clamp(11px,1.6vmin,14px); color:var(--muted); }
+  .ibox.real small{ color:var(--accent); font-weight:800; }
+  .iarrow{ display:flex; align-items:center; font-size:clamp(20px,3.6vmin,30px); font-weight:900; color:var(--accent); }
+
+  /* 앞으로의 꿈 리스트 */
+  .goals{ display:flex; flex-direction:column; gap:1.2vmin; margin-top:1vmin; }
+  .goal{ display:flex; align-items:center; gap:1.6vmin; background:#fff; border:1px solid var(--line); border-radius:12px; padding:1.4vmin 2vmin; font-size:clamp(14px,2.3vmin,20px); color:var(--ink); }
+  .goal .mk{ flex:none; width:clamp(24px,3.6vmin,32px); height:clamp(24px,3.6vmin,32px); border-radius:50%; background:var(--soft); color:var(--accent); display:flex; align-items:center; justify-content:center; font-weight:900; font-size:clamp(13px,2vmin,18px); }
+
+  /* 마무리 */
+  .closing-in{ display:flex; flex-direction:column; align-items:center; justify-content:center; gap:2.6vmin; text-align:center; min-height:100%; }
+  .quote2{ font-size:clamp(14px,2.8vmin,27px); font-weight:800; color:#fff; line-height:1.42; }
+  .closing .lead-c{ color:rgba(255,255,255,.95); font-size:clamp(15px,2.4vmin,21px); line-height:1.6; max-width:42ch; }
+
+  /* ---- 이미지 갤러리 (클릭·자동 페이드 전환) ---- */
+  .gallery{ width:100%; }
+  .frame{ position:relative; width:100%; aspect-ratio:16/10; border-radius:16px; overflow:hidden; border:2px solid var(--line); background:#e7ebf3; cursor:pointer; transition:box-shadow .2s ease; }
+  .frame:hover{ box-shadow:0 10px 26px rgba(20,30,60,.22); }
+  .frame .pslide{ position:absolute; inset:0; opacity:0; transition:opacity .9s ease; }
+  .frame .pslide.on{ opacity:1; }
+  .frame .pslide img{ width:100%; height:100%; object-fit:cover; display:block; }
+  .frame.fit .pslide img{ object-fit:contain; }
+  .pnav{ margin-top:1vmin; text-align:center; font-size:clamp(11px,1.9vmin,15px); color:var(--muted); }
+  .pnav .pcount{ font-weight:800; color:var(--accent2); }
+  .frame .ph{
+    position:absolute; inset:0; display:flex; flex-direction:column; align-items:center; justify-content:center; text-align:center; gap:1vmin;
+    background:repeating-linear-gradient(45deg,#eef1f7,#eef1f7 12px,#e7ebf3 12px,#e7ebf3 24px);
+    color:#7b8698; padding:3vmin;
+  }
+  .frame .ph .ic{ font-size:clamp(28px,6vmin,54px); }
+  .frame .ph .cap{ font-size:clamp(12px,2vmin,16px); font-weight:700; }
+  .frame .ph .cap b{ color:var(--accent2); }
+
+  /* ---- 하단 네비 ---- */
+  .hud{
+    position:fixed; left:0; right:0; bottom:0; height:8vmin; min-height:52px;
+    display:flex; align-items:center; justify-content:center; gap:2vmin;
+    background:rgba(14,18,32,.9); color:#fff; z-index:20;
+  }
+  .hud button{
+    width:clamp(38px,6vmin,52px); height:clamp(32px,5vmin,44px);
+    border:none; border-radius:10px; background:#2b3350; color:#fff; font-size:clamp(15px,2.6vmin,22px); cursor:pointer; transition:background .15s;
+  }
+  .hud button:hover{ background:#3a4468; } .hud button:disabled{ opacity:.35; cursor:default; }
+  .count{ font-size:clamp(13px,2.2vmin,18px); font-variant-numeric:tabular-nums; min-width:64px; text-align:center; }
+  .count b{ color:#ffd24a; }
+  .dots{ display:flex; gap:7px; flex-wrap:wrap; justify-content:center; max-width:40vw; }
+  .dots i{ width:9px; height:9px; border-radius:50%; background:#4a5578; cursor:pointer; transition:background .15s,transform .15s; }
+  .dots i.on{ background:#ffd24a; transform:scale(1.25); }
+  .hint{ position:fixed; top:2vmin; right:2.5vmin; color:#9aa4bd; font-size:12px; z-index:20; text-align:right; }
+
+  @media (max-width:680px){ .row{ grid-template-columns:1fr; } .imagine{ flex-direction:column; } .iarrow{ justify-content:center; transform:rotate(90deg); } }
+</style>
+</head>
+<body>
+<div class="deck">
+
+  <!-- 1. 표지 -->
+  <section class="slide cover active">
+    <div class="inner" style="text-align:center">
+      <span class="tag">💻 김은준의 자기소개</span>
+      <h1>안녕하세요, <span style="color:#ffd24a">컴퓨터</span>를 좋아하는<br>김은준이에요</h1>
+      <div class="brand">"하고 싶은 건 몇 시간이든 해보는 사람!"</div>
+    </div>
+  </section>
+
+  <!-- 2. 코딩과의 첫 만남 -->
+  <section class="slide">
+    <div class="inner row">
+      <div class="stack">
+        <div class="kicker">① 코딩과의 첫 만남</div>
+        <h2>초등학교 3학년, <span class="accent">엔트리</span>로 시작</h2>
+        <p class="narr">저는 컴퓨터에 관심이 아주 많은 김은준이에요. <b>초등학교 3학년 때</b> 처음으로 <span class="accent2">엔트리 블록 코딩</span>을 접하게 됐어요.</p>
+        <p class="narr">블록을 하나씩 끼워 맞추면 화면 속 캐릭터가 내 말대로 움직이는 게 정말 신기했어요. 그때부터 코딩이 좋아지기 시작했죠.</p>
+      </div>
+      <!-- 사진 자리: 코딩하는 모습 등을 넣으세요 -->
+      <div>
+        <div class="gallery">
+          <div class="frame">
+            <div class="ph">
+              <div class="ic">🧩</div>
+              <div class="cap"><b>사진 자리</b><br>엔트리/코딩하는 모습을 넣어보세요</div>
+            </div>
+          </div>
+          <div class="pnav">사진을 넣으면 여기 표시돼요</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 3. 언어 여정 -->
+  <section class="slide">
+    <div class="inner row">
+      <div class="stack">
+        <div class="kicker">② 나의 언어 여정</div>
+        <h2>한 걸음씩, <span class="accent">여러 언어</span>를 배우는 중</h2>
+        <p class="narr">엔트리로 시작해서, 지금은 더 다양한 언어에 도전하고 있어요. 하나씩 익힐 때마다 만들 수 있는 게 점점 많아져서 재밌어요.</p>
+      </div>
+      <div class="ljourney">
+        <div class="lang"><div class="li">🧩</div><div><div class="lt">엔트리</div><div class="ls">블록 코딩 — 코딩의 첫 시작</div></div><div class="num">START</div></div>
+        <div class="lang"><div class="li">🐱</div><div><div class="lt">스크래치</div><div class="ls">블록으로 게임·애니메이션 만들기</div></div><div class="num">02</div></div>
+        <div class="lang"><div class="li">🐍</div><div><div class="lt">파이썬</div><div class="ls">글자로 쓰는 진짜 코드에 도전</div></div><div class="num">03</div></div>
+        <div class="lang cur"><div class="li">⚙️</div><div><div class="lt">C언어</div><div class="ls">컴퓨터를 더 깊이 이해하는 언어</div></div><div class="num">NOW</div></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 4. 나의 성격 -->
+  <section class="slide">
+    <div class="inner row">
+      <div class="stack">
+        <div class="kicker">③ 나는 이런 사람</div>
+        <h2>하고 싶은 건 <span class="accent">몇 시간이든</span> 해봐요</h2>
+        <p class="narr">저는 하고 싶은 게 생기면 <b>몇 시간씩 시간을 쓰면서</b> 될 때까지 시도해 보는 성격이에요.</p>
+        <p class="narr">오류가 나도 포기하지 않고, 왜 안 되는지 찾아보고 다시 해봐요. 그러다 결국 성공하면 그 기분이 정말 짜릿하거든요!</p>
+      </div>
+      <div class="cards">
+        <div class="card"><span class="mk">⏳</span>궁금하면 몇 시간이든 <b>몰입</b>해요</div>
+        <div class="card"><span class="mk">🔁</span>안 되면 포기 대신 <b>다시 도전</b></div>
+        <div class="card"><span class="mk">✨</span>성공했을 때의 <b>짜릿함</b>이 좋아요</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 5. 장래희망 -->
+  <section class="slide">
+    <div class="inner row">
+      <div class="stack">
+        <div class="kicker">④ 나의 장래희망</div>
+        <h2>웹·앱을 만드는 <span class="accent">소프트웨어 개발자</span></h2>
+        <p class="narr">저의 장래희망은 <b>웹이나 앱을 만드는 소프트웨어 개발자</b>예요.</p>
+        <p class="narr">사람들이 실제로 쓰는 서비스를 내 손으로 만들 수 있다는 게 멋지다고 생각해요. 그래서 지금도 여러 언어를 배우며 준비하고 있어요.</p>
+        <div class="pills">
+          <span class="pill">🌐 웹 개발</span>
+          <span class="pill">📱 앱 개발</span>
+          <span class="pill">💡 나만의 서비스</span>
+        </div>
+      </div>
+      <div>
+        <div class="gallery">
+          <div class="frame">
+            <div class="ph">
+              <div class="ic">💻📱</div>
+              <div class="cap"><b>사진/작품 자리</b><br>내가 만든 프로그램이나 화면을 넣어보세요</div>
+            </div>
+          </div>
+          <div class="pnav">작품 스크린샷을 넣으면 좋아요</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 6. 왜 개발자? -->
+  <section class="slide">
+    <div class="inner row">
+      <div class="stack">
+        <div class="kicker">⑤ 왜 개발자가 되고 싶냐면</div>
+        <h2><span class="accent">상상</span>한 걸 진짜로 <span class="accent">만들 수</span> 있으니까</h2>
+        <p class="narr">제가 개발자가 되고 싶은 가장 큰 이유는, <b>내가 상상한 것을 실제로 만들 수 있다는 것</b>에 매력을 느꼈기 때문이에요.</p>
+        <p class="narr">머릿속에만 있던 아이디어가 코드로 화면에 나타날 때, 정말 마법 같아요.</p>
+      </div>
+      <div class="stack">
+        <div class="imagine">
+          <div class="ibox dream"><div class="ic">💭</div><b>상상</b><small>머릿속 아이디어</small></div>
+          <div class="iarrow">→</div>
+          <div class="ibox real"><div class="ic">🚀</div><b>현실</b><small>진짜 만든 것!</small></div>
+        </div>
+        <p class="narr" style="text-align:center">코드로 상상을 현실로 만드는 사람, 그게 개발자예요.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- 7. 진짜 꿈 -->
+  <section class="slide">
+    <div class="inner row">
+      <div class="stack">
+        <div class="kicker">⑥ 그리고 나의 진짜 꿈</div>
+        <h2><span class="accent">세계 여행</span>을 다니며 경험하기</h2>
+        <p class="narr">사실 저의 진짜 꿈은 <b>세계 여행</b>이에요. 여러 나라를 다니면서 <span class="accent2">다양한 곳을 방문하고 경험</span>해 보고 싶어요.</p>
+        <p class="narr">새로운 곳, 새로운 사람, 새로운 문화를 만나는 게 설레요. 개발자가 되면 어디서든 일할 수 있으니, 여행하면서 일하는 것도 꿈꿔봐요!</p>
+      </div>
+      <div>
+        <div class="gallery">
+          <div class="frame">
+            <div class="ph">
+              <div class="ic">🌍✈️</div>
+              <div class="cap"><b>사진 자리</b><br>가보고 싶은 나라·여행 사진을 넣어보세요</div>
+            </div>
+          </div>
+          <div class="pnav">가고 싶은 곳 사진을 넣어보세요</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 8. 마무리 -->
+  <section class="slide closing">
+    <div class="inner closing-in">
+      <div class="quote2">"하고 싶은 건, 일단 해보는 거야!"</div>
+      <h1>앞으로도 열심히 해볼게요 💪</h1>
+      <p class="lead-c">하고 싶은 건 해보면서, 한 걸음씩.<br>컴퓨터를 좋아하는 <b style="color:#fff">김은준</b>의 이야기였습니다.</p>
+      <div class="brand">읽어주셔서 고마워요! 😊</div>
+    </div>
+  </section>
+
+  <!-- 네비게이션 -->
+  <div class="hint">← → 방향키 · 화면 클릭으로 넘기기</div>
+  <nav class="hud">
+    <button id="prev" aria-label="이전">◀</button>
+    <div class="dots" id="dots"></div>
+    <span class="count"><b id="cur">1</b> / <span id="tot">8</span></span>
+    <button id="next" aria-label="다음">▶</button>
+  </nav>
+</div>
+
+<script>
+  const slides = Array.from(document.querySelectorAll('.slide'));
+  const dotsWrap = document.getElementById('dots');
+  const curEl = document.getElementById('cur');
+  const prevBtn = document.getElementById('prev');
+  const nextBtn = document.getElementById('next');
+  document.getElementById('tot').textContent = slides.length;
+  let i = 0;
+
+  slides.forEach((_, k) => {
+    const d = document.createElement('i');
+    d.addEventListener('click', (e) => { e.stopPropagation(); show(k); });
+    dotsWrap.appendChild(d);
+  });
+  const dots = Array.from(dotsWrap.children);
+
+  // 사진 갤러리 컨트롤러: 슬라이드가 활성화될 때만 1번 사진부터 자동 전환 시작.
+  const galleries = [];
+  document.querySelectorAll('.gallery').forEach((g) => {
+    const frame = g.querySelector('.frame');
+    const ps = Array.from(g.querySelectorAll('.pslide'));
+    const count = g.querySelector('.pcount');
+    const slide = g.closest('.slide');
+    let pi = 0, timer = null;
+    function render() {
+      ps.forEach((p, k) => p.classList.toggle('on', k === pi));
+      if (count) count.textContent = (pi + 1) + ' / ' + ps.length;
+    }
+    function go(n) { if (ps.length < 2) return; pi = (n + ps.length) % ps.length; render(); }
+    function stop() { if (timer) { clearInterval(timer); timer = null; } }
+    function startAuto() {
+      stop();
+      if (ps.length > 1 && frame && frame.dataset.auto === '1') timer = setInterval(() => go(pi + 1), 3500);
+    }
+    function reset() { pi = 0; render(); }
+    if (frame) frame.addEventListener('click', (e) => { e.stopPropagation(); go(pi + 1); startAuto(); });
+    galleries.push({ slide, reset, startAuto, stop });
+  });
+
+  function show(n) {
+    i = Math.max(0, Math.min(slides.length - 1, n));
+    slides.forEach((s, k) => s.classList.toggle('active', k === i));
+    dots.forEach((d, k) => d.classList.toggle('on', k === i));
+    curEl.textContent = i + 1;
+    prevBtn.disabled = i === 0;
+    nextBtn.disabled = i === slides.length - 1;
+    const inner = slides[i].querySelector('.inner');
+    if (inner) inner.scrollTop = 0;
+    galleries.forEach((gal) => {
+      if (gal.slide === slides[i]) { gal.reset(); gal.startAuto(); }
+      else gal.stop();
+    });
+  }
+
+  prevBtn.addEventListener('click', (e) => { e.stopPropagation(); show(i - 1); });
+  nextBtn.addEventListener('click', (e) => { e.stopPropagation(); show(i + 1); });
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'ArrowRight' || e.key === 'PageDown') { show(i + 1); e.preventDefault(); }
+    else if (e.key === 'ArrowLeft' || e.key === 'PageUp') { show(i - 1); e.preventDefault(); }
+  });
+  document.querySelector('.deck').addEventListener('click', (e) => {
+    if (e.target.closest('.hud') || e.target.closest('a') || e.target.closest('.dots') || e.target.closest('.gallery')) return;
+    if (e.clientX > window.innerWidth / 2) show(i + 1); else show(i - 1);
+  });
+
+  show(0);
+</script>
+</body>
+</html>
