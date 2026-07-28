@@ -139,7 +139,24 @@ elif [ -f /System/Library/Fonts/AppleSDGothicNeo.ttc ]; then
   FONT="fontfile='/System/Library/Fonts/AppleSDGothicNeo.ttc'"
 elif [ -f /System/Library/Fonts/Supplemental/AppleGothic.ttf ]; then
   FONT="fontfile='/System/Library/Fonts/Supplemental/AppleGothic.ttf'"
+elif [ -f /c/Windows/Fonts/malgun.ttf ]; then
+  # Windows(Git Bash) — 맑은 고딕. 찾을 때는 /c/... 로 보지만, ffmpeg 는 네이티브
+  # exe 라 그 경로를 못 읽으니 넘길 때는 C:/... 로 준다.
+  # 드라이브 문자 뒤의 ':' 가 필터 옵션 구분자와 겹치므로 반드시 이스케이프한다.
+  FONT="fontfile='C\\:/Windows/Fonts/malgun.ttf'"
 fi
+
+# 필터그래프 안에 넣을 파일 경로를 ffmpeg 가 읽을 수 있는 형태로 바꾼다.
+#   Windows 의 ffmpeg 는 네이티브 exe 라 Git Bash 의 /tmp/... 를 못 읽는다.
+#   그래서 C:/... 로 바꾸고, 드라이브 문자 뒤의 ':' 는 필터 옵션 구분자와
+#   겹치므로 이스케이프한다. macOS·리눅스에선 cygpath 가 없어 그대로 통과한다.
+ff_path() {
+  if command -v cygpath >/dev/null 2>&1; then
+    cygpath -m "$1" | sed 's/:/\\:/'
+  else
+    printf '%s' "$1"
+  fi
+}
 
 # ---------------------------------------------------------------- 입력 인자
 INPUTS=()
@@ -239,7 +256,7 @@ if [ -n "$FONT" ] && [ -f "$CAPTIONS" ]; then
     else
       EN=$(awk "BEGIN{printf \"%.2f\", ($ci-1)*$HOLD+$HOLD}")
     fi
-    FG="$FG[$LAST]drawtext=$FONT:textfile='$TMP/cap$ci.txt':"
+    FG="$FG[$LAST]drawtext=$FONT:textfile='$(ff_path "$TMP/cap$ci.txt")':"
     FG="${FG}fontcolor=white:fontsize=$FS:line_spacing=10:"
     FG="${FG}box=1:boxcolor=0x1b2f57@0.55:boxborderw=$CAP_PAD:"   # intro.html 의 남색 --accent2
     FG="${FG}x=(w-tw)/2:y=$CAP_Y:fix_bounds=1:"
