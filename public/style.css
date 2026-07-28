@@ -794,6 +794,31 @@ select.pix-input { padding: 6px 8px; font-size: 12px; margin-top: 5px; }
   background-color: #ded2b4;
   box-shadow: 0 0 0 3px #2b2340, inset 3px 3px 0 0 #efe6cc, inset -3px -3px 0 0 #b7a377;
 }
+/* 방학 숙제 칸: 아직 비어 있지만 "못 한 칸"이 아니라 "해볼 수 있는 칸"으로 보이게 한다.
+   회색으로 죽이지 않고, 점선 테두리 + 다른 색 뱃지로 나머지 3칸과 구분한다. */
+.gal-card.empty.homework {
+  opacity: 1;
+  gap: 3px; padding: 8px; /* 안내 문구가 한 줄 더 붙어서 점선 안쪽에 들어오도록 */
+  background-color: #f3e9ff;
+  box-shadow: 0 0 0 3px #2b2340, inset 3px 3px 0 0 #ffffff, inset -3px -3px 0 0 #bda2dd;
+}
+.gal-card.empty.homework:not(:disabled) { cursor: pointer; } /* 안내 문서가 열린다 */
+.gal-card.empty.homework:not(:disabled):hover {
+  background-color: #ece0fb; transform: translate(-1px,-1px);
+}
+.gal-card.empty.homework:not(:disabled):active { transform: translate(1px,1px); }
+.gal-card.empty.homework::after {
+  content: ''; position: absolute; inset: 6px;
+  border: 2px dashed #8b5fbf; pointer-events: none;
+}
+.gal-card.empty.homework .gal-card-icon,
+.gal-card.empty.homework .gal-card-label { color: #4a2d6b; }
+.gal-card.empty.homework .gal-card-sub { color: #7a5aa0; }
+.gal-card.empty.homework .gal-card-status { background: #8b5fbf; }
+.gal-card-note {
+  font-size: 9px; font-weight: 800; color: #7a5aa0; text-align: center;
+}
+
 .gal-card-icon { font-size: 26px; text-shadow: 2px 2px 0 rgba(255,255,255,.5); }
 .gal-card-label { font-size: 13px; font-weight: 900; text-align: center; text-shadow: 0 1px 0 rgba(255,255,255,.6); }
 .gal-card-sub { font-size: 10px; font-weight: 800; color: #97795a; }
@@ -813,6 +838,7 @@ select.pix-input { padding: 6px 8px; font-size: 12px; margin-top: 5px; }
   .pix-window { width: 100%; }
   .gal-grid { grid-template-columns: 1fr 1fr; gap: 8px; }
   .gal-card { height: 104px; }
+  .gal-card-note { display: none; } /* 좁은 화면에선 카드가 넘쳐서 뱃지만 남긴다 */
 }
 
 /* =====================================================================

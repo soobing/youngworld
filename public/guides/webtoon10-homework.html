@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>10년 뒤 나의 미래 — 방학 숙제 안내</title>
+<!--
+  작품 갤러리 slot 3(webtoon10) 의 방학 숙제 안내.
+  마지막 수업에서 다루지 못해 개별 과제로 남긴 칸이라, 갤러리의 그 카드를 누르면 이 문서가 열린다.
+
+  ⚠️ 이 문서에는 "이렇게 만들어라" 를 일부러 넣지 않는다.
+     형태·칸수·그림체·도구 예시를 적는 순간 아이들이 그쪽으로 수렴한다.
+     여기 적는 것은 (1) 과제가 뭔지 (2) 아무 틀도 없다는 사실 (3) 제출 방법, 이 세 가지뿐.
+     전용 서브에이전트(.claude/agents/*)도 만들지 않는다 — game5 와 같은 이유.
+-->
+<style>
+  :root{
+    --ink:#1f2430; --muted:#5b6472; --purple:#7048e8; --purple-soft:#f3e9ff;
+    --accent:#e8590c; --soft:#fff4e6; --line:#e3e7ee; --bg:#f7f8fb;
+    --green:#2f9e44; --mint:#ebfbee;
+  }
+  *{ box-sizing:border-box; }
+  html,body{ margin:0; padding:0; background:var(--bg); }
+  body{
+    font-family:"Apple SD Gothic Neo","Pretendard","Noto Sans KR",-apple-system,"Malgun Gothic",sans-serif;
+    color:var(--ink); line-height:1.75;
+  }
+  .wrap{ max-width:760px; margin:0 auto; padding:36px 24px 72px; }
+
+  header.hero{
+    background:linear-gradient(135deg,#4a2d6b,#8b5fbf); color:#fff;
+    border-radius:18px; padding:30px 28px; margin-bottom:26px;
+    box-shadow:0 10px 30px rgba(112,72,232,.25);
+  }
+  header.hero .tag{
+    display:inline-block; background:rgba(255,255,255,.22);
+    font-weight:800; font-size:13px; padding:5px 12px; border-radius:20px;
+  }
+  header.hero h1{ margin:12px 0 8px; font-size:28px; }
+  header.hero p{ margin:0; opacity:.95; font-size:15px; }
+
+  h2{ font-size:20px; margin:38px 0 12px; padding-left:12px; border-left:5px solid var(--purple); }
+  p.lead{ color:var(--muted); margin:0 0 18px; }
+
+  .callout{ background:var(--purple-soft); border-left:4px solid var(--purple); border-radius:12px; padding:15px 20px; margin:16px 0; }
+  .callout b{ color:var(--purple); }
+  .callout.warm{ background:var(--soft); border-left-color:var(--accent); }
+  .callout.warm b{ color:var(--accent); }
+  .callout.mint{ background:var(--mint); border-left-color:var(--green); }
+  .callout.mint b{ color:var(--green); }
+  .callout p{ margin:6px 0 0; font-size:14.5px; }
+  .callout p:first-child{ margin-top:0; }
+
+  .free{
+    background:#fff; border:2px dashed var(--purple); border-radius:16px;
+    padding:22px 24px; margin:18px 0; text-align:center;
+  }
+  .free .big{ font-size:22px; font-weight:900; color:var(--purple); }
+  .free .sub{ font-size:14px; color:var(--muted); margin-top:6px; }
+
+  ul.plain{ padding-left:20px; margin:10px 0; }
+  ul.plain li{ margin:7px 0; font-size:15px; }
+
+  code{
+    background:#f1f3f7; border:1px solid var(--line); border-radius:6px;
+    padding:1px 6px; font-size:13.5px; font-family:"SFMono-Regular",Consolas,monospace;
+  }
+  pre{
+    background:#12121a; color:#e9ecf5; border-radius:12px; padding:14px 16px;
+    overflow-x:auto; font-size:13px; line-height:1.6;
+  }
+  .foot{ margin-top:44px; padding-top:18px; border-top:1px solid var(--line); color:var(--muted); font-size:13.5px; }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header class="hero">
+    <span class="tag">🎒 방학 숙제 · 하고 싶은 사람만</span>
+    <h1>📚 10년 뒤 나의 미래</h1>
+    <p>마지막 수업에서 같이 하지 못한 칸이에요. 시간이 되고 마음이 생기면, 방학 동안 각자 채워서 갤러리에 걸어 봅시다.</p>
+  </header>
+
+  <h2>이 과제는 뭐예요?</h2>
+  <p class="lead">
+    작품 갤러리의 네 번째 칸이에요. 앞의 세 칸(자기소개 · 나의 꿈은 · 5년 뒤 나의 미래)은 수업 시간에 같이 만들었고,
+    이 칸만 남았습니다. <b>안 해도 괜찮아요.</b> 빈 칸으로 두어도 괜찮습니다.
+    다만 채우고 싶은 사람에게는 이 칸이 계속 열려 있어요. 마감도 없습니다.
+  </p>
+
+  <h2>규칙은 딱 하나</h2>
+
+  <div class="free">
+    <div class="big">10년 뒤의 나</div>
+    <div class="sub">그 이야기가 담겨 있으면 됩니다. 나머지는 전부 자유.</div>
+  </div>
+
+  <div class="callout">
+    <p><b>이번엔 일부러 가이드를 만들지 않았어요.</b></p>
+    <p>
+      「5년 뒤 나의 미래」때는 강의자료도 있고, 옆에서 도와주는 AI 도우미도 따로 있었죠.
+      이번 숙제에는 그런 걸 <b>하나도 준비하지 않았습니다.</b>
+      "이런 식으로 만들면 돼" 하는 예시를 보는 순간 다들 그 모양으로 비슷해지거든요.
+      10년 뒤 이야기만큼은 <b>처음부터 끝까지 여러분이 정한 모양</b>이었으면 좋겠어요.
+    </p>
+  </div>
+
+  <ul class="plain">
+    <li>웹툰으로 그려도 되고, 웹툰이 아니어도 됩니다. 만들다 보니 다른 게 되었어도 괜찮아요.</li>
+    <li>몇 칸인지, 그림체가 어떤지, 글이 많은지 적은지 — 정해진 게 없습니다.</li>
+    <li>어떤 도구를 써도 됩니다. 손으로 그려서 사진을 찍어도, 코드로 만들어도 좋아요.</li>
+    <li>막히면 AI에게 물어봐도 됩니다. 대신 <b>"뭘 만들지"는 먼저 스스로 정하고</b> 물어보세요.</li>
+  </ul>
+
+  <div class="callout warm">
+    <p><b>다른 친구 작품을 먼저 보지 마세요.</b></p>
+    <p>내 것을 다 만들고 나서 보면 훨씬 재미있습니다. 먼저 보면 꼭 그쪽을 닮아 버려요.</p>
+  </div>
+
+  <h2>다 만들면 어떻게 걸어요?</h2>
+  <p class="lead">
+    <b>여러분이 직접 겁니다.</b> 선생님한테 보내지 않아도 돼요.
+    자기소개랑 5년 뒤 미래를 올렸던 것과 똑같습니다 — 내 폴더에 파일을 넣고 올리면 끝.
+  </p>
+
+<pre>public/works/&lt;내폴더&gt;/webtoon10.html</pre>
+
+  <ul class="plain">
+    <li><code>&lt;내폴더&gt;</code> 는 지금까지 쓰던 내 폴더 그대로예요 (<code>intro.html</code> 이 들어 있는 그 폴더).</li>
+    <li>파일 이름은 <b>반드시 <code>webtoon10.html</code></b> 이어야 합니다. 이 이름을 보고 갤러리가 알아서 찾아 걸어요.</li>
+    <li>그림·사진 같은 자료는 같은 폴더 안에 넣고 <code>webtoon10.html</code> 에서 불러오면 됩니다.</li>
+    <li>올리는 방법(브랜치 → PR)은 책장의 <b>「개발자는 어떻게 함께 일할까?」</b> 문서에 그대로 있습니다.</li>
+  </ul>
+
+  <div class="callout mint">
+    <p><b>올리고 나면</b> 갤러리 카드의 보라색 점선이 사라지고, 다른 작품들처럼 눌러서 볼 수 있게 됩니다.</p>
+    <p>어려운 점이 있으면 선생님에게 언제든지 연락해서 물어봐도 돼요.</p>
+  </div>
+
+  <div class="foot">
+    영월드 · 작품 갤러리 slot 3 (<code>webtoon10</code>) · 방학 숙제 안내
+  </div>
+
+</div>
+</body>
+</html>

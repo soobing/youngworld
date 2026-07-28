@@ -110,10 +110,12 @@ function render() {
 
 function buildCard(cat, work) {
   const has = !!(work && work.url);
+  // 수업 시간에 못 한 칸(방학 숙제)은 "아직 안 함"이 아니라 "해볼 수 있음"으로 보이게 한다.
+  const homework = !!cat.optional && !has;
 
   const card = document.createElement('button');
   card.type = 'button';
-  card.className = 'gal-card' + (has ? ' filled' : ' empty');
+  card.className = 'gal-card' + (has ? ' filled' : ' empty') + (homework ? ' homework' : '');
   if (has && work.thumbnail) {
     card.style.backgroundImage = `url("${work.thumbnail}")`;
   }
@@ -135,14 +137,32 @@ function buildCard(cat, work) {
     card.appendChild(sub);
   }
 
+  if (homework && cat.note) {
+    const note = document.createElement('span');
+    note.className = 'gal-card-note';
+    note.textContent = cat.note;
+    card.appendChild(note);
+  }
+
   const status = document.createElement('span');
   status.className = 'gal-card-status';
-  status.textContent = has ? '✔ 전시됨' : '전시 준비 중';
+  status.textContent = has
+    ? '✔ 전시됨'
+    : homework
+      ? cat.guide
+        ? '🎒 방학 숙제 ▸' // ▸ = 눌러서 안내를 볼 수 있다는 표시
+        : '🎒 방학 숙제'
+      : '전시 준비 중';
   card.appendChild(status);
 
   if (has) {
     card.addEventListener('click', () => {
       openPPT(work.url, cat.label + (cat.sub ? ' ' + cat.sub : ''));
+    });
+  } else if (homework && cat.guide) {
+    // 아직 안 만들었어도 누를 수 있다 — 안내 문서가 열린다.
+    card.addEventListener('click', () => {
+      openPPT(cat.guide, `${cat.label} — 방학 숙제 안내`);
     });
   } else {
     card.disabled = true;

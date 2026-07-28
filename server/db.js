@@ -401,11 +401,21 @@ const Materials = {
 };
 
 // 작품 전시 카테고리 4종(고정 순서 = slot 인덱스). 학생마다 이 4칸을 채운다.
+// optional: 수업 시간에 다 못 하는 칸. 방학 숙제/개별 과제로 남겨두고, 하고 싶은 친구만 채운다.
 const WORK_CATEGORIES = [
   { key: 'intro', label: '자기소개', sub: '', icon: '👋' },
   { key: 'dream', label: '나의 꿈은?', sub: '', icon: '⭐' },
   { key: 'game5', label: '5년 뒤 나의 미래', sub: '(게임)', icon: '🎮' },
-  { key: 'webtoon10', label: '10년 뒤 나의 미래', sub: '(웹툰)', icon: '📚' },
+  {
+    key: 'webtoon10',
+    label: '10년 뒤 나의 미래',
+    sub: '(웹툰)',
+    icon: '📚',
+    optional: true,
+    note: '하고 싶은 사람만 · 언제든지',
+    // 비어 있는 카드를 누르면 열리는 안내(만드는 법이 아니라 "틀이 없다"는 안내).
+    guide: '/guides/webtoon10-homework.html',
+  },
 ];
 
 // 교실 책장의 How-to 안내 문서.
