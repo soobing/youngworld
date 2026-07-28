@@ -222,6 +222,12 @@ function ensureSeed() {
     Guides.create({ title: '그림 5장이 영상이 되기까지', url: HOW_VIDEO_URL, slot: 3 });
   }
 
+  // 협업 실전편(브랜치 → PR → 코드리뷰 + worktree/resume). 단독으로 읽어도 완결되게 썼다.
+  const TEAM_URL = '/guides/team-workflow.html';
+  if (!Guides.all().some((g) => g.url === TEAM_URL)) {
+    Guides.create({ title: '개발자는 어떻게 함께 일할까?', url: TEAM_URL, slot: 4 });
+  }
+
   if (already === 0) {
     console.log('[seed] 초기 아바타 7명 + 예시 강의자료를 넣었습니다.');
   }
