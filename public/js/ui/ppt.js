@@ -8,7 +8,12 @@ import { state } from '../state.js';
 export function openPPT(url, title) {
   const modal = document.getElementById('ppt-modal');
   document.getElementById('ppt-title').textContent = title || '';
-  document.getElementById('ppt-frame').src = url;
+  // 로그인한 사람 이름을 작품(iframe)에 ?me= 로 넘겨준다.
+  // 게임 순위표 등에서 이름을 직접 입력받지 않고 이 값으로 자동 저장할 수 있다.
+  let src = url;
+  const nick = state.me && state.me.nickname;
+  if (nick) src += (url.includes('?') ? '&' : '?') + 'me=' + encodeURIComponent(nick);
+  document.getElementById('ppt-frame').src = src;
   modal.classList.remove('hidden');
   state.uiOpen = true; // 게임 입력 잠금
 }
