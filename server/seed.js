@@ -205,6 +205,7 @@ function ensureSeed() {
   //   - 그 닉네임의 아바타가 없으면 조용히 건너뛴다. 이미 slot 2 가 차 있으면 건드리지 않는다.
   const STUDENT_GAMES = [
     { nickname: '최승찬', slug: 'seungchan', title: '최승찬의 5년 뒤 나의 미래' },
+    { nickname: '안해찬', slug: 'ahn', title: '안해찬의 첫 박' },
     { nickname: '박효진', slug: 'park', title: '박효진의 5년 뒤 나의 미래' },
     { nickname: '김현영', slug: 'hyunyoung', title: '김현영의 국제고로 올라가기' },
   ];

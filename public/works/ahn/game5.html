@@ -1,0 +1,1612 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
+<title>안해찬의 5년 뒤 나의 미래 — 첫 박</title>
+<style>
+  html, body {
+    margin: 0; padding: 0; height: 100%; overflow: hidden;
+    background: #06060b; color: #f1f3f5;
+    font-family: "Pretendard", "Apple SD Gothic Neo", "Malgun Gothic", system-ui, sans-serif;
+    -webkit-user-select: none; user-select: none;
+    -webkit-tap-highlight-color: transparent;
+    touch-action: manipulation;
+  }
+
+  /* 게임판은 480x720 고정으로 그리고, 화면 크기에 맞춰 통째로 확대/축소한다.
+     (폭을 고정한 채 두면 폰에서 가로로 삐져나간다) */
+  #board {
+    position: absolute; left: 50%; top: 50%;
+    width: 480px; height: 720px;
+    transform: translate(-50%, -50%) scale(1);
+    transform-origin: center center;
+    background: #0b0c14;
+    border-radius: 18px;
+    overflow: hidden;
+    box-shadow: 0 0 0 1px #23252f, 0 24px 70px rgba(0,0,0,.6);
+  }
+
+  #cv { display: block; width: 480px; height: 720px; }
+
+  /* ---- HUD (화면에 계속 보이는 숫자는 점수와 남은 시간 둘뿐) ---- */
+  #hud {
+    position: absolute; left: 0; top: 0; width: 480px;
+    padding: 14px 18px 0; box-sizing: border-box;
+    display: flex; justify-content: space-between; align-items: flex-start;
+    pointer-events: none;
+  }
+  .hud-label { font-size: 12px; letter-spacing: .14em; color: #7c8093; margin-bottom: 2px; }
+  .hud-value { font-size: 30px; font-weight: 800; line-height: 1; font-variant-numeric: tabular-nums; }
+  #hudRight { text-align: right; }
+  #stageName {
+    position: absolute; left: 0; top: 62px; width: 480px;
+    text-align: center; font-size: 13px; color: #9aa0b5; letter-spacing: .04em;
+    pointer-events: none;
+  }
+  #bar {
+    position: absolute; left: 0; top: 86px; width: 480px; height: 3px;
+    background: rgba(255,255,255,.07); pointer-events: none;
+  }
+  #barFill { height: 100%; width: 0%; background: #ffd43b; transition: width .1s linear; }
+
+  /* ---- 콤보 / 판정 문구 ---- */
+  #judge {
+    position: absolute; left: 0; top: 430px; width: 480px; text-align: center;
+    font-size: 26px; font-weight: 800; opacity: 0; pointer-events: none;
+    text-shadow: 0 2px 12px rgba(0,0,0,.7);
+  }
+  #combo {
+    position: absolute; left: 0; top: 468px; width: 480px; text-align: center;
+    font-size: 15px; font-weight: 700; color: #ffd43b; opacity: 0; pointer-events: none;
+  }
+
+  /* ---- 단계 시작 배너 ---- */
+  #banner {
+    position: absolute; left: 50%; top: 300px; transform: translateX(-50%);
+    width: 400px; text-align: center; opacity: 0; pointer-events: none;
+  }
+  #bannerNo { font-size: 13px; letter-spacing: .3em; color: #ffd43b; }
+  #bannerTitle { font-size: 34px; font-weight: 800; margin: 8px 0 6px; }
+  #bannerSpeed {
+    display: inline-block; margin-top: 14px; padding: 5px 14px; border-radius: 999px;
+    background: rgba(255,212,59,.14); color: #ffd43b; font-size: 13px; font-weight: 700;
+  }
+
+  /* ---- 오버레이 화면(시작/결과/기록) ---- */
+  .screen {
+    position: absolute; inset: 0; background: rgba(8,9,15,.94);
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    padding: 30px 34px; box-sizing: border-box; text-align: center;
+  }
+  .screen.hidden { display: none; }
+  .eyebrow { font-size: 12px; letter-spacing: .3em; color: #ffd43b; }
+  h1 { font-size: 42px; margin: 10px 0 4px; font-weight: 800; letter-spacing: -.02em; }
+  .who { font-size: 14px; color: #868c9f; margin-bottom: 22px; }
+  .rule {
+    background: rgba(255,255,255,.05); border: 1px solid rgba(255,255,255,.09);
+    border-radius: 12px; padding: 16px 18px; font-size: 15px; line-height: 1.7; color: #d3d7e4;
+    margin-bottom: 22px; max-width: 340px;
+  }
+  .rule b { color: #ffd43b; }
+  .keys { display: flex; gap: 8px; justify-content: center; margin: 12px 0 0; }
+  .keyCol { display: flex; flex-direction: column; align-items: center; gap: 5px; }
+  .keyCol span { font-size: 11px; color: #7c8093; }
+  .key {
+    width: 42px; height: 38px; border-radius: 8px; display: flex; align-items: center; justify-content: center;
+    font-weight: 800; font-size: 15px; color: #0b0c14;
+  }
+  .small { font-size: 12px; color: #6f7488; margin-top: 12px; line-height: 1.6; }
+
+  button {
+    font: inherit; cursor: pointer; border: 0; border-radius: 11px;
+    padding: 14px 30px; font-weight: 800; font-size: 16px;
+    background: #ffd43b; color: #16171f; transition: transform .08s ease, filter .15s ease;
+  }
+  button:active { transform: translateY(1px); }
+  button.ghost { background: transparent; color: #c3c8d8; box-shadow: inset 0 0 0 1px #3a3d4c; }
+  button:disabled { filter: grayscale(1) brightness(.7); cursor: default; }
+  .btns { display: flex; gap: 10px; flex-wrap: wrap; justify-content: center; }
+
+  /* ---- 결과 ---- */
+  #resultScore { font-size: 66px; font-weight: 800; line-height: 1; margin: 6px 0 2px; color: #ffd43b; }
+  #resultDetail { font-size: 14px; color: #a2a8bb; margin-bottom: 6px; }
+  #resultStages {
+    font-size: 12px; color: #757b90; margin-bottom: 18px; line-height: 1.8;
+    font-variant-numeric: tabular-nums;
+  }
+  #nameBox { margin-bottom: 16px; }
+  #nameBox input {
+    font: inherit; font-size: 16px; padding: 12px 14px; width: 200px; text-align: center;
+    border-radius: 10px; border: 1px solid #3a3d4c; background: #14151e; color: #f1f3f5;
+  }
+  #saveMsg { font-size: 13px; margin-bottom: 14px; min-height: 18px; color: #8de08d; }
+  #saveMsg.err { color: #ff8787; }
+
+  /* ---- 기록(랭킹) ---- */
+  #rankList { width: 100%; max-width: 360px; max-height: 380px; overflow-y: auto; margin-bottom: 18px; }
+  .rankRow {
+    display: flex; align-items: center; gap: 10px; padding: 9px 12px;
+    border-radius: 9px; font-size: 15px;
+  }
+  .rankRow:nth-child(odd) { background: rgba(255,255,255,.04); }
+  .rankRow .no { width: 30px; color: #7c8093; font-weight: 700; font-variant-numeric: tabular-nums; }
+  .rankRow .nm { flex: 1; text-align: left; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .rankRow .sc { font-weight: 800; font-variant-numeric: tabular-nums; }
+  .rankRow.top1 .no, .rankRow.top1 .sc { color: #ffd43b; }
+  .rankRow.me { box-shadow: inset 0 0 0 1px #ffd43b; }
+  #rankEmpty { color: #7c8093; font-size: 14px; padding: 30px 0; }
+
+  #muteBtn {
+    position: absolute; right: 14px; bottom: 12px; width: 38px; height: 38px; padding: 0;
+    border-radius: 50%; background: rgba(255,255,255,.07); color: #c3c8d8; font-size: 16px;
+  }
+</style>
+</head>
+<body>
+
+<div id="board">
+  <canvas id="cv" width="960" height="1440"></canvas>
+
+  <div id="hud">
+    <div><div class="hud-label">점수</div><div class="hud-value" id="scoreV">0</div></div>
+    <div id="hudRight"><div class="hud-label">남은 시간</div><div class="hud-value" id="timeV">15</div></div>
+  </div>
+  <div id="stageName"></div>
+  <div id="bar"><div id="barFill"></div></div>
+
+  <div id="judge"></div>
+  <div id="combo"></div>
+
+  <div id="banner">
+    <div id="bannerNo"></div>
+    <div id="bannerTitle"></div>
+    <div id="bannerSpeed"></div>
+  </div>
+
+  <!-- 시작 화면 -->
+  <div class="screen" id="startScreen">
+    <div class="eyebrow">5년 뒤 나의 미래</div>
+    <h1>첫 박</h1>
+    <div class="who">안해찬 · 리듬게임 5단계</div>
+    <div class="rule">
+      떨어지는 북이 <b>아래 선</b>에 닿을 때 그 칸을 친다. 끝.<br>
+      맞추면 <b>+10점</b>, 헛치면 <b style="color:#ff8787">-5점</b>.
+      <div class="keys">
+        <div class="keyCol"><div class="key" style="background:#ff6b6b">D</div><span>킥</span></div>
+        <div class="keyCol"><div class="key" style="background:#ffd43b">F</div><span>스네어</span></div>
+        <div class="keyCol"><div class="key" style="background:#69db7c">J</div><span>탐</span></div>
+        <div class="keyCol"><div class="key" style="background:#74c0fc">K</div><span>하이햇</span></div>
+      </div>
+      <div class="small">폰이면 그 칸을 손가락으로 누르세요.<br>단계가 오를수록 0.5배씩 빨라집니다. (1 → 3배)<br>🎧 소리를 켜고 하세요 — 단계마다 음악이 세집니다.</div>
+    </div>
+    <div class="btns">
+      <button id="startBtn">시작하기</button>
+      <button class="ghost" id="rankBtn1">기록 보기</button>
+    </div>
+    <div class="small">5단계 × 15초 · 전부 맞히면 2000점</div>
+  </div>
+
+  <!-- 결과 화면 -->
+  <div class="screen hidden" id="resultScreen">
+    <div class="eyebrow" id="resultEyebrow">무대 끝</div>
+    <div id="resultScore">0</div>
+    <div id="resultDetail"></div>
+    <div id="resultStages"></div>
+    <div id="nameBox" class="hidden">
+      <input id="nameInput" maxlength="12" placeholder="이름 (12자까지)" autocomplete="off">
+    </div>
+    <div id="saveMsg"></div>
+    <div class="btns">
+      <button id="saveBtn">기록 저장</button>
+      <button class="ghost" id="rankBtn2">기록 보기</button>
+      <button class="ghost" id="againBtn">다시 하기</button>
+    </div>
+  </div>
+
+  <!-- 기록 화면 -->
+  <div class="screen hidden" id="rankScreen">
+    <div class="eyebrow">기록</div>
+    <h1 style="font-size:28px">첫 박 랭킹</h1>
+    <div class="who" style="margin-bottom:14px">안해찬의 5년 뒤 나의 미래</div>
+    <div id="rankList"></div>
+    <button class="ghost" id="rankCloseBtn">닫기</button>
+  </div>
+
+  <button id="muteBtn" title="소리 켜기/끄기">🔊</button>
+</div>
+
+<script>
+/* =====================================================================
+   BGM — 단계가 오를수록 세지는 록. 음원 파일 없이 그 자리에서 만든다.
+
+   왜 mp3 를 안 쓰나
+     1) 리듬게임이라 음악과 노트가 어긋나면 게임이 망가진다. 노트 간격에서
+        BPM 을 거꾸로 계산해 쓰면 노트가 전부 박에 정확히 떨어진다.
+        노트 간격 750·500·375·300·250ms → 60000/간격 = 80·120·160·200·240 BPM.
+        즉 노트 하나 = 정확히 한 박이다.
+     2) 게임은 HTML 한 파일로 완결시키는 규칙이라 음원을 늘리기 어렵다.
+     3) 라이선스 표기 문제가 없다.
+
+   단계별 — 조성은 계속 E 단조(록에서 제일 흔하다. 기타 제일 굵은 줄이 E)
+     1단계  80 BPM  아르페지오. 킥/하이햇만. 아직 안 세다
+     2단계 120 BPM  팜뮤트 8분 파워코드 + 백비트 스네어
+     3단계 160 BPM  디스토션 본격. 드럼 전부 + 베이스도 같이 달린다
+     4단계 200 BPM  갤럽 리듬 + 리드 기타 멜로디. 하드록
+     5단계 240 BPM  투 베이스 + 솔로. 여기서부터는 스래시
+   ===================================================================== */
+(function (global) {
+  'use strict';
+
+  // ---- 음이름
+  var E2 = 82.41, G2 = 98.0, C3 = 130.81, D3 = 146.83;
+  var B2 = 123.47, E3 = 164.81, G3 = 196.0, A3 = 220.0;
+  var B3 = 246.94, C4 = 261.63, D4 = 293.66, E4 = 329.63;
+  var G4 = 392.0, A4 = 440.0, B4 = 493.88, D5 = 587.33, E5 = 659.25;
+
+  // 파워코드 = 근음 + 5도 + 옥타브. 3도가 없어서 디스토션을 세게 걸어도 안 탁하다.
+  var PROG = [
+    { notes: [E2, B2, E3], bass: E2 / 2, arp: [E3, B3, E4, B3] },  // Em
+    { notes: [C3, G3, C4], bass: C3 / 2, arp: [C4, G3, C4, E4] },  // C
+    { notes: [G2, D3, G3], bass: G2 / 2, arp: [G3, D4, G4, D4] },  // G
+    { notes: [D3, A3, D4], bass: D3 / 2, arp: [D4, A3, D4, A4] }   // D
+  ];
+  // 5단계만 코드를 바꾼다. D 자리에 Em 을 되받아쳐서 쉴 틈을 없앤다.
+  var PROG5 = [PROG[0], PROG[1], PROG[3], PROG[0]];
+
+  // 리드는 E 단조 펜타토닉. 록 솔로가 거의 이 5음 안에서 논다.
+  var PENTA = [E4, G4, A4, B4, D5, E5];
+
+  //   drive  디스토션 세기(2 = 거의 깨끗 … 30 = 찢어짐)
+  //   gtr    기타 주법 / drums 드럼 패턴 / bassDiv 한 마디를 몇 번 치는지
+  var LEVELS = {
+    1: { bpm: 80,  drive: 2.5, gtr: 'arp',    drums: 'light',  bassDiv: 2, lead: null,  amp: 0.17, crash: 0 },
+    2: { bpm: 120, drive: 6,   gtr: 'mute8',  drums: 'basic',  bassDiv: 2, lead: null,  amp: 0.19, crash: 8 },
+    3: { bpm: 160, drive: 12,  gtr: 'power8', drums: 'rock',   bassDiv: 4, lead: null,  amp: 0.20, crash: 4 },
+    4: { bpm: 200, drive: 20,  gtr: 'gallop', drums: 'drive',  bassDiv: 4, lead: 'mel', amp: 0.20, crash: 4 },
+    5: { bpm: 240, drive: 30,  gtr: 'chug',   drums: 'double', bassDiv: 8, lead: 'solo', amp: 0.21, crash: 2 }
+  };
+  var MAX_LEVEL = 5;
+
+  // 빠른 곡에서 16분음표까지 채우면 소리가 뭉개지고 오디오 노드도 감당이 안 된다.
+  // 이 BPM 이상이면 한 단계 성기게 친다.
+  var FAST_BPM = 170;
+
+  var ac = null, master, gtrBus, gtrShape, leadBus, leadShape, vibAmt, nz;
+  var running = false, timer = null;
+  var level = 1, bpm = 80;
+  var barIndex = 0, nextBarTime = 0;
+  var pendingBar = null;   // 다음 마디에서 바꿀 단계
+  var pendingAt = null;    // {time, level, bpm} — 이 시각에 딱 맞춰 갈아탄다
+  var volume = 0.4, everStarted = false;
+
+  var LOOKAHEAD = 0.3;     // 이만큼 앞서 예약해 둔다(브라우저가 버벅여도 안 끊기게)
+
+  function ensure() {
+    if (ac) return ac;
+    var AC = global.AudioContext || global.webkitAudioContext;
+    if (!AC) return null;
+    ac = new AC();
+
+    // 리미터. 5단계에서 소리가 한꺼번에 몰려도 찢어지지 않게 눌러 준다.
+    var comp = ac.createDynamicsCompressor();
+    comp.threshold.value = -16; comp.ratio.value = 8;
+    comp.attack.value = 0.003; comp.release.value = 0.2;
+
+    master = ac.createGain();
+    master.gain.value = 0.0001;
+    master.connect(comp); comp.connect(ac.destination);
+
+    // 기타는 앰프 한 대를 같이 쓴다. 여러 음이 한 디스토션을 통과해야
+    // 진짜 기타처럼 서로 뭉개지면서 코드가 한 덩어리로 들린다.
+    gtrShape = ac.createWaveShaper(); gtrShape.oversample = '4x';
+    var gLow = ac.createBiquadFilter();   // 캐비닛 흉내 — 고역을 잘라야 기타 소리가 난다
+    gLow.type = 'lowpass'; gLow.frequency.value = 3400;
+    var gHigh = ac.createBiquadFilter();  // 저역을 잘라야 베이스와 안 겹친다
+    gHigh.type = 'highpass'; gHigh.frequency.value = 95;
+    gtrBus = ac.createGain();
+    gtrBus.connect(gtrShape); gtrShape.connect(gLow); gLow.connect(gHigh); gHigh.connect(master);
+
+    // 리드는 앰프를 따로 쓴다. 같이 물리면 코드에 파묻혀 안 들린다.
+    leadShape = ac.createWaveShaper(); leadShape.oversample = '4x';
+    var lLow = ac.createBiquadFilter();
+    lLow.type = 'lowpass'; lLow.frequency.value = 5200;
+    leadBus = ac.createGain();
+    leadBus.connect(leadShape); leadShape.connect(lLow); lLow.connect(master);
+
+    // 비브라토 LFO 하나를 리드 음들이 같이 쓴다(음마다 만들면 무겁다).
+    var vib = ac.createOscillator();
+    vib.frequency.value = 5.4;
+    vibAmt = ac.createGain(); vibAmt.gain.value = 9;  // 센트
+    vib.connect(vibAmt); vib.start();
+
+    // 드럼용 노이즈. 2초짜리를 한 번 만들고 읽는 위치만 바꿔 쓴다.
+    var n = Math.floor(ac.sampleRate * 2);
+    nz = ac.createBuffer(1, n, ac.sampleRate);
+    var d = nz.getChannelData(0), seed = 20260729;
+    for (var i = 0; i < n; i++) {
+      seed = (seed * 1664525 + 1013904223) >>> 0;
+      d[i] = seed / 2147483648 - 1;
+    }
+
+    applyTone(LEVELS[level]);
+    return ac;
+  }
+
+  function curve(amount) {
+    var n = 1024, c = new Float32Array(n), k = Math.tanh(amount);
+    for (var i = 0; i < n; i++) c[i] = Math.tanh(((i * 2) / n - 1) * amount) / k;
+    return c;
+  }
+
+  function applyTone(cfg) {
+    gtrShape.curve = curve(cfg.drive);
+    leadShape.curve = curve(Math.max(3, cfg.drive * 0.7));
+    // 디스토션을 세게 걸수록 소리도 커지므로 그만큼 내려서 균형을 맞춘다.
+    gtrBus.gain.value = 1 / (1 + cfg.drive * 0.06);
+    leadBus.gain.value = 1 / (1 + cfg.drive * 0.05);
+  }
+
+  // ---- 악기 -----------------------------------------------------------
+  // 기타 한 음. mute = 팜뮤트(손날로 줄을 눌러 짧고 답답하게 치는 주법)
+  function gtrNote(t, f, dur, amp, mute) {
+    var o = ac.createOscillator(); o.type = 'sawtooth'; o.frequency.value = f;
+    var g = ac.createGain();
+    var peak = amp * (mute ? 1.3 : 1);
+    g.gain.setValueAtTime(0.0001, t);
+    g.gain.linearRampToValueAtTime(peak, t + 0.004);
+    if (mute) {
+      // 순식간에 죽는다. 이 "툭툭" 끊기는 맛이 록 리프의 핵심이다.
+      g.gain.exponentialRampToValueAtTime(peak * 0.22, t + dur * 0.4);
+      g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+    } else {
+      g.gain.setValueAtTime(peak, t + dur * 0.7);
+      g.gain.exponentialRampToValueAtTime(0.0001, t + dur + 0.05);
+    }
+    o.connect(g); g.connect(gtrBus);
+    o.start(t); o.stop(t + dur + 0.08);
+  }
+
+  function gtrChord(t, notes, dur, amp, mute, thin) {
+    var n = thin ? Math.min(2, notes.length) : notes.length;
+    for (var i = 0; i < n; i++) gtrNote(t, notes[i], dur, amp, mute);
+  }
+
+  // 베이스 — 사인(몸통) + 톱니(작은 스피커에서도 들리라고)
+  function bassNote(t, f, dur, amp) {
+    var o1 = ac.createOscillator(); o1.type = 'sine'; o1.frequency.value = f;
+    var o2 = ac.createOscillator(); o2.type = 'sawtooth'; o2.frequency.value = f;
+    var o2g = ac.createGain(); o2g.gain.value = 0.35;
+    var lp = ac.createBiquadFilter(); lp.type = 'lowpass';
+    lp.frequency.setValueAtTime(1800, t);
+    lp.frequency.exponentialRampToValueAtTime(420, t + dur);
+    var g = ac.createGain();
+    g.gain.setValueAtTime(0.0001, t);
+    g.gain.linearRampToValueAtTime(amp, t + 0.008);
+    g.gain.exponentialRampToValueAtTime(0.0001, t + dur + 0.04);
+    o1.connect(g); o2.connect(o2g); o2g.connect(g);
+    g.connect(lp); lp.connect(master);
+    o1.start(t); o2.start(t); o1.stop(t + dur + 0.06); o2.stop(t + dur + 0.06);
+  }
+
+  function leadNote(t, f, dur, amp) {
+    var o = ac.createOscillator(); o.type = 'sawtooth'; o.frequency.value = f;
+    vibAmt.connect(o.detune);
+    var g = ac.createGain();
+    g.gain.setValueAtTime(0.0001, t);
+    g.gain.linearRampToValueAtTime(amp, t + 0.012);
+    g.gain.setValueAtTime(amp * 0.85, t + dur * 0.7);
+    g.gain.exponentialRampToValueAtTime(0.0001, t + dur + 0.12);
+    o.connect(g); g.connect(leadBus);
+    o.start(t); o.stop(t + dur + 0.15);
+    o.onended = function () { try { vibAmt.disconnect(o.detune); } catch (e) {} };
+  }
+
+  function bgmKick(t, amp) {
+    var o = ac.createOscillator(); o.type = 'sine';
+    o.frequency.setValueAtTime(150, t);
+    o.frequency.exponentialRampToValueAtTime(46, t + 0.07);   // 뚝 떨어진다 = 킥
+    var g = ac.createGain();
+    g.gain.setValueAtTime(amp, t);
+    g.gain.exponentialRampToValueAtTime(0.0001, t + 0.2);
+    o.connect(g); g.connect(master);
+    o.start(t); o.stop(t + 0.24);
+  }
+
+  function bgmSnare(t, amp) {
+    var s = ac.createBufferSource(); s.buffer = nz; s.playbackRate.value = 1.2;
+    var bp = ac.createBiquadFilter();
+    bp.type = 'bandpass'; bp.frequency.value = 1900; bp.Q.value = 0.7;
+    var g = ac.createGain();
+    g.gain.setValueAtTime(amp, t);
+    g.gain.exponentialRampToValueAtTime(0.0001, t + 0.16);
+    s.connect(bp); bp.connect(g); g.connect(master);
+    s.start(t, (t * 7) % 1);      // 매번 다른 지점을 읽어 똑같이 안 들리게
+    s.stop(t + 0.18);
+    var b = ac.createOscillator(); b.type = 'triangle';   // 통 울림
+    b.frequency.setValueAtTime(210, t);
+    b.frequency.exponentialRampToValueAtTime(160, t + 0.09);
+    var bg = ac.createGain();
+    bg.gain.setValueAtTime(amp * 0.5, t);
+    bg.gain.exponentialRampToValueAtTime(0.0001, t + 0.1);
+    b.connect(bg); bg.connect(master);
+    b.start(t); b.stop(t + 0.12);
+  }
+
+  function bgmHat(t, amp, open) {
+    var s = ac.createBufferSource(); s.buffer = nz; s.playbackRate.value = 2.4;
+    var hp = ac.createBiquadFilter(); hp.type = 'highpass'; hp.frequency.value = 7500;
+    var dur = open ? 0.24 : 0.04;
+    var g = ac.createGain();
+    g.gain.setValueAtTime(amp, t);
+    g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+    s.connect(hp); hp.connect(g); g.connect(master);
+    s.start(t, (t * 3) % 1); s.stop(t + dur + 0.02);
+  }
+
+  function bgmCrash(t, amp) {
+    var s = ac.createBufferSource(); s.buffer = nz; s.playbackRate.value = 0.8;
+    var hp = ac.createBiquadFilter(); hp.type = 'highpass'; hp.frequency.value = 4200;
+    var g = ac.createGain();
+    g.gain.setValueAtTime(amp, t);
+    g.gain.exponentialRampToValueAtTime(0.0001, t + 1.3);
+    s.connect(hp); hp.connect(g); g.connect(master);
+    s.start(t, 0.05); s.stop(t + 1.4);
+  }
+
+  function bgmTom(t, f, amp) {
+    var o = ac.createOscillator(); o.type = 'sine';
+    o.frequency.setValueAtTime(f, t);
+    o.frequency.exponentialRampToValueAtTime(f * 0.6, t + 0.16);
+    var g = ac.createGain();
+    g.gain.setValueAtTime(amp, t);
+    g.gain.exponentialRampToValueAtTime(0.0001, t + 0.2);
+    o.connect(g); g.connect(master);
+    o.start(t); o.stop(t + 0.22);
+  }
+
+  // ---- 마디 하나를 통째로 예약한다 -------------------------------------
+  function scheduleBar(t, bar) {
+    var cfg = LEVELS[level];
+    var beat = 60 / bpm, s16 = beat / 4, barDur = beat * 4;
+    var fast = bpm >= FAST_BPM;             // 빠르면 성기게 친다
+    var prog = level === 5 ? PROG5 : PROG;
+    var ch = prog[bar % prog.length];
+    var i;
+
+    // 기타
+    if (cfg.gtr === 'arp') {
+      // 아르페지오 — 코드를 한 음씩 흩는다. 아직 안 세다.
+      for (i = 0; i < 8; i++) {
+        gtrNote(t + i * beat * 0.5, ch.arp[i % ch.arp.length], beat * 0.55,
+                cfg.amp * (i % 2 ? 0.7 : 1), false);
+      }
+    } else if (cfg.gtr === 'mute8') {
+      // 첫 박만 코드를 활짝 열고, 나머지는 근음을 팜뮤트로 툭툭
+      gtrChord(t, ch.notes, beat * 0.9, cfg.amp, false, false);
+      for (i = 2; i < 8; i++) gtrNote(t + i * beat * 0.5, ch.notes[0], s16 * 1.4, cfg.amp * 0.8, true);
+    } else if (cfg.gtr === 'power8') {
+      // 8분 파워코드 — 여기서부터 진짜 록
+      for (i = 0; i < 8; i++) {
+        gtrChord(t + i * beat * 0.5, ch.notes, beat * 0.42,
+                 cfg.amp * (i === 0 ? 1.15 : 0.9), i !== 0, false);
+      }
+    } else if (cfg.gtr === 'gallop') {
+      // 갤럽(♪♬) — 말 달리는 리듬. 하드록/메탈의 상징 같은 리프.
+      // 200 BPM 이면 16분이 75ms 라 너무 급하다 → 8분 두 번으로 편다.
+      for (i = 0; i < 4; i++) {
+        var kt = t + i * beat;
+        if (fast) {
+          gtrChord(kt, ch.notes, beat * 0.42, cfg.amp * 1.05, true, false);
+          gtrChord(kt + beat * 0.5, ch.notes, beat * 0.36, cfg.amp * 0.85, true, true);
+        } else {
+          gtrChord(kt, ch.notes, s16 * 1.6, cfg.amp * 1.05, true, false);
+          gtrChord(kt + s16 * 2, ch.notes, s16 * 0.9, cfg.amp * 0.85, true, true);
+          gtrChord(kt + s16 * 3, ch.notes, s16 * 0.9, cfg.amp * 0.85, true, true);
+        }
+      }
+    } else if (cfg.gtr === 'chug') {
+      // 연타. 두 박마다 코드를 열어 숨통을 틔운다.
+      var steps = fast ? 8 : 16, step = barDur / steps;
+      for (i = 0; i < steps; i++) {
+        var open = i % (steps / 2) === 0;
+        gtrChord(t + i * step, ch.notes, open ? beat * 0.5 : step * 0.8,
+                 cfg.amp * (open ? 1.1 : 0.82), !open, !open);
+      }
+    }
+
+    // 베이스
+    for (i = 0; i < cfg.bassDiv; i++) {
+      var len = barDur / cfg.bassDiv;
+      bassNote(t + i * len, ch.bass, len * 0.85, 0.32 * (i === 0 ? 1.15 : 1));
+    }
+
+    // 드럼
+    var d = cfg.drums;
+    if (d === 'light') {
+      bgmKick(t, 0.8); bgmKick(t + beat * 2, 0.7);
+      bgmSnare(t + beat * 2, 0.26);
+      for (i = 0; i < 8; i++) bgmHat(t + i * beat * 0.5, i % 2 ? 0.07 : 0.12, false);
+    } else if (d === 'basic') {
+      bgmKick(t, 0.85); bgmKick(t + beat * 2, 0.75);
+      bgmSnare(t + beat, 0.42); bgmSnare(t + beat * 3, 0.44);
+      for (i = 0; i < 8; i++) bgmHat(t + i * beat * 0.5, i % 2 ? 0.08 : 0.14, false);
+    } else if (d === 'rock') {
+      bgmKick(t, 0.9); bgmKick(t + beat * 0.75, 0.6); bgmKick(t + beat * 2, 0.85);
+      bgmSnare(t + beat, 0.5); bgmSnare(t + beat * 3, 0.52);
+      for (i = 0; i < 8; i++) bgmHat(t + i * beat * 0.5, i % 2 ? 0.09 : 0.16, i === 7);
+    } else if (d === 'drive') {
+      bgmKick(t, 0.95); bgmKick(t + beat * 0.5, 0.6);
+      bgmKick(t + beat * 2, 0.9); bgmKick(t + beat * 2.75, 0.65);
+      bgmSnare(t + beat, 0.55); bgmSnare(t + beat * 3, 0.58);
+      bgmSnare(t + beat * 3.5, 0.15);       // 고스트 노트 — 있는 듯 없는 듯 굴러가게
+      for (i = 0; i < 8; i++) bgmHat(t + i * beat * 0.5, i % 2 ? 0.1 : 0.18, false);
+    } else if (d === 'double') {
+      // 투 베이스. 5단계를 5단계로 만드는 소리.
+      var kicks = fast ? 8 : 16;
+      for (i = 0; i < kicks; i++) bgmKick(t + i * (barDur / kicks), i % (kicks / 4) === 0 ? 0.9 : 0.55);
+      bgmSnare(t + beat, 0.6); bgmSnare(t + beat * 3, 0.62);
+      for (i = 0; i < 8; i++) bgmHat(t + i * beat * 0.5, 0.13, false);
+    }
+
+    // 필인 — 4마디에 한 번, 마지막 박에서 탐을 굴려 다음 마디로 넘긴다.
+    if (bar % 4 === 3 && level >= 3) {
+      var cnt = level >= 5 ? 4 : 2;
+      for (i = 0; i < cnt; i++) bgmTom(t + beat * 3 + i * (beat / cnt), 220 - i * 34, 0.4);
+    }
+    if (cfg.crash && bar % cfg.crash === 0) bgmCrash(t, 0.16);
+
+    // 리드
+    if (cfg.lead === 'mel') {
+      var seq = [0, 2, 3, 2];
+      for (i = 0; i < 4; i++) leadNote(t + i * beat, PENTA[(seq[i] + bar) % PENTA.length], beat * 0.8, 0.1);
+    } else if (cfg.lead === 'solo') {
+      // 펜타토닉을 오르내린다. 마디마다 시작 음이 달라져 같은 프레이즈가 반복되지 않는다.
+      var n = fast ? 8 : 16;
+      for (i = 0; i < n; i++) {
+        if (i % 4 === 3) continue;          // 다 채우면 정신없다. 한 칸씩 비운다
+        var idx = (bar * 2 + i + (i % 8 < 4 ? 0 : 2)) % PENTA.length;
+        leadNote(t + i * (barDur / n), PENTA[idx], (barDur / n) * 1.5, 0.075);
+      }
+    }
+  }
+
+  function tick() {
+    if (!running || !ac) return;
+    var guard = 0;
+    while (nextBarTime < ac.currentTime + LOOKAHEAD && guard++ < 8) {
+      var barDur = (60 / bpm) * 4;
+
+      // 예약한 시각에 딱 맞춰 갈아타야 하면, 그 시각을 넘어가는 마디는 치지 않고
+      // 통째로 건너뛴다. 남는 잠깐의 공백은 단계 배너가 떠 있는 동안이라
+      // 오히려 "뚝 끊겼다가 새 리프가 쾅" 하고 들어오는 맛이 난다.
+      if (pendingAt && nextBarTime + barDur > pendingAt.time - 0.001) {
+        nextBarTime = pendingAt.time;
+        level = pendingAt.level; bpm = pendingAt.bpm;
+        barIndex = 0; pendingAt = null;
+        applyTone(LEVELS[level]);
+        barDur = (60 / bpm) * 4;
+        if (nextBarTime > ac.currentTime + LOOKAHEAD) break;
+      } else if (pendingBar !== null) {
+        // 그냥 다음 마디에서 바꾸는 경우 — 마디 경계라 박자가 안 끊긴다.
+        if (pendingBar !== level) {
+          level = pendingBar; bpm = LEVELS[level].bpm;
+          applyTone(LEVELS[level]);
+          barDur = (60 / bpm) * 4;
+        }
+        pendingBar = null;
+      }
+
+      scheduleBar(nextBarTime, barIndex);
+      nextBarTime += barDur;
+      barIndex++;
+    }
+  }
+
+  function clampLv(lv) {
+    lv = Math.round(Number(lv) || 1);
+    return Math.max(1, Math.min(MAX_LEVEL, lv));
+  }
+
+  global.BGM = {
+    supported: !!(global.AudioContext || global.webkitAudioContext),
+
+    // opts: {level, bpm, at}  at 을 주면 그 오디오 시각부터 시작한다
+    start: function (opts) {
+      opts = opts || {};
+      if (!ensure()) return false;
+      if (ac.state === 'suspended') ac.resume();
+      level = clampLv(opts.level || 1);
+      bpm = Number(opts.bpm) || LEVELS[level].bpm;
+      applyTone(LEVELS[level]);
+      pendingBar = null; pendingAt = null; barIndex = 0;
+      nextBarTime = opts.at != null ? opts.at : ac.currentTime + 0.12;
+      running = true; everStarted = true;
+      master.gain.cancelScheduledValues(ac.currentTime);
+      master.gain.setValueAtTime(0.0001, ac.currentTime);
+      master.gain.linearRampToValueAtTime(Math.max(0.0001, volume), ac.currentTime + 0.3);
+      if (timer) clearInterval(timer);
+      timer = setInterval(tick, 40);
+      tick();
+      return true;
+    },
+
+    // 이 시각(오디오 시계)에 딱 맞춰 새 단계로 갈아탄다.
+    // 리듬게임이라 노트가 시작되는 순간과 마디 첫 박이 정확히 겹쳐야 한다.
+    switchAt: function (lv, newBpm, at) {
+      if (!running) return;
+      lv = clampLv(lv);
+      pendingAt = { time: at, level: lv, bpm: Number(newBpm) || LEVELS[lv].bpm };
+      pendingBar = null;
+      tick();
+    },
+
+    setLevel: function (lv) {
+      lv = clampLv(lv);
+      if (!running) { level = lv; bpm = LEVELS[lv].bpm; if (ac) applyTone(LEVELS[lv]); return; }
+      pendingBar = lv;
+    },
+
+    bpmOf: function (lv) { return LEVELS[clampLv(lv)].bpm; },
+    now: function () { return ac ? ac.currentTime : 0; },
+    isPlaying: function () { return running; },
+
+    setVolume: function (v) {
+      volume = Math.max(0, Math.min(1, Number(v) || 0));
+      if (ac && running) {
+        master.gain.cancelScheduledValues(ac.currentTime);
+        master.gain.setValueAtTime(master.gain.value, ac.currentTime);
+        master.gain.linearRampToValueAtTime(Math.max(0.0001, volume), ac.currentTime + 0.08);
+      }
+    },
+
+    stop: function (fade) {
+      if (!running || !ac) return;
+      running = false;
+      clearInterval(timer); timer = null;
+      pendingAt = null; pendingBar = null;
+      var f = fade == null ? 0.4 : fade;
+      master.gain.cancelScheduledValues(ac.currentTime);
+      master.gain.setValueAtTime(master.gain.value, ac.currentTime);
+      master.gain.linearRampToValueAtTime(0.0001, ac.currentTime + f);
+    },
+
+    resume: function () { if (ac && everStarted) ac.resume(); }
+  };
+})(window);
+</script>
+
+<script>
+/* =====================================================================
+   첫 박 — 안해찬의 「5년 뒤 나의 미래」 (리듬게임)
+
+   ▼ 숫자를 바꾸고 싶으면 아래 설정값만 고치면 됩니다.
+   ===================================================================== */
+
+var STAGE_COUNT   = 5;      // 단계 수
+var STAGE_MS      = 15000;  // 한 단계 길이 (15초)
+var STAGE_INTRO_MS= 2200;   // 단계 시작 전 배너가 뜨는 시간
+var SPEED_START   = 1.0;    // 1단계 속도
+var SPEED_STEP    = 0.5;    // 단계마다 더해지는 속도 (1 → 1.5 → 2 → 2.5 → 3배)
+var POINT_PER_HIT = 10;     // 하나 맞출 때마다 얻는 점수
+var PENALTY_WHIFF = 5;      // 아무것도 없는데 쳤을 때 깎이는 점수 (마구 두드리는 것 막기)
+var BASE_BEAT_MS  = 750;    // 1단계에서 북이 나오는 간격 (속도가 오르면 이만큼 짧아진다)
+var BASE_FALL_MS  = 1800;   // 1단계에서 북이 떨어지는 데 걸리는 시간
+var HIT_WINDOW_MS = 140;    // 이 시간 안에 치면 맞은 것으로 친다
+var PERFECT_MS    = 60;     // 이 안쪽이면 PERFECT (점수는 같고 표시만 다르다)
+var LANES         = 4;      // 칸 수
+var CHART_SEED    = 20260729; // 악보 씨앗 — 고정이라 누가 해도 같은 악보가 나온다(랭킹 공정)
+
+var BGM_VOLUME    = 0.4;    // 배경음악 크기. 내가 친 드럼 소리가 묻히면 이걸 낮춘다.
+
+var GAME_KEY      = 'ahn-game5'; // 랭킹이 쌓이는 이름. 오타 나면 기록이 둘로 갈라진다.
+
+// 단계 — 관객석에서 보기만 하던 사람이 → 연습실 → 학교 → 거리 → 결국 무대에 앉는다.
+//   scene 은 아래 drawScene() 이 그리는 배경 이름이다.
+var STAGES = [
+  { title: '공연장 관객석', scene: 'seats',  bg: ['#0e1120', '#06070d'], accent: '#748ffc' },
+  { title: '연습실',       scene: 'room',   bg: ['#1c1510', '#0a0807'], accent: '#ffa94d' },
+  { title: '학교',         scene: 'school', bg: ['#0f1e2c', '#070c12'], accent: '#4dabf7' },
+  { title: '버스킹',       scene: 'street', bg: ['#141026', '#07060f'], accent: '#b197fc' },
+  { title: '공연장 무대',   scene: 'stage',  bg: ['#2b2008', '#0f0b04'], accent: '#ffd43b' }
+];
+
+// 칸(드럼) 색과 이름
+var LANE_COLOR = ['#ff6b6b', '#ffd43b', '#69db7c', '#74c0fc'];
+var LANE_KEYS  = ['D', 'F', 'J', 'K'];
+
+/* ================= 여기부터는 게임이 돌아가는 코드 ================= */
+
+var BOARD_W = 480, BOARD_H = 720;
+var JUDGE_Y = 596;          // 판정선 y
+var SPAWN_Y = -46;          // 북이 나타나는 y
+var LANE_X0 = 40;           // 칸이 시작되는 x
+var LANE_W  = 100;          // 칸 하나 폭 (40 + 100*4 = 440, 양쪽 여백 40)
+var NOTE_R  = 26;
+
+var TOTAL_MS = STAGE_COUNT * (STAGE_INTRO_MS + STAGE_MS);
+var MAX_SCORE = 0; // 악보를 만든 뒤 계산한다
+
+var cv = document.getElementById('cv');
+var ctx = cv.getContext('2d');
+ctx.scale(2, 2); // 캔버스 실제 크기는 2배로 잡아 두고 절반 좌표로 그린다(선명하게)
+
+var el = {
+  board: document.getElementById('board'),
+  scoreV: document.getElementById('scoreV'),
+  timeV: document.getElementById('timeV'),
+  stageName: document.getElementById('stageName'),
+  barFill: document.getElementById('barFill'),
+  judge: document.getElementById('judge'),
+  combo: document.getElementById('combo'),
+  banner: document.getElementById('banner'),
+  bannerNo: document.getElementById('bannerNo'),
+  bannerTitle: document.getElementById('bannerTitle'),
+  bannerSpeed: document.getElementById('bannerSpeed'),
+  startScreen: document.getElementById('startScreen'),
+  resultScreen: document.getElementById('resultScreen'),
+  rankScreen: document.getElementById('rankScreen'),
+  resultScore: document.getElementById('resultScore'),
+  resultEyebrow: document.getElementById('resultEyebrow'),
+  resultDetail: document.getElementById('resultDetail'),
+  resultStages: document.getElementById('resultStages'),
+  nameBox: document.getElementById('nameBox'),
+  nameInput: document.getElementById('nameInput'),
+  saveMsg: document.getElementById('saveMsg'),
+  saveBtn: document.getElementById('saveBtn'),
+  rankList: document.getElementById('rankList'),
+  muteBtn: document.getElementById('muteBtn')
+};
+
+var G = null;   // 한 판의 상태. null 이면 아직 시작 전.
+
+// ---- 화면 크기 맞추기 ------------------------------------------------
+function fit() {
+  var s = Math.min(window.innerWidth / BOARD_W, window.innerHeight / BOARD_H);
+  el.board.style.transform = 'translate(-50%,-50%) scale(' + s + ')';
+}
+window.addEventListener('resize', fit);
+fit();
+
+// ---- 악보 만들기 -----------------------------------------------------
+// 씨앗이 고정된 난수라 매번 같은 악보가 나온다. (친구들끼리 같은 조건으로 겨룬다)
+function lcg(seed) {
+  var s = seed >>> 0;
+  return function () { s = (s * 1664525 + 1013904223) >>> 0; return s / 4294967296; };
+}
+
+function speedOf(stage) { return SPEED_START + SPEED_STEP * stage; }
+function playStartOf(stage) { return stage * (STAGE_INTRO_MS + STAGE_MS) + STAGE_INTRO_MS; }
+
+// 그 단계의 배경음악 BPM. 노트 간격이 곧 한 박이라서 이렇게 나온다.
+//   750ms → 80 · 500 → 120 · 375 → 160 · 300 → 200 · 250 → 240 BPM
+// 노트가 전부 박 위에 정확히 떨어지므로, 음악을 들으면 리듬이 보인다.
+function bpmOf(stage) { return 60000 / (BASE_BEAT_MS / speedOf(stage)); }
+
+function buildChart() {
+  var rnd = lcg(CHART_SEED);
+  var notes = [];
+  for (var s = 0; s < STAGE_COUNT; s++) {
+    var mult = speedOf(s);
+    var interval = BASE_BEAT_MS / mult;         // 750 → 500 → 375 → 300 → 250 ms
+    var count = Math.round(STAGE_MS / interval); //  20 →  30 →  40 →  50 →  60 개
+    var start = playStartOf(s);
+    var prevLane = -1;
+    for (var i = 0; i < count; i++) {
+      var lane = Math.floor(rnd() * LANES);
+      // 같은 칸이 연달아 나오면 판정이 겹치기 쉬워서 한 칸 옆으로 민다
+      if (lane === prevLane) lane = (lane + 1 + Math.floor(rnd() * (LANES - 1))) % LANES;
+      prevLane = lane;
+      notes.push({ t: start + i * interval, lane: lane, stage: s, fall: BASE_FALL_MS / mult, done: false, hit: false });
+    }
+  }
+  return notes;
+}
+
+// ---- 소리 (파일 없이 만든 8비트 드럼) --------------------------------
+var AC = null, muted = false, noiseBuf = null;
+function audio() {
+  if (!AC) {
+    var Ctx = window.AudioContext || window.webkitAudioContext;
+    if (!Ctx) return null;
+    AC = new Ctx();
+    var len = Math.floor(AC.sampleRate * 0.3);
+    noiseBuf = AC.createBuffer(1, len, AC.sampleRate);
+    var d = noiseBuf.getChannelData(0);
+    for (var i = 0; i < len; i++) d[i] = Math.random() * 2 - 1;
+  }
+  if (AC.state === 'suspended') AC.resume();
+  return AC;
+}
+
+function tone(freq, freq2, dur, gain, type) {
+  var ac = audio(); if (!ac || muted) return;
+  var o = ac.createOscillator(), g = ac.createGain();
+  o.type = type || 'sine';
+  o.frequency.setValueAtTime(freq, ac.currentTime);
+  if (freq2) o.frequency.exponentialRampToValueAtTime(freq2, ac.currentTime + dur);
+  g.gain.setValueAtTime(gain, ac.currentTime);
+  g.gain.exponentialRampToValueAtTime(0.0001, ac.currentTime + dur);
+  o.connect(g); g.connect(ac.destination);
+  o.start(); o.stop(ac.currentTime + dur + 0.02);
+}
+
+function noise(dur, gain, hp) {
+  var ac = audio(); if (!ac || muted || !noiseBuf) return;
+  var src = ac.createBufferSource(); src.buffer = noiseBuf;
+  var f = ac.createBiquadFilter(); f.type = 'highpass'; f.frequency.value = hp || 2000;
+  var g = ac.createGain();
+  g.gain.setValueAtTime(gain, ac.currentTime);
+  g.gain.exponentialRampToValueAtTime(0.0001, ac.currentTime + dur);
+  src.connect(f); f.connect(g); g.connect(ac.destination);
+  src.start(); src.stop(ac.currentTime + dur + 0.02);
+}
+
+function drumSound(lane) {
+  if (lane === 0) tone(150, 45, 0.16, 0.32);          // 킥
+  else if (lane === 1) { noise(0.11, 0.20, 1400); tone(200, 130, 0.08, 0.14, 'triangle'); } // 스네어
+  else if (lane === 2) tone(320, 160, 0.14, 0.24, 'triangle'); // 탐
+  else noise(0.07, 0.13, 6000);                        // 하이햇
+}
+function missSound() { tone(110, 70, 0.1, 0.1, 'square'); }
+// 박자 안내음. 배경음악이 나오는 동안은 음악이 곧 박자라서 치지 않는다
+// (음악의 하이햇과 겹쳐서 두 번 들린다).
+function tickSound() {
+  if (window.BGM && BGM.isPlaying()) return;
+  noise(0.03, 0.035, 7000);
+}
+
+el.muteBtn.addEventListener('click', function () {
+  muted = !muted;
+  el.muteBtn.textContent = muted ? '🔇' : '🔊';
+  // 음악은 멈추지 않고 소리만 0 으로 만든다. 다시 켰을 때 박자가 그대로여야 한다.
+  if (window.BGM) BGM.setVolume(muted ? 0 : BGM_VOLUME);
+});
+
+// ---- 한 판 시작 ------------------------------------------------------
+function startGame() {
+  audio();
+  var notes = buildChart();
+  MAX_SCORE = notes.length * POINT_PER_HIT;
+  G = {
+    notes: notes,
+    t: 0,
+    t0: 0,
+    score: 0,
+    hits: 0,
+    whiffs: 0,
+    perfects: 0,
+    combo: 0,
+    bestCombo: 0,
+    stage: -1,
+    perStage: [],
+    laneFlash: [-9999, -9999, -9999, -9999],
+    hitFlash: [-9999, -9999, -9999, -9999],
+    over: false,
+    started: false,
+    audioT0: 0,      // 게임 시간 0 에 해당하는 오디오 시계 값 (음악을 노트에 맞추는 기준)
+    musicOn: false
+  };
+  if (window.BGM) BGM.stop(0.15);   // 다시 하기 — 앞판 음악을 정리하고 새로 시작한다
+  for (var i = 0; i < STAGE_COUNT; i++) G.perStage.push({ hit: 0, total: 0 });
+  for (var j = 0; j < notes.length; j++) G.perStage[notes[j].stage].total++;
+
+  el.startScreen.classList.add('hidden');
+  el.resultScreen.classList.add('hidden');
+  el.rankScreen.classList.add('hidden');
+  el.scoreV.textContent = '0';
+  requestAnimationFrame(loop);
+}
+
+// ---- 입력 -----------------------------------------------------------
+function press(lane) {
+  if (!G || G.over) return;
+  G.laneFlash[lane] = G.t;
+
+  var best = null, bestD = 1e9;
+  for (var i = 0; i < G.notes.length; i++) {
+    var n = G.notes[i];
+    if (n.done || n.lane !== lane) continue;
+    var d = n.t - G.t;
+    if (d > HIT_WINDOW_MS) break;          // 악보는 시간순이라 더 볼 필요 없다
+    if (Math.abs(d) < bestD) { bestD = Math.abs(d); best = n; }
+  }
+
+  if (best && bestD <= HIT_WINDOW_MS) {
+    best.done = true; best.hit = true;
+    G.score += POINT_PER_HIT;
+    G.hits++;
+    G.perStage[best.stage].hit++;
+    G.combo++;
+    if (G.combo > G.bestCombo) G.bestCombo = G.combo;
+    G.hitFlash[lane] = G.t;
+    var perfect = bestD <= PERFECT_MS;
+    if (perfect) G.perfects++;
+    showJudge(perfect ? 'PERFECT' : 'GOOD', perfect ? '#ffd43b' : '#69db7c');
+    drumSound(lane);
+    el.scoreV.textContent = G.score;
+  } else {
+    // 헛침 — 점수가 깎인다. 점수는 0점 아래로 내려가지 않는다(기록 서버가 음수를 받지 않는다).
+    G.combo = 0;
+    G.whiffs++;
+    G.score = Math.max(0, G.score - PENALTY_WHIFF);
+    showJudge('-' + PENALTY_WHIFF, '#ff8787');
+    missSound();
+    el.scoreV.textContent = G.score;
+  }
+}
+
+// 한글 자판이 켜져 있어도 되게 'ㅇㄹㅓㅏ' 도 같이 받는다
+var KEYMAP = { 'd': 0, 'f': 1, 'j': 2, 'k': 3, 'ㅇ': 0, 'ㄹ': 1, 'ㅓ': 2, 'ㅏ': 3,
+               'ArrowLeft': 0, 'ArrowDown': 1, 'ArrowUp': 2, 'ArrowRight': 3 };
+
+window.addEventListener('keydown', function (e) {
+  if (e.repeat) return;
+  var lane = KEYMAP[e.key] !== undefined ? KEYMAP[e.key] : KEYMAP[String(e.key).toLowerCase()];
+  if (lane === undefined) {
+    // 스페이스/엔터로 시작·다시하기
+    if ((e.key === ' ' || e.key === 'Enter') && (!G || G.over) && el.rankScreen.classList.contains('hidden')
+        && document.activeElement !== el.nameInput) {
+      e.preventDefault(); startGame();
+    }
+    return;
+  }
+  e.preventDefault();
+  press(lane);
+});
+
+// 손가락/마우스 — 그 칸 어디를 눌러도 그 칸을 친 것으로 본다(폰에서 판정선만 노리기 어렵다)
+function pointerLane(clientX) {
+  var r = el.board.getBoundingClientRect();
+  var x = (clientX - r.left) / (r.width / BOARD_W); // 확대/축소를 되돌린 게임판 좌표
+  var lane = Math.floor((x - LANE_X0) / LANE_W);
+  return (lane >= 0 && lane < LANES) ? lane : -1;
+}
+cv.addEventListener('pointerdown', function (e) {
+  if (!G || G.over) return;
+  e.preventDefault();
+  var lane = pointerLane(e.clientX);
+  if (lane >= 0) press(lane);
+});
+
+// ---- 판정 문구 -------------------------------------------------------
+var judgeUntil = 0;
+function showJudge(text, color) {
+  el.judge.textContent = text;
+  el.judge.style.color = color;
+  el.judge.style.opacity = '1';
+  judgeUntil = G.t + 380;
+  if (G.combo >= 3) {
+    el.combo.textContent = G.combo + ' 연속';
+    el.combo.style.opacity = '1';
+  } else {
+    el.combo.style.opacity = '0';
+  }
+}
+
+// ---- 매 프레임 ------------------------------------------------------
+// 음악의 기준점은 게임 시계를 잡는 바로 그 순간에 같이 잡는다.
+// 두 시계(화면 시계 / 오디오 시계)를 한 프레임에서 재야 노트와 박이 안 어긋난다.
+function startMusic() {
+  if (!window.BGM || !BGM.supported) return;
+  G.audioT0 = BGM.now();
+  BGM.setVolume(muted ? 0 : BGM_VOLUME);
+  // 1단계 첫 노트가 떨어지는 순간에 첫 마디 첫 박이 오게 맞춘다.
+  G.musicOn = !!BGM.start({ level: 1, bpm: bpmOf(0), at: G.audioT0 + playStartOf(0) / 1000 });
+}
+
+function loop(now) {
+  if (!G) return;
+  if (!G.started) { G.started = true; G.t0 = now; startMusic(); }
+  G.t = now - G.t0;
+
+  // 지나간 북은 놓친 것으로 처리
+  for (var i = 0; i < G.notes.length; i++) {
+    var n = G.notes[i];
+    if (n.done) continue;
+    if (n.t < G.t - HIT_WINDOW_MS) { n.done = true; G.combo = 0; }
+    else if (n.t > G.t + HIT_WINDOW_MS) break;
+  }
+
+  // 박자 안내음 (놓쳐도 리듬은 계속 들리게)
+  while (G.tickIdx === undefined || G.tickIdx < G.notes.length) {
+    if (G.tickIdx === undefined) G.tickIdx = 0;
+    if (G.notes[G.tickIdx] && G.notes[G.tickIdx].t <= G.t) { tickSound(); G.tickIdx++; }
+    else break;
+  }
+
+  updateStage();
+  draw();
+
+  if (G.t >= TOTAL_MS) { finish(); return; }
+  requestAnimationFrame(loop);
+}
+
+function updateStage() {
+  var idx = Math.min(STAGE_COUNT - 1, Math.floor(G.t / (STAGE_INTRO_MS + STAGE_MS)));
+  var into = G.t - idx * (STAGE_INTRO_MS + STAGE_MS);
+  var inIntro = into < STAGE_INTRO_MS;
+
+  if (idx !== G.stage) {
+    G.stage = idx;
+    var st = STAGES[idx];
+    el.stageName.textContent = (idx + 1) + '단계 · ' + st.title + ' · ×' + speedOf(idx).toFixed(1) + ' 빠르게';
+    el.barFill.style.background = st.accent;
+    el.bannerNo.textContent = (idx + 1) + ' / ' + STAGE_COUNT;
+    el.bannerTitle.textContent = st.title;
+    el.bannerSpeed.textContent = '속도 ×' + speedOf(idx).toFixed(1);
+    el.bannerSpeed.style.color = st.accent;
+
+    // 음악도 같이 세진다. 배너가 떠 있는 동안 앞 단계 음악이 이어지다가,
+    // 새 단계의 첫 노트가 떨어지는 바로 그 순간에 새 리프가 첫 박으로 들어온다.
+    if (idx > 0 && G.musicOn) {
+      BGM.switchAt(idx + 1, bpmOf(idx), G.audioT0 + playStartOf(idx) / 1000);
+    }
+  }
+
+  el.banner.style.opacity = inIntro ? String(Math.min(1, (STAGE_INTRO_MS - into) / 500)) : '0';
+
+  var left = inIntro ? STAGE_MS : (STAGE_MS - (into - STAGE_INTRO_MS));
+  el.timeV.textContent = Math.max(0, Math.ceil(left / 1000));
+  el.barFill.style.width = (100 * Math.min(1, Math.max(0, (into - STAGE_INTRO_MS) / STAGE_MS))) + '%';
+
+  if (judgeUntil && G.t > judgeUntil) {
+    el.judge.style.opacity = '0';
+    el.combo.style.opacity = '0';
+    judgeUntil = 0;
+  }
+}
+
+// ---- 단계 배경 ------------------------------------------------------
+// 이미지 파일 없이 캔버스로 그린다(파일 하나로 돌아가야 하므로).
+// 노트가 잘 보여야 해서 전부 어둡고 연하게 그린다.
+function drawScene(st, t) {
+  ctx.save();
+  if (st.scene === 'seats') sceneSeats(t, st);
+  else if (st.scene === 'room') sceneRoom(t, st);
+  else if (st.scene === 'school') sceneSchool(t, st);
+  else if (st.scene === 'street') sceneStreet(t, st);
+  else if (st.scene === 'stage') sceneStage(t, st);
+  ctx.restore();
+}
+
+// 1단계 — 공연장 관객석: 비어 있는 좌석 줄이 뒤로 멀어진다
+function sceneSeats(t, st) {
+  for (var r = 0; r < 9; r++) {
+    var p = r / 8;                    // 0 = 앞줄(아래) → 1 = 뒷줄(위·멀다)
+    var yy = 300 - p * 190;
+    var h = 30 - p * 18;
+    var w = 40 - p * 24;
+    var gap = w + 8;
+    ctx.fillStyle = 'rgba(130,150,215,' + (0.13 - p * 0.095) + ')';
+    var off = (r % 2) ? gap / 2 : 0;
+    for (var x = -gap; x < 500; x += gap) {
+      ctx.fillRect(x + off, yy, w, h);
+      ctx.fillRect(x + off + w * 0.42, yy + h, w * 0.16, 5); // 다리
+    }
+  }
+  // 비상구 표시 — 어두운 홀 느낌
+  ctx.fillStyle = 'rgba(105,219,124,.30)';
+  ctx.fillRect(24, 128, 26, 12);
+  ctx.fillRect(430, 128, 26, 12);
+  // 천장에서 내려오는 아주 약한 조명
+  var g = ctx.createLinearGradient(240, 0, 240, 260);
+  g.addColorStop(0, 'rgba(116,143,252,.10)');
+  g.addColorStop(1, 'rgba(116,143,252,0)');
+  ctx.fillStyle = g;
+  ctx.fillRect(0, 0, 480, 260);
+}
+
+// 2단계 — 연습실: 방음 폼 벽 + 전구 하나
+function sceneRoom(t, st) {
+  ctx.fillStyle = 'rgba(255,169,77,.05)';
+  for (var yy = 40; yy < 400; yy += 32) {
+    for (var xx = 8; xx < 480; xx += 32) {
+      if ((Math.round(xx / 32) + Math.round(yy / 32)) % 2 === 0) ctx.fillRect(xx, yy, 26, 26);
+    }
+  }
+  // 매달린 전구
+  ctx.strokeStyle = 'rgba(255,255,255,.14)'; ctx.lineWidth = 1.5;
+  ctx.beginPath(); ctx.moveTo(96, 0); ctx.lineTo(96, 96); ctx.stroke();
+  var g = ctx.createRadialGradient(96, 104, 3, 96, 104, 92);
+  g.addColorStop(0, 'rgba(255,214,153,.42)');
+  g.addColorStop(1, 'rgba(255,214,153,0)');
+  ctx.fillStyle = g;
+  ctx.beginPath(); ctx.arc(96, 104, 92, 0, Math.PI * 2); ctx.fill();
+  ctx.fillStyle = 'rgba(255,231,186,.75)';
+  ctx.beginPath(); ctx.arc(96, 104, 7, 0, Math.PI * 2); ctx.fill();
+  // 벽에 붙은 포스터
+  ctx.fillStyle = 'rgba(255,169,77,.13)';
+  ctx.fillRect(360, 120, 68, 92);
+  ctx.fillStyle = 'rgba(255,255,255,.07)';
+  ctx.fillRect(368, 132, 52, 40);
+}
+
+// 3단계 — 학교: 칠판 + 창문 + 축제 가랜드
+function sceneSchool(t, st) {
+  // 칠판
+  ctx.fillStyle = 'rgba(70,140,110,.16)';
+  ctx.fillRect(120, 140, 250, 130);
+  ctx.strokeStyle = 'rgba(200,170,120,.22)'; ctx.lineWidth = 5;
+  ctx.strokeRect(120, 140, 250, 130);
+  ctx.strokeStyle = 'rgba(255,255,255,.14)'; ctx.lineWidth = 2;
+  ctx.beginPath(); ctx.moveTo(146, 186); ctx.lineTo(268, 186); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(146, 212); ctx.lineTo(320, 212); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(146, 238); ctx.lineTo(226, 238); ctx.stroke();
+  // 창문(낮빛)
+  for (var i = 0; i < 2; i++) {
+    var wx = i === 0 ? 18 : 396;
+    ctx.fillStyle = 'rgba(160,205,255,.13)';
+    ctx.fillRect(wx, 150, 66, 110);
+    ctx.strokeStyle = 'rgba(255,255,255,.16)'; ctx.lineWidth = 2;
+    ctx.strokeRect(wx, 150, 66, 110);
+    ctx.beginPath(); ctx.moveTo(wx + 33, 150); ctx.lineTo(wx + 33, 260); ctx.stroke();
+  }
+  // 축제 가랜드
+  var col = ['#ff6b6b', '#ffd43b', '#69db7c', '#74c0fc', '#b197fc'];
+  ctx.strokeStyle = 'rgba(255,255,255,.18)'; ctx.lineWidth = 1.5;
+  ctx.beginPath();
+  for (var x = 0; x <= 480; x += 10) ctx.lineTo(x, 62 + Math.sin(x / 62) * 12);
+  ctx.stroke();
+  for (var f = 0; f < 16; f++) {
+    var fx = 16 + f * 30;
+    var fy = 62 + Math.sin(fx / 62) * 12;
+    ctx.fillStyle = col[f % 5];
+    ctx.globalAlpha = 0.4;
+    ctx.beginPath();
+    ctx.moveTo(fx - 9, fy); ctx.lineTo(fx + 9, fy); ctx.lineTo(fx, fy + 20);
+    ctx.closePath(); ctx.fill();
+  }
+  ctx.globalAlpha = 1;
+}
+
+// 4단계 — 버스킹: 밤거리 건물 + 가로등 + 지나가는 사람
+function sceneStreet(t, st) {
+  // 건물 실루엣
+  var seed = 7;
+  var bx = 0;
+  while (bx < 480) {
+    var bw = 40 + ((seed = (seed * 37 + 11) % 97) % 40);
+    var bh = 90 + (seed % 130);
+    ctx.fillStyle = 'rgba(60,54,110,.30)';
+    ctx.fillRect(bx, 300 - bh, bw, bh);
+    ctx.fillStyle = 'rgba(255,224,150,.16)';
+    for (var wy = 300 - bh + 12; wy < 288; wy += 22) {
+      for (var wx2 = bx + 8; wx2 < bx + bw - 10; wx2 += 18) {
+        if ((wx2 + wy) % 3 === 0) ctx.fillRect(wx2, wy, 7, 10);
+      }
+    }
+    bx += bw + 4;
+  }
+  // 가로등 + 빛 웅덩이
+  ctx.strokeStyle = 'rgba(180,180,210,.35)'; ctx.lineWidth = 4;
+  ctx.beginPath(); ctx.moveTo(56, 300); ctx.lineTo(56, 120); ctx.lineTo(96, 120); ctx.stroke();
+  var g = ctx.createRadialGradient(96, 126, 4, 96, 126, 130);
+  g.addColorStop(0, 'rgba(255,238,180,.34)');
+  g.addColorStop(1, 'rgba(255,238,180,0)');
+  ctx.fillStyle = g;
+  ctx.beginPath(); ctx.arc(96, 126, 130, 0, Math.PI * 2); ctx.fill();
+  // 멈춰 선 사람 / 지나가는 사람
+  var people = [[150, 0], [186, 1], [330, 0], [366, 1], [402, 0]];
+  for (var p = 0; p < people.length; p++) {
+    var px = people[p][0];
+    var sway = Math.sin(t / 520 + p) * 2;
+    ctx.fillStyle = 'rgba(20,18,34,.62)';
+    ctx.beginPath(); ctx.arc(px + sway, 268, 8, 0, Math.PI * 2); ctx.fill();
+    ctx.fillRect(px - 9 + sway, 278, 18, 34);
+  }
+  // 보도 경계
+  ctx.strokeStyle = 'rgba(255,255,255,.06)'; ctx.lineWidth = 2;
+  ctx.beginPath(); ctx.moveTo(0, 314); ctx.lineTo(480, 314); ctx.stroke();
+}
+
+// 5단계 — 공연장 무대: 조명 트러스에서 빛줄기가 내려오고 관객이 손을 든다
+function sceneStage(t, st) {
+  // 트러스
+  ctx.strokeStyle = 'rgba(160,165,190,.4)'; ctx.lineWidth = 4;
+  ctx.beginPath(); ctx.moveTo(0, 56); ctx.lineTo(480, 56); ctx.stroke();
+  ctx.lineWidth = 1.5;
+  ctx.strokeStyle = 'rgba(160,165,190,.22)';
+  for (var z = 0; z < 480; z += 24) {
+    ctx.beginPath(); ctx.moveTo(z, 46); ctx.lineTo(z + 24, 66); ctx.stroke();
+  }
+  // 빛줄기 (천천히 좌우로 흔들린다)
+  var beamCol = ['#ffd43b', '#ff8787', '#74c0fc', '#b197fc'];
+  for (var b = 0; b < 4; b++) {
+    var ox = 68 + b * 116;
+    var sway2 = Math.sin(t / 900 + b * 1.7) * 62;
+    var g2 = ctx.createLinearGradient(ox, 64, ox + sway2, 470);
+    g2.addColorStop(0, beamCol[b]);
+    g2.addColorStop(1, 'rgba(0,0,0,0)');
+    ctx.globalAlpha = 0.16;
+    ctx.fillStyle = g2;
+    ctx.beginPath();
+    ctx.moveTo(ox - 7, 64);
+    ctx.lineTo(ox + 7, 64);
+    ctx.lineTo(ox + sway2 + 62, 470);
+    ctx.lineTo(ox + sway2 - 62, 470);
+    ctx.closePath(); ctx.fill();
+    ctx.globalAlpha = 1;
+    ctx.fillStyle = beamCol[b];
+    ctx.beginPath(); ctx.arc(ox, 62, 5, 0, Math.PI * 2); ctx.fill();
+  }
+  // 관객 (제일 아래, 손을 흔든다)
+  ctx.fillStyle = 'rgba(10,8,4,.7)';
+  for (var c = 0; c < 20; c++) {
+    var cxp = -10 + c * 26;
+    var hy = 700 + Math.sin(t / 300 + c) * 4;
+    ctx.beginPath(); ctx.arc(cxp, hy, 11, 0, Math.PI * 2); ctx.fill();
+    ctx.fillRect(cxp - 3, hy - 26 - Math.abs(Math.sin(t / 260 + c)) * 6, 4, 20); // 든 손
+  }
+}
+
+// ---- 드럼 치는 사람 ------------------------------------------------
+// 칸마다 실제 드럼이 짝지어져 있다. D=킥 · F=스네어 · J=탐 · K=하이햇
+// 내가 친 칸에 따라 팔(과 발)이 그쪽으로 내려찍히고 그 북이 번쩍인다.
+function drawDrummer(t, st) {
+  var cx = 238, gy = 300;
+  var accent = st.accent;
+  var y = gy + Math.sin(t / 260) * 2.2;   // 숨 쉬듯 위아래로 조금 움직인다
+
+  function amt(lane) {                    // 그 칸을 친 지 얼마 안 됐으면 1 → 0 으로 준다
+    var age = t - G.hitFlash[lane];
+    return (age >= 0 && age < 230) ? (1 - age / 230) : 0;
+  }
+  var aKick = amt(0), aSnare = amt(1), aTom = amt(2), aHat = amt(3);
+  var aRight = Math.max(aTom, aHat);
+  var rightTargetIsHat = G.hitFlash[3] > G.hitFlash[2];
+
+  var SNARE = { x: cx - 76, y: y - 24 };
+  var TOM   = { x: cx + 64, y: y - 54 };
+  var HAT   = { x: cx - 118, y: y - 78 };
+  var CYM   = { x: cx + 120, y: y - 92 };
+
+  ctx.save();
+  ctx.lineCap = 'round';
+  ctx.lineJoin = 'round';
+
+  // 스탠드
+  ctx.strokeStyle = '#39405a'; ctx.lineWidth = 3;
+  ctx.beginPath(); ctx.moveTo(HAT.x, HAT.y); ctx.lineTo(HAT.x, y + 30); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(CYM.x, CYM.y); ctx.lineTo(CYM.x, y + 30); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(TOM.x, TOM.y + 10); ctx.lineTo(TOM.x, y + 24); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(SNARE.x, SNARE.y + 8); ctx.lineTo(SNARE.x, y + 30); ctx.stroke();
+
+  // 심벌 (친 순간 흔들린다)
+  function cymbal(p, r, shake) {
+    ctx.save();
+    ctx.translate(p.x, p.y);
+    ctx.rotate(Math.sin(t / 34) * 0.16 * shake);
+    ctx.fillStyle = '#caa63a';
+    ctx.beginPath(); ctx.ellipse(0, 0, r, r * 0.2, 0, 0, Math.PI * 2); ctx.fill();
+    if (shake > 0) {
+      ctx.globalAlpha = shake * 0.8; ctx.fillStyle = '#fff3bf'; ctx.fill(); ctx.globalAlpha = 1;
+    }
+    ctx.restore();
+  }
+  cymbal(HAT, 24, aHat);
+  cymbal(CYM, 27, 0);
+
+  // ---- 사람 (드럼 뒤에 앉아 있다) ----
+  ctx.strokeStyle = '#2b3145'; ctx.lineWidth = 4;
+  ctx.beginPath(); ctx.moveTo(cx + 8, y - 20); ctx.lineTo(cx + 8, y + 34); ctx.stroke();   // 의자
+  ctx.beginPath(); ctx.moveTo(cx - 10, y + 34); ctx.lineTo(cx + 26, y + 34); ctx.stroke();
+
+  // 오른쪽 다리 — 킥을 칠 때 발이 내려간다
+  ctx.strokeStyle = '#1e2333'; ctx.lineWidth = 10;
+  ctx.beginPath();
+  ctx.moveTo(cx + 6, y - 16);
+  ctx.lineTo(cx - 24, y + 4);
+  ctx.lineTo(cx - 30, y + 26 - 5 * aKick);
+  ctx.stroke();
+
+  // 몸통
+  ctx.fillStyle = '#242a3d';
+  ctx.beginPath();
+  ctx.moveTo(cx - 21, y - 20);
+  ctx.lineTo(cx - 16, y - 72);
+  ctx.lineTo(cx + 16, y - 72);
+  ctx.lineTo(cx + 21, y - 20);
+  ctx.closePath();
+  ctx.fill();
+  ctx.strokeStyle = accent; ctx.globalAlpha = 0.5; ctx.lineWidth = 1.5; ctx.stroke(); ctx.globalAlpha = 1;
+
+  // 머리
+  ctx.fillStyle = '#d2a06b';
+  ctx.beginPath(); ctx.arc(cx, y - 88, 14, 0, Math.PI * 2); ctx.fill();
+  ctx.fillStyle = '#161a28';
+  ctx.beginPath(); ctx.arc(cx, y - 92, 14, Math.PI, Math.PI * 2); ctx.fill();  // 머리카락
+  ctx.fillRect(cx - 14, y - 93, 28, 4);
+
+  // ---- 북 ----
+  function drum(p, rx, h, flash) {
+    ctx.fillStyle = '#2a3149';
+    ctx.beginPath();
+    ctx.moveTo(p.x - rx, p.y);
+    ctx.lineTo(p.x - rx, p.y + h);
+    ctx.quadraticCurveTo(p.x, p.y + h + rx * 0.34, p.x + rx, p.y + h);
+    ctx.lineTo(p.x + rx, p.y);
+    ctx.closePath();
+    ctx.fill();
+    ctx.fillStyle = '#dfe3ef';
+    ctx.beginPath(); ctx.ellipse(p.x, p.y, rx, rx * 0.34, 0, 0, Math.PI * 2); ctx.fill();
+    if (flash > 0) { ctx.globalAlpha = flash * 0.85; ctx.fillStyle = accent; ctx.fill(); ctx.globalAlpha = 1; }
+    ctx.strokeStyle = accent; ctx.globalAlpha = 0.3 + flash * 0.7; ctx.lineWidth = 2; ctx.stroke(); ctx.globalAlpha = 1;
+  }
+  drum(TOM, 25, 26, aTom);
+  drum(SNARE, 28, 20, aSnare);
+
+  // 킥 드럼 (제일 앞)
+  ctx.fillStyle = '#222941';
+  ctx.beginPath(); ctx.arc(cx, y + 4, 44, 0, Math.PI * 2); ctx.fill();
+  ctx.fillStyle = '#dfe3ef';
+  ctx.beginPath(); ctx.arc(cx, y + 4, 38, 0, Math.PI * 2); ctx.fill();
+  if (aKick > 0) { ctx.globalAlpha = aKick * 0.85; ctx.fillStyle = accent; ctx.fill(); ctx.globalAlpha = 1; }
+  ctx.strokeStyle = accent; ctx.globalAlpha = 0.3 + aKick * 0.7; ctx.lineWidth = 2; ctx.stroke(); ctx.globalAlpha = 1;
+
+  // ---- 팔 + 스틱 (북 위에 그린다) ----
+  function arm(sx, sy, target, swing) {
+    var hx = sx + (target.x - sx) * 0.5;
+    var hy = sy + (target.y - sy) * 0.45 - 24 * (1 - swing);
+    ctx.strokeStyle = '#d2a06b'; ctx.lineWidth = 7;
+    ctx.beginPath(); ctx.moveTo(sx, sy); ctx.lineTo(hx, hy); ctx.stroke();
+    ctx.strokeStyle = '#e9d8a6'; ctx.lineWidth = 3.5;
+    ctx.beginPath(); ctx.moveTo(hx, hy); ctx.lineTo(target.x, target.y - 6 - 40 * (1 - swing)); ctx.stroke();
+  }
+  arm(cx - 16, y - 66, SNARE, aSnare);
+  arm(cx + 16, y - 66, rightTargetIsHat ? HAT : TOM, aRight);
+
+  ctx.restore();
+}
+
+function draw() {
+  var st = STAGES[G.stage < 0 ? 0 : G.stage];
+
+  // 배경
+  var grd = ctx.createLinearGradient(0, 0, 0, BOARD_H);
+  grd.addColorStop(0, st.bg[0]);
+  grd.addColorStop(1, st.bg[1]);
+  ctx.fillStyle = grd;
+  ctx.fillRect(0, 0, BOARD_W, BOARD_H);
+
+  // 단계마다 다른 장소
+  drawScene(st, G.t);
+
+  // 칸
+  for (var l = 0; l < LANES; l++) {
+    var x = LANE_X0 + l * LANE_W;
+    ctx.fillStyle = (l % 2 === 0) ? 'rgba(255,255,255,.028)' : 'rgba(255,255,255,.05)';
+    ctx.fillRect(x, 0, LANE_W, BOARD_H);
+
+    // 누른 순간 칸이 잠깐 밝아진다
+    var since = G.t - G.laneFlash[l];
+    if (since >= 0 && since < 140) {
+      ctx.fillStyle = 'rgba(255,255,255,' + (0.10 * (1 - since / 140)) + ')';
+      ctx.fillRect(x, 0, LANE_W, BOARD_H);
+    }
+    ctx.strokeStyle = 'rgba(255,255,255,.06)';
+    ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, BOARD_H); ctx.stroke();
+  }
+
+  // 드럼 치는 사람 (노트 뒤에서 같이 연주한다)
+  drawDrummer(G.t, st);
+
+  // 판정선
+  ctx.strokeStyle = 'rgba(255,255,255,.5)';
+  ctx.lineWidth = 2;
+  ctx.beginPath(); ctx.moveTo(LANE_X0, JUDGE_Y); ctx.lineTo(LANE_X0 + LANE_W * LANES, JUDGE_Y); ctx.stroke();
+  ctx.lineWidth = 1;
+
+  // 판정선 위 드럼패드
+  for (var p = 0; p < LANES; p++) {
+    var cx = LANE_X0 + p * LANE_W + LANE_W / 2;
+    var hitAge = G.t - G.hitFlash[p];
+    var glow = (hitAge >= 0 && hitAge < 200) ? (1 - hitAge / 200) : 0;
+
+    ctx.beginPath();
+    ctx.arc(cx, JUDGE_Y, NOTE_R + 4, 0, Math.PI * 2);
+    ctx.fillStyle = 'rgba(255,255,255,' + (0.05 + glow * 0.45) + ')';
+    ctx.fill();
+    ctx.strokeStyle = LANE_COLOR[p];
+    ctx.globalAlpha = 0.4 + glow * 0.6;
+    ctx.lineWidth = 2;
+    ctx.stroke();
+    ctx.globalAlpha = 1;
+    ctx.lineWidth = 1;
+
+    ctx.fillStyle = 'rgba(255,255,255,.35)';
+    ctx.font = '700 13px system-ui, sans-serif';
+    ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    ctx.fillText(LANE_KEYS[p], cx, JUDGE_Y + 44);
+  }
+
+  // 북(노트)
+  for (var i = 0; i < G.notes.length; i++) {
+    var n = G.notes[i];
+    if (n.done) continue;
+    var left = n.t - G.t;
+    if (left > n.fall) break;               // 아직 나올 때가 아니다 (시간순이라 뒤도 마찬가지)
+    if (left < -HIT_WINDOW_MS) continue;
+    var prog = 1 - left / n.fall;           // 0(생성) → 1(판정선)
+    var y = SPAWN_Y + (JUDGE_Y - SPAWN_Y) * prog;
+    var cx2 = LANE_X0 + n.lane * LANE_W + LANE_W / 2;
+
+    ctx.beginPath();
+    ctx.arc(cx2, y, NOTE_R, 0, Math.PI * 2);
+    ctx.fillStyle = LANE_COLOR[n.lane];
+    ctx.fill();
+    ctx.beginPath();
+    ctx.arc(cx2, y, NOTE_R - 7, 0, Math.PI * 2);
+    ctx.fillStyle = 'rgba(0,0,0,.28)';
+    ctx.fill();
+  }
+}
+
+// ---- 끝났을 때 -------------------------------------------------------
+function finish() {
+  G.over = true;
+  if (window.BGM) BGM.stop(1.2);   // 마지막 코드가 여운으로 남게 천천히 줄인다
+  el.timeV.textContent = '0';
+  el.barFill.style.width = '100%';
+  el.banner.style.opacity = '0';
+  el.judge.style.opacity = '0';
+  el.combo.style.opacity = '0';
+
+  el.resultScore.textContent = G.score;
+  el.resultDetail.textContent =
+    G.notes.length + '개 중 ' + G.hits + '개 · 최고 ' + G.bestCombo + '연속 · 헛침 ' + G.whiffs + '번(-' + (G.whiffs * PENALTY_WHIFF) + ')';
+
+  var lines = [];
+  for (var s = 0; s < STAGE_COUNT; s++) {
+    lines.push((s + 1) + '단계 ' + STAGES[s].title + ' (×' + speedOf(s).toFixed(1) + ')  '
+      + G.perStage[s].hit + '/' + G.perStage[s].total);
+  }
+  el.resultStages.innerHTML = lines.join('<br>');
+  el.resultEyebrow.textContent = (G.hits === G.notes.length) ? '한 박도 안 놓쳤다' : '무대 끝';
+
+  el.saveMsg.textContent = '';
+  el.saveMsg.classList.remove('err');
+  el.saveBtn.disabled = false;
+  el.saveBtn.textContent = '기록 저장';
+  el.resultScreen.classList.remove('hidden');
+
+  // 로그인한 사람은 이름을 물어보지 않고 바로 저장한다
+  whoAmI().then(function (me) {
+    if (me && !me.needsName) {
+      el.nameBox.classList.add('hidden');
+      submitScore('');
+    } else {
+      el.nameBox.classList.remove('hidden');
+      var saved = null;
+      try { saved = localStorage.getItem('yw_game_name'); } catch (e) {}
+      if (saved) el.nameInput.value = saved;
+    }
+  });
+}
+
+/* ================= 기록(랭킹) — server/games.js 의 API 3개 =============== */
+
+var ME = null, mePromise = null;
+
+function token() {
+  try { return localStorage.getItem('yw_token') || ''; } catch (e) { return ''; }
+}
+
+// /api/game/me 는 한 번만 부르고 결과를 재사용한다.
+// 응답을 기다렸다가 이름칸을 띄울지 정한다(안 기다리면 로그인한 사람에게도 이름을 묻게 된다).
+function whoAmI() {
+  if (mePromise) return mePromise;
+  mePromise = fetch('/api/game/me', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ token: token() })
+  }).then(function (r) { return r.json(); })
+    .then(function (j) { ME = j; return j; })
+    .catch(function () { ME = { needsName: true, offline: true }; return ME; });
+  return mePromise;
+}
+whoAmI(); // 시작할 때 미리 물어본다
+
+function submitScore(playerName) {
+  el.saveBtn.disabled = true;
+  el.saveBtn.textContent = '저장 중…';
+  el.saveMsg.classList.remove('err');
+  el.saveMsg.textContent = '';
+
+  return fetch('/api/game/score', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      gameKey: GAME_KEY,
+      token: token(),
+      playerName: playerName,
+      score: G.score,
+      grade: '',   // 등급·칭호는 쓰지 않는다 (점수만)
+      detail: G.notes.length + '개 중 ' + G.hits + '개 · 최고 ' + G.bestCombo + '연속 · 헛침 ' + G.whiffs + '번'
+    })
+  }).then(function (r) { return r.json().then(function (j) { return { ok: r.ok, j: j }; }); })
+    .then(function (res) {
+      if (!res.ok) {
+        el.saveBtn.disabled = false;
+        el.saveBtn.textContent = '기록 저장';
+        el.saveMsg.classList.add('err');
+        el.saveMsg.textContent = res.j && res.j.message ? res.j.message : '저장하지 못했습니다.';
+        return;
+      }
+      var j = res.j;
+      if (playerName) { try { localStorage.setItem('yw_game_name', playerName); } catch (e) {} }
+      el.saveBtn.textContent = '저장됨';
+      el.nameBox.classList.add('hidden');
+      el.saveMsg.textContent = j.playerName + ' · ' + j.total + '명 중 ' + j.rank + '등';
+      if (j.ranking) renderRank(j.ranking, j.playerName);
+    })
+    .catch(function () {
+      el.saveBtn.disabled = false;
+      el.saveBtn.textContent = '기록 저장';
+      el.saveMsg.classList.add('err');
+      el.saveMsg.textContent = '기록 서버에 연결하지 못했습니다. (게임은 계속 할 수 있어요)';
+    });
+}
+
+function renderRank(list, myName) {
+  if (!list || !list.length) {
+    el.rankList.innerHTML = '<div id="rankEmpty">아직 기록이 없습니다. 첫 번째가 되어보세요!</div>';
+    return;
+  }
+  var html = '';
+  for (var i = 0; i < list.length; i++) {
+    var r = list[i];
+    var cls = 'rankRow' + (i === 0 ? ' top1' : '') + (myName && r.player_name === myName ? ' me' : '');
+    html += '<div class="' + cls + '">'
+      + '<div class="no">' + (i + 1) + '</div>'
+      + '<div class="nm">' + escapeHtml(r.player_name) + '</div>'
+      + '<div class="sc">' + r.score + '</div>'
+      + '</div>';
+  }
+  el.rankList.innerHTML = html;
+}
+
+function escapeHtml(s) {
+  return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) {
+    return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
+  });
+}
+
+// 기록 보기 — 로그인하지 않아도 볼 수 있다
+function openRank() {
+  el.rankList.innerHTML = '<div id="rankEmpty">불러오는 중…</div>';
+  el.rankScreen.classList.remove('hidden');
+  fetch('/api/game/ranking?gameKey=' + GAME_KEY + '&limit=20')
+    .then(function (r) { return r.json(); })
+    .then(function (j) { renderRank(j.ranking, ME && ME.nickname); })
+    .catch(function () {
+      el.rankList.innerHTML = '<div id="rankEmpty">기록 서버에 연결하지 못했습니다.</div>';
+    });
+}
+
+/* ================= 버튼 연결 ================= */
+
+document.getElementById('startBtn').addEventListener('click', startGame);
+document.getElementById('againBtn').addEventListener('click', startGame);
+document.getElementById('rankBtn1').addEventListener('click', openRank);
+document.getElementById('rankBtn2').addEventListener('click', openRank);
+document.getElementById('rankCloseBtn').addEventListener('click', function () {
+  el.rankScreen.classList.add('hidden');
+});
+el.saveBtn.addEventListener('click', function () {
+  var needsName = !ME || ME.needsName;
+  var nm = el.nameInput.value.trim();
+  if (needsName && !nm) {
+    el.saveMsg.classList.add('err');
+    el.saveMsg.textContent = '이름을 입력해야 기록이 남습니다.';
+    el.nameInput.focus();
+    return;
+  }
+  submitScore(nm);
+});
+el.nameInput.addEventListener('keydown', function (e) {
+  if (e.key === 'Enter') el.saveBtn.click();
+});
+</script>
+</body>
+</html>
