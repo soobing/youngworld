@@ -1,0 +1,707 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>박효진의 5년 뒤 나의 미래 — 영월드</title>
+<!--
+  ============================================================
+  🎮🤖 slot 2 「5년 뒤 나의 미래(게임)」 — 박효진 · 로봇 공장 리듬 조립
+  ============================================================
+  ▶ 자체 완결형 HTML 1파일(인라인 CSS/JS, 외부 의존성 X).
+    /works/park/game5.html 로 열림 (URL 규칙: isSafeDocUrl).
+
+  ▶ 컨셉: 5년 뒤 박효진은 "로봇 만드는 공학도". 컨베이어로 흘러오는 로봇 부품을
+    판정선에 닿는 순간 리듬에 맞춰 눌러 조립한다. 한 스테이지 = 1년차.
+    해가 갈수록 템포가 빨라지고 레인이 늘며, 옆의 로봇이 한 단계씩 완성된다.
+    5년차를 깨면 자기소개의 꿈 — "생활 패턴을 분석해 불을 켜고 꺼주는 스마트홈 로봇" 완성.
+
+  ▶ 조작: 레인 키 D F J K (스테이지별 2~4개) 또는 화면 하단 터치 버튼.
+    Perfect / Good / Miss + 콤보. 정확도 60% 이상이면 그 해 합격 → 다음 해.
+
+  ▶ 점수: 완주하면 gameKey 'park-game5' 로 서버(/api/game/score)에 저장 → 순위표.
+    로그인(yw_token) 상태면 본인 닉네임으로, 아니면 이름을 한 번 입력.
+    서버가 없거나 실패하면 localStorage 순위표로 폴백(단독 미리보기에서도 동작).
+
+  ▶ 이어쓰기: 스테이지 난이도는 STAGES 배열, 부품 이름은 각 stage.parts 로 조정.
+-->
+<style>
+  :root{
+    --bg:#0f1524; --panel:#151d30; --line:#2a3550; --ink:#eaf0fb; --dim:#93a1c4;
+    --brass:#e0a055; --brass2:#96560f; --cyan:#57d9c8; --good:#6ad06a; --bad:#ff6b6b;
+    --grid:rgba(234,240,251,.05);
+  }
+  *{ box-sizing:border-box; margin:0; padding:0; }
+  html,body{ height:100%; }
+  body{
+    font-family:"Pretendard Variable",Pretendard,"Apple SD Gothic Neo","Noto Sans KR",
+                -apple-system,"Malgun Gothic",sans-serif;
+    background:var(--bg); color:var(--ink); overflow:hidden; -webkit-font-smoothing:antialiased;
+    word-break:keep-all;
+  }
+  .wrap{ position:fixed; inset:0; display:flex; flex-direction:column; align-items:center;
+         justify-content:center; gap:1.2vmin; padding:2vmin; }
+  .head{ text-align:center; }
+  .who{ font-size:clamp(10px,1.7vmin,14px); font-weight:800; color:var(--dim); letter-spacing:.14em; }
+  h1{ font-size:clamp(16px,2.9vmin,28px); margin-top:.3vmin; letter-spacing:-.02em; }
+  h1 .g{ color:var(--brass); }
+
+  .stage-box{ position:relative; width:min(100%,1040px); aspect-ratio:16/9; border-radius:16px;
+    overflow:hidden; border:1px solid var(--line); box-shadow:0 18px 50px rgba(0,0,0,.5);
+    background:
+      linear-gradient(var(--grid) 1px,transparent 1px),
+      linear-gradient(90deg,var(--grid) 1px,transparent 1px),
+      radial-gradient(120% 80% at 70% 0%,#1b2740 0%,#0d1220 70%);
+    background-size:34px 34px,34px 34px,100% 100%; }
+  canvas{ position:absolute; inset:0; width:100%; height:100%; display:block; touch-action:none; }
+
+  .hud{ position:absolute; top:0; left:0; right:0; display:flex; justify-content:space-between;
+    align-items:flex-start; padding:1.4vmin 1.8vmin; gap:1vmin; pointer-events:none; z-index:3; }
+  .chip{ background:rgba(13,18,32,.72); border:1px solid var(--line); border-radius:10px;
+    padding:.6vmin 1.2vmin; font-size:clamp(10px,1.8vmin,15px); font-weight:800; }
+  .chip .k{ color:var(--dim); font-weight:700; margin-right:.5em; letter-spacing:.06em; }
+  .chip .brass{ color:var(--brass); } .chip .cyan{ color:var(--cyan); }
+  .hud .right{ text-align:right; display:flex; flex-direction:column; gap:.7vmin; align-items:flex-end; }
+
+  .judge{ position:absolute; left:0; right:38%; top:52%; text-align:center; z-index:3;
+    font-weight:900; font-size:clamp(18px,4vmin,40px); pointer-events:none; opacity:0;
+    text-shadow:0 2px 10px rgba(0,0,0,.6); }
+  .combo{ position:absolute; left:0; right:38%; top:38%; text-align:center; z-index:3;
+    font-weight:900; font-size:clamp(14px,2.6vmin,24px); color:var(--brass); pointer-events:none; opacity:0; }
+
+  .lanebtns{ position:absolute; left:0; right:38%; bottom:0; height:16%; display:flex; z-index:3; }
+  .lanebtns button{ flex:1; margin:.6vmin; border:1px solid var(--line);
+    background:rgba(21,29,48,.6); color:var(--dim); border-radius:10px; font-family:inherit;
+    font-weight:900; font-size:clamp(12px,2.2vmin,20px); cursor:pointer; touch-action:manipulation;
+    transition:background .05s,transform .05s; }
+  .lanebtns button:active,.lanebtns button.on{ background:var(--brass); color:#20130a; transform:translateY(1px); }
+  .lanebtns button[hidden]{ display:none; }
+
+  .overlay{ position:absolute; inset:0; z-index:5; display:flex; flex-direction:column;
+    align-items:center; justify-content:center; gap:1.6vmin; text-align:center; padding:5vmin;
+    background:rgba(9,13,22,.86); backdrop-filter:blur(2px); }
+  .overlay.hidden{ display:none; }
+  .overlay h2{ font-size:clamp(18px,3.6vmin,36px); line-height:1.28; letter-spacing:-.02em; }
+  .overlay h2 .g{ color:var(--brass); }
+  .overlay p{ color:var(--dim); font-size:clamp(12px,2vmin,17px); line-height:1.65; max-width:46ch; }
+  .overlay .keys{ color:var(--dim); font-size:clamp(11px,1.9vmin,15px); }
+  .overlay .keys b{ color:var(--ink); background:#20293f; border:1px solid var(--line);
+    border-radius:6px; padding:.15em .5em; margin:0 .1em; }
+  .btn{ background:var(--brass); color:#20130a; border:none; font-family:inherit; font-weight:900;
+    font-size:clamp(13px,2.2vmin,18px); border-radius:12px; padding:1.1vmin 3vmin; cursor:pointer;
+    box-shadow:0 8px 22px rgba(224,160,85,.32); }
+  .btn:hover{ filter:brightness(1.06); } .btn.ghost{ background:transparent; color:var(--dim);
+    border:1px solid var(--line); box-shadow:none; }
+  .btnrow{ display:flex; gap:1vmin; flex-wrap:wrap; justify-content:center; }
+
+  .stats{ display:flex; gap:1.4vmin; flex-wrap:wrap; justify-content:center; margin:.4vmin 0; }
+  .stat{ background:var(--panel); border:1px solid var(--line); border-radius:10px;
+    padding:.8vmin 1.6vmin; min-width:9ch; }
+  .stat .n{ font-size:clamp(15px,2.8vmin,26px); font-weight:900; }
+  .stat .n.p{ color:var(--good); } .stat .n.g{ color:var(--brass); } .stat .n.m{ color:var(--bad); }
+  .stat .l{ font-size:clamp(9px,1.5vmin,12px); color:var(--dim); letter-spacing:.08em; margin-top:.2vmin; }
+
+  .rank{ width:min(92%,40ch); text-align:left; }
+  .rank h3{ font-size:clamp(12px,2vmin,16px); color:var(--dim); letter-spacing:.1em; margin-bottom:.6vmin; }
+  .rank ol{ list-style:none; display:flex; flex-direction:column; gap:.3vmin; max-height:26vmin; overflow-y:auto; }
+  .rank li{ display:flex; justify-content:space-between; gap:1em; font-size:clamp(11px,1.9vmin,15px);
+    padding:.5vmin .9vmin; border:1px solid var(--line); border-radius:8px; background:var(--panel);
+    font-variant-numeric:tabular-nums; }
+  .rank li.me{ border-color:var(--brass); background:rgba(224,160,85,.12); }
+  .rank li .who2{ color:var(--ink); font-weight:700; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .rank li .sc{ color:var(--brass); font-weight:900; }
+  .rank .empty{ color:var(--dim); font-size:clamp(11px,1.8vmin,14px); padding:.6vmin; }
+
+  .namebox{ display:flex; gap:.8vmin; flex-wrap:wrap; justify-content:center; }
+  .namebox input{ font-family:inherit; font-size:clamp(13px,2.2vmin,17px); font-weight:700;
+    padding:.9vmin 1.4vmin; border-radius:10px; border:1px solid var(--line); background:var(--panel);
+    color:var(--ink); width:14ch; text-align:center; }
+  .namebox input:focus{ outline:2px solid var(--brass); outline-offset:1px; }
+
+  @media (prefers-reduced-motion:reduce){ *{ animation:none!important; } }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="head">
+    <div class="who">5년 뒤 나의 미래 · 박효진</div>
+    <h1>로봇 공장 <span class="g">리듬 조립</span></h1>
+  </div>
+
+  <div class="stage-box" id="box">
+    <canvas id="cv" width="1280" height="720"></canvas>
+
+    <div class="hud">
+      <div class="left">
+        <div class="chip"><span class="k">YEAR</span><span class="brass" id="hYear">1</span><span class="k" style="margin-left:.5em">/ 5</span></div>
+      </div>
+      <div class="right">
+        <div class="chip"><span class="k">SCORE</span><span id="hScore">0</span></div>
+        <div class="chip"><span class="k">COMBO</span><span class="cyan" id="hCombo">0</span></div>
+      </div>
+    </div>
+
+    <div class="combo" id="comboFx"></div>
+    <div class="judge" id="judgeFx"></div>
+
+    <div class="lanebtns" id="lanebtns">
+      <button data-lane="0" hidden>D</button>
+      <button data-lane="1">F</button>
+      <button data-lane="2">J</button>
+      <button data-lane="3" hidden>K</button>
+    </div>
+
+    <!-- 타이틀 -->
+    <div class="overlay" id="ovTitle">
+      <h2>5년 뒤, 나는 <span class="g">로봇을 만드는 공학도</span></h2>
+      <p>컨베이어로 흘러오는 부품이 <b style="color:#eaf0fb">판정선</b>에 닿는 순간 눌러 조립하세요.
+         한 해 한 해, 옆의 로봇이 완성돼 갑니다. 5년차엔 — 제가 꿈꾸던 그 장치예요.</p>
+      <p class="keys">레인 키 <b>D</b> <b>F</b> <b>J</b> <b>K</b> · 또는 화면 아래 버튼 · 터치</p>
+      <button class="btn" id="btnStart">1년차 시작</button>
+    </div>
+
+    <!-- 해 시작 안내 -->
+    <div class="overlay hidden" id="ovYear">
+      <h2 id="ovYearTitle"></h2>
+      <p id="ovYearDesc"></p>
+      <p class="keys" id="ovYearKeys"></p>
+      <button class="btn" id="btnYearGo">시작</button>
+    </div>
+
+    <!-- 해 결과 -->
+    <div class="overlay hidden" id="ovResult">
+      <h2 id="ovResultTitle"></h2>
+      <div class="stats">
+        <div class="stat"><div class="n p" id="rPerfect">0</div><div class="l">PERFECT</div></div>
+        <div class="stat"><div class="n g" id="rGood">0</div><div class="l">GOOD</div></div>
+        <div class="stat"><div class="n m" id="rMiss">0</div><div class="l">MISS</div></div>
+        <div class="stat"><div class="n" id="rAcc">0%</div><div class="l">정확도</div></div>
+      </div>
+      <p id="ovResultMsg"></p>
+      <div class="btnrow" id="ovResultBtns"></div>
+    </div>
+
+    <!-- 엔딩 -->
+    <div class="overlay hidden" id="ovEnd">
+      <h2 id="ovEndTitle">🤖 완성! <span class="g">스마트홈 로봇</span></h2>
+      <p id="ovEndMsg">5년 뒤, 상상만 하던 장치를 진짜로 만들었습니다.
+         이 로봇은 생활 패턴을 읽어 스스로 방의 불을 켜고 끕니다.</p>
+      <div class="stats">
+        <div class="stat"><div class="n g" id="eScore">0</div><div class="l">최종 점수</div></div>
+        <div class="stat"><div class="n" id="eAcc">0%</div><div class="l">평균 정확도</div></div>
+        <div class="stat"><div class="n cyan" id="eMaxCombo">0</div><div class="l">최대 콤보</div></div>
+      </div>
+      <div class="namebox" id="nameBox">
+        <input id="nameInput" maxlength="12" placeholder="이름 입력" autocomplete="off">
+        <button class="btn" id="btnSave">순위 저장</button>
+      </div>
+      <div class="rank" id="rankWrap">
+        <h3>🏆 명예의 전당</h3>
+        <ol id="rankList"><li class="empty">기록을 불러오는 중…</li></ol>
+      </div>
+      <div class="btnrow">
+        <button class="btn ghost" id="btnRestart">처음부터 다시</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+(function(){
+  "use strict";
+
+  // ── 무대(스테이지) 정의: 1~5년차 ──────────────────────────────
+  //  lanes: 사용할 레인 수(2~4), beatMs: 노트 간격(작을수록 빠름),
+  //  travelMs: 부품이 위→판정선까지 내려오는 시간, notes: 노트 개수,
+  //  part: 이번 해에 조립되는 로봇 부품(로봇 그림 단계), title/desc: 안내 문구.
+  var STAGES = [
+    { year:1, lanes:2, beatMs:720, travelMs:1600, notes:22,
+      part:'바퀴와 몸통', title:'1년차 · 첫 로봇',
+      desc:'제일 기본, 굴러가는 바퀴 로봇부터. 천천히 흐르는 부품을 딱 맞춰 조립!' },
+    { year:2, lanes:3, beatMs:620, travelMs:1500, notes:26,
+      part:'팔', title:'2년차 · 팔을 달다',
+      desc:'물건을 집는 팔을 답니다. 레인이 하나 늘었어요.' },
+    { year:3, lanes:3, beatMs:520, travelMs:1400, notes:30,
+      part:'센서 눈', title:'3년차 · 세상을 보다',
+      desc:'주변을 인식하는 센서 눈. 손이 조금 더 바빠집니다.' },
+    { year:4, lanes:4, beatMs:440, travelMs:1300, notes:34,
+      part:'배터리와 회로', title:'4년차 · 스스로 움직이다',
+      desc:'배터리와 회로를 넣어 오래 버티게. 네 레인 모두 사용!' },
+    { year:5, lanes:4, beatMs:360, travelMs:1200, notes:40,
+      part:'AI 두뇌', title:'5년차 · 꿈꾸던 그 장치',
+      desc:'생활 패턴을 읽어 불을 켜고 꺼주는 스마트홈 로봇. 마지막, 가장 빠릅니다!' }
+  ];
+  var LANE_KEYS = ['D','F','J','K'];
+  var KEYCODE = { KeyD:0, KeyF:1, KeyJ:2, KeyK:3 };
+  // 스테이지별로 실제 쓰는 레인의 화면상 인덱스(가운데 정렬 느낌).
+  function laneMap(n){ return n===2 ? [1,2] : n===3 ? [0,1,2] : [0,1,2,3]; }
+
+  var PERFECT_MS = 62, GOOD_MS = 132; // 판정 창(밀리초)
+  var GAME_KEY = 'park-game5';
+  var LB_KEY = 'game5_park_ranks';   // localStorage 폴백 순위표
+
+  // ── DOM ──────────────────────────────
+  var cv = document.getElementById('cv'), ctx = cv.getContext('2d');
+  var box = document.getElementById('box');
+  var elYear=id('hYear'), elScore=id('hScore'), elCombo=id('hCombo');
+  var judgeFx=id('judgeFx'), comboFx=id('comboFx');
+  var laneBtnsWrap=id('lanebtns'), laneBtns=Array.prototype.slice.call(laneBtnsWrap.querySelectorAll('button'));
+  function id(x){ return document.getElementById(x); }
+
+  // ── 상태 ──────────────────────────────
+  var stageIdx=0, running=false, notes=[], nextSpawn=0, spawned=0, startAt=0;
+  var score=0, combo=0, maxCombo=0;
+  var tally={perfect:0,good:0,miss:0};
+  var totals={score:0,perfect:0,good:0,miss:0,maxCombo:0}; // 5년 누적
+  var flash=[]; // 판정선 반짝임
+  var robotStage=0; // 완성된 로봇 단계(0~5)
+  var lightsOn=true, lightTimer=0; // 엔딩 연출용
+  var lastTs=0;
+
+  // ── 유틸 ──────────────────────────────
+  function show(elId){ id(elId).classList.remove('hidden'); }
+  function hide(elId){ id(elId).classList.add('hidden'); }
+  function fmt(n){ return n.toLocaleString('en-US'); }
+
+  // ── 게임 진행 ──────────────────────────────
+  function startStage(i){
+    stageIdx=i;
+    var s=STAGES[i];
+    notes=[]; spawned=0; combo=0; score=0;
+    tally={perfect:0,good:0,miss:0};
+    nextSpawn=0; startAt=performance.now(); lastTs=startAt;
+    elYear.textContent=s.year; elScore.textContent='0'; elCombo.textContent='0';
+    // 레인 버튼 표시 개수 맞추기
+    var used=laneMap(s.lanes);
+    laneBtns.forEach(function(b,idx){
+      var on = used.indexOf(idx)>=0;
+      b.hidden=!on; b.classList.remove('on');
+    });
+    running=true;
+  }
+
+  // 노트 스폰: 균일 비트 + 레인 무작위(직전 레인 회피로 자연스럽게).
+  var lastLane=-1;
+  function maybeSpawn(now){
+    var s=STAGES[stageIdx];
+    if(spawned>=s.notes) return;
+    var due = startAt + 900 + spawned*s.beatMs; // 첫 노트 전 900ms 여유
+    if(now >= due){
+      var used=laneMap(s.lanes);
+      var pool=used.filter(function(l){ return l!==lastLane; });
+      var lane = pool[(Math.random()*pool.length)|0];
+      lastLane=lane;
+      notes.push({ lane:lane, target: now + s.travelMs, hit:false, dead:false });
+      spawned++;
+    }
+  }
+
+  function judge(lane, now){
+    // 해당 레인에서 판정선에 가장 가까운, 아직 안 친 노트 찾기
+    var best=null, bestAbs=1e9;
+    for(var i=0;i<notes.length;i++){
+      var n=notes[i];
+      if(n.lane!==lane||n.hit||n.dead) continue;
+      var d=Math.abs(n.target-now);
+      if(d<bestAbs){ bestAbs=d; best=n; }
+    }
+    flashLane(lane);
+    if(!best || bestAbs>GOOD_MS){ return; } // 허공 침 — 감점 없음(친절 모드)
+    best.hit=true;
+    if(bestAbs<=PERFECT_MS){ hitResult('PERFECT', 100); }
+    else { hitResult('GOOD', 55); }
+  }
+
+  function hitResult(kind, base){
+    if(kind==='PERFECT') tally.perfect++; else tally.good++;
+    combo++; if(combo>maxCombo) maxCombo=combo;
+    var bonus = Math.min(combo,50)*2; // 콤보 보너스(최대 +100)
+    score += base + bonus;
+    elScore.textContent=fmt(score); elCombo.textContent=combo;
+    popJudge(kind, kind==='PERFECT'?'#6ad06a':'#e0a055');
+    if(combo>0 && combo%10===0) popCombo(combo+' COMBO!');
+  }
+
+  function missNote(){
+    tally.miss++; combo=0; elCombo.textContent='0';
+    popJudge('MISS', '#ff6b6b');
+  }
+
+  // ── 판정/콤보 텍스트 애니메이션 ──────────────────────────────
+  function popJudge(text,color){
+    judgeFx.textContent=text; judgeFx.style.color=color;
+    judgeFx.style.transition='none'; judgeFx.style.opacity='1'; judgeFx.style.transform='translateY(0) scale(1.08)';
+    requestAnimationFrame(function(){
+      judgeFx.style.transition='opacity .38s, transform .38s';
+      judgeFx.style.opacity='0'; judgeFx.style.transform='translateY(-8px) scale(1)';
+    });
+  }
+  function popCombo(text){
+    comboFx.textContent=text;
+    comboFx.style.transition='none'; comboFx.style.opacity='1'; comboFx.style.transform='scale(1.12)';
+    requestAnimationFrame(function(){
+      comboFx.style.transition='opacity .5s, transform .5s';
+      comboFx.style.opacity='0'; comboFx.style.transform='scale(1)';
+    });
+  }
+  function flashLane(lane){ flash.push({lane:lane, t:performance.now()}); }
+
+  // ── 스테이지 종료 판정 ──────────────────────────────
+  function stageDone(now){
+    var s=STAGES[stageIdx];
+    if(spawned<s.notes) return false;
+    for(var i=0;i<notes.length;i++){ if(!notes[i].hit && !notes[i].dead) return false; }
+    return true;
+  }
+
+  function endStage(){
+    running=false;
+    var s=STAGES[stageIdx];
+    var total=tally.perfect+tally.good+tally.miss;
+    var acc = total? Math.round((tally.perfect+tally.good*0.5)/total*100) : 0;
+    var pass = acc>=60;
+    // 결과 화면
+    id('rPerfect').textContent=tally.perfect;
+    id('rGood').textContent=tally.good;
+    id('rMiss').textContent=tally.miss;
+    id('rAcc').textContent=acc+'%';
+    var t=id('ovResultTitle'), m=id('ovResultMsg'), btns=id('ovResultBtns');
+    btns.innerHTML='';
+    if(pass){
+      // 누적에 반영 + 로봇 조립 한 단계
+      totals.score+=score; totals.perfect+=tally.perfect; totals.good+=tally.good;
+      totals.miss+=tally.miss; if(maxCombo>totals.maxCombo) totals.maxCombo=maxCombo;
+      robotStage=stageIdx+1;
+      t.innerHTML=(acc>=90?'🌟 완벽에 가까워요!':acc>=75?'👍 훌륭해요!':'✅ 합격!')+
+        ' <span class="g">'+s.part+'</span> 조립 완료';
+      m.textContent = stageIdx<STAGES.length-1
+        ? (STAGES[stageIdx+1].year+'년차로 갑니다. 로봇이 한 단계 더 자랐어요.')
+        : '드디어 5년차까지 왔어요.';
+      var b=document.createElement('button'); b.className='btn';
+      b.textContent = stageIdx<STAGES.length-1 ? (STAGES[stageIdx+1].year+'년차로') : '완성 보기';
+      b.onclick=function(){ hide('ovResult'); if(stageIdx<STAGES.length-1) showYear(stageIdx+1); else showEnding(); };
+      btns.appendChild(b);
+    } else {
+      t.innerHTML='조금 아쉬워요 — <span class="g">'+acc+'%</span>';
+      m.textContent='정확도 60%를 넘기면 이 해를 합격해요. 리듬을 타면서 다시 한 번!';
+      var r=document.createElement('button'); r.className='btn'; r.textContent='이 해 다시';
+      r.onclick=function(){ hide('ovResult'); showYear(stageIdx); };
+      btns.appendChild(r);
+    }
+    maxCombo=0;
+    show('ovResult');
+  }
+
+  function showYear(i){
+    stageIdx=i; var s=STAGES[i];
+    id('ovYearTitle').innerHTML=s.title;
+    id('ovYearDesc').textContent=s.desc;
+    var used=laneMap(s.lanes).map(function(l){ return LANE_KEYS[l]; });
+    id('ovYearKeys').innerHTML='이번 해 레인: '+used.map(function(k){ return '<b style="color:#eaf0fb">'+k+'</b>'; }).join(' ');
+    show('ovYear');
+    id('btnYearGo').onclick=function(){ hide('ovYear'); startStage(i); };
+  }
+
+  // ── 엔딩 ──────────────────────────────
+  function showEnding(){
+    robotStage=5;
+    id('eScore').textContent=fmt(totals.score);
+    var tot=totals.perfect+totals.good+totals.miss;
+    id('eAcc').textContent=(tot?Math.round((totals.perfect+totals.good*0.5)/tot*100):0)+'%';
+    id('eMaxCombo').textContent=totals.maxCombo;
+    show('ovEnd');
+    // 이름 기본값(로그인 닉네임 있으면 채우고 잠금)
+    prefillName();
+    loadRanking();
+  }
+
+  // ── 점수 저장(서버 우선, 실패 시 localStorage) ──────────────────────────────
+  function token(){ try{ return localStorage.getItem('yw_token'); }catch(e){ return null; } }
+  var savedOnce=false;
+
+  function prefillName(){
+    var inp=id('nameInput');
+    // 로그인 사용자면 서버가 닉네임을 강제하므로 입력칸을 안내로만 쓴다.
+    fetch('/api/game/me',{method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({token:token()})})
+      .then(function(r){ return r.json(); })
+      .then(function(d){
+        if(d && d.nickname && !d.isGuest){ inp.value=d.nickname; inp.disabled=true; inp.title='로그인 계정으로 저장됩니다'; }
+      }).catch(function(){ /* 단독 실행: 그냥 직접 입력 */ });
+  }
+
+  function saveScore(){
+    if(savedOnce) return;
+    var name=(id('nameInput').value||'').trim();
+    var payload={ gameKey:GAME_KEY, token:token(), playerName:name, score:totals.score,
+      grade:'5년 완주', detail:'P'+totals.perfect+'/G'+totals.good+'/M'+totals.miss };
+    var btn=id('btnSave'); btn.disabled=true; btn.textContent='저장 중…';
+    fetch('/api/game/score',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)})
+      .then(function(r){ return r.json().then(function(j){ return {ok:r.ok,j:j}; }); })
+      .then(function(res){
+        if(!res.ok){ throw new Error(res.j && res.j.message || '저장 실패'); }
+        savedOnce=true; btn.textContent='저장됨 ✓';
+        renderRanking(res.j.ranking, res.j.playerName, res.j.rank);
+      })
+      .catch(function(err){
+        // 서버가 없거나(단독 미리보기) 이름이 비었거나 → localStorage 폴백
+        if(!name){ btn.disabled=false; btn.textContent='순위 저장'; id('nameInput').focus();
+          id('nameInput').placeholder='이름을 입력하세요'; return; }
+        var lb=loadLB(); lb.push({name:name, score:totals.score});
+        lb.sort(function(a,b){ return b.score-a.score; }); lb=lb.slice(0,20); saveLB(lb);
+        savedOnce=true; btn.textContent='저장됨 ✓ (내 기기)';
+        renderRanking(lb.map(function(x){ return {playerName:x.name, score:x.score}; }), name, null);
+      });
+  }
+
+  function loadRanking(){
+    fetch('/api/game/ranking?gameKey='+GAME_KEY+'&limit=20')
+      .then(function(r){ return r.json(); })
+      .then(function(d){ renderRanking((d&&d.ranking)||[], null, null); })
+      .catch(function(){
+        var lb=loadLB();
+        renderRanking(lb.map(function(x){ return {playerName:x.name, score:x.score}; }), null, null);
+      });
+  }
+
+  function renderRanking(list, meName, meRank){
+    var ol=id('rankList'); ol.innerHTML='';
+    if(!list || !list.length){ ol.innerHTML='<li class="empty">아직 기록이 없어요. 첫 기록의 주인공이 되어보세요!</li>'; return; }
+    list.forEach(function(row,i){
+      // 서버 랭킹은 player_name(snake_case), localStorage 폴백은 playerName — 둘 다 받는다.
+      var nm = (row.player_name!=null) ? row.player_name : row.playerName;
+      var li=document.createElement('li');
+      var isMe = (meRank && (i+1)===meRank) || (meName && nm===meName && i<3);
+      if(isMe) li.className='me';
+      var rank=(i+1);
+      li.innerHTML='<span class="who2">'+rank+'. '+escapeHtml(nm||'익명')+'</span>'+
+                   '<span class="sc">'+fmt(row.score||0)+'</span>';
+      ol.appendChild(li);
+    });
+  }
+
+  function loadLB(){ try{ return JSON.parse(localStorage.getItem(LB_KEY))||[]; }catch(e){ return []; } }
+  function saveLB(l){ try{ localStorage.setItem(LB_KEY, JSON.stringify(l)); }catch(e){} }
+  function escapeHtml(s){ return String(s).replace(/[&<>"']/g,function(c){
+    return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]; }); }
+
+  // ── 렌더 루프 ──────────────────────────────
+  function loop(ts){
+    requestAnimationFrame(loop);
+    var now=performance.now();
+    ctx.clearRect(0,0,cv.width,cv.height);
+    drawWorkshop(now);       // 오른쪽 로봇 공방
+    if(running){
+      var s=STAGES[stageIdx];
+      maybeSpawn(now);
+      // miss 처리(판정선을 GOOD_MS 이상 지나침)
+      for(var i=0;i<notes.length;i++){
+        var n=notes[i];
+        if(!n.hit && !n.dead && now - n.target > GOOD_MS){ n.dead=true; missNote(); }
+      }
+      drawLanes(now, s);
+      if(stageDone(now)){ endStage(); }
+    } else {
+      drawLanes(now, STAGES[stageIdx]||STAGES[0]); // 정적 배경(레인 틀)
+    }
+    lastTs=ts;
+  }
+
+  // 재생 필드는 왼쪽 62%, 로봇 공방은 오른쪽 38%.
+  function fieldW(){ return cv.width*0.62; }
+
+  function drawLanes(now, s){
+    var W=fieldW(), H=cv.height;
+    var used=laneMap(s.lanes), nLane=used.length;
+    var hitY=H*0.82; // 판정선 y
+    var lw=W/nLane;
+    // 레인 배경
+    for(var i=0;i<nLane;i++){
+      var x=i*lw;
+      ctx.fillStyle = (i%2===0)?'rgba(255,255,255,.015)':'rgba(255,255,255,.03)';
+      ctx.fillRect(x,0,lw,H);
+      ctx.strokeStyle='rgba(234,240,251,.06)'; ctx.lineWidth=2;
+      ctx.strokeRect(x,0,lw,H);
+    }
+    // 판정선
+    ctx.strokeStyle='rgba(224,160,85,.9)'; ctx.lineWidth=4;
+    ctx.beginPath(); ctx.moveTo(0,hitY); ctx.lineTo(W,hitY); ctx.stroke();
+    ctx.fillStyle='rgba(224,160,85,.14)'; ctx.fillRect(0,hitY-3,W,6);
+    // 레인 반짝임
+    var na=[];
+    for(var f=0;f<flash.length;f++){
+      var age=now-flash[f].t; if(age>180) continue; na.push(flash[f]);
+      var li=used.indexOf(flash[f].lane); if(li<0) continue;
+      var a=(1-age/180)*0.5;
+      ctx.fillStyle='rgba(224,160,85,'+a+')';
+      ctx.fillRect(li*lw,0,lw,H);
+    }
+    flash=na;
+    // 노트(부품) 그리기
+    for(var k=0;k<notes.length;k++){
+      var n=notes[k]; if(n.hit||n.dead) continue;
+      var li2=used.indexOf(n.lane); if(li2<0) continue;
+      var prog=1-(n.target-now)/s.travelMs; // 0(위)~1(판정선)
+      if(prog<0) prog=0;
+      var y=prog*hitY;
+      var cx=li2*lw+lw/2;
+      drawPart(cx,y,Math.min(lw,120)*0.34, n.lane);
+    }
+  }
+
+  // 레인별로 다른 부품 아이콘(볼트/기어/칩/배터리 느낌)
+  function drawPart(x,y,r,lane){
+    ctx.save(); ctx.translate(x,y);
+    ctx.shadowColor='rgba(0,0,0,.5)'; ctx.shadowBlur=8; ctx.shadowOffsetY=3;
+    var col=['#57d9c8','#e0a055','#8fb2ff','#ff9db1'][lane];
+    ctx.fillStyle=col; ctx.strokeStyle='rgba(0,0,0,.35)'; ctx.lineWidth=3;
+    if(lane===0){ // 기어
+      gear(0,0,r,8); ctx.fill(); ctx.stroke();
+      ctx.fillStyle='rgba(15,21,36,.9)'; circle(0,0,r*0.4); ctx.fill();
+    } else if(lane===1){ // 볼트(육각)
+      poly(0,0,r,6,Math.PI/6); ctx.fill(); ctx.stroke();
+      ctx.fillStyle='rgba(15,21,36,.85)'; poly(0,0,r*0.42,6,Math.PI/6); ctx.fill();
+    } else if(lane===2){ // 칩(사각+핀)
+      ctx.fillRect(-r*0.8,-r*0.8,r*1.6,r*1.6); ctx.strokeRect(-r*0.8,-r*0.8,r*1.6,r*1.6);
+      ctx.fillStyle='rgba(15,21,36,.85)'; ctx.fillRect(-r*0.4,-r*0.4,r*0.8,r*0.8);
+    } else { // 배터리
+      ctx.fillRect(-r*0.7,-r,r*1.4,r*2); ctx.strokeRect(-r*0.7,-r,r*1.4,r*2);
+      ctx.fillStyle='rgba(15,21,36,.85)'; ctx.fillRect(-r*0.28,-r*1.2,r*0.56,r*0.25);
+    }
+    ctx.restore();
+  }
+  function gear(cx,cy,r,teeth){
+    ctx.beginPath();
+    for(var i=0;i<teeth*2;i++){
+      var ang=Math.PI*i/teeth; var rr=(i%2===0)?r:r*0.74;
+      var px=cx+Math.cos(ang)*rr, py=cy+Math.sin(ang)*rr;
+      if(i===0) ctx.moveTo(px,py); else ctx.lineTo(px,py);
+    } ctx.closePath();
+  }
+  function poly(cx,cy,r,n,rot){
+    ctx.beginPath();
+    for(var i=0;i<n;i++){ var a=rot+Math.PI*2*i/n; var px=cx+Math.cos(a)*r,py=cy+Math.sin(a)*r;
+      if(i===0)ctx.moveTo(px,py); else ctx.lineTo(px,py);} ctx.closePath();
+  }
+  function circle(cx,cy,r){ ctx.beginPath(); ctx.arc(cx,cy,r,0,Math.PI*2); ctx.closePath(); }
+
+  // ── 오른쪽 로봇 공방: robotStage(0~5)에 따라 부품이 쌓인다 ──────────────
+  function drawWorkshop(now){
+    var x0=fieldW(), W=cv.width-x0, H=cv.height;
+    // 공방 배경
+    ctx.fillStyle='rgba(255,255,255,.02)'; ctx.fillRect(x0,0,W,H);
+    ctx.strokeStyle='rgba(234,240,251,.08)'; ctx.lineWidth=2; ctx.strokeRect(x0+1,1,W-2,H-2);
+    // 라벨
+    ctx.fillStyle='rgba(147,161,196,.9)'; ctx.font='700 '+Math.round(H*0.035)+'px Pretendard, sans-serif';
+    ctx.textAlign='center';
+    ctx.fillText('나의 로봇 · '+robotStage+'/5', x0+W/2, H*0.10);
+
+    var cx=x0+W/2, baseY=H*0.86, u=H*0.12; // u: 단위 크기
+    // 작업대
+    ctx.fillStyle='#1a2338'; ctx.fillRect(x0+W*0.12, baseY, W*0.76, H*0.05);
+
+    // 5년차(=robotStage 5)면 스마트홈 조명 연출
+    if(robotStage>=5){
+      lightTimer+=1; if(lightTimer>90){ lightTimer=0; lightsOn=!lightsOn; }
+      if(lightsOn){
+        var g=ctx.createRadialGradient(cx,baseY-u*3.2,u*0.2,cx,baseY-u*3.2,u*4.2);
+        g.addColorStop(0,'rgba(255,224,150,.35)'); g.addColorStop(1,'rgba(255,224,150,0)');
+        ctx.fillStyle=g; ctx.fillRect(x0,0,W,H);
+      }
+    }
+
+    // 몸통/바퀴 (stage>=1)
+    if(robotStage>=1){
+      // 바퀴
+      ctx.fillStyle='#2b3a5c';
+      circle(cx-u*0.9, baseY-u*0.2, u*0.5); ctx.fill();
+      circle(cx+u*0.9, baseY-u*0.2, u*0.5); ctx.fill();
+      // 몸통
+      roundRect(cx-u*1.1, baseY-u*2.2, u*2.2, u*2.0, u*0.28);
+      ctx.fillStyle='#c9d3e8'; ctx.fill();
+      ctx.strokeStyle='#7f8db0'; ctx.lineWidth=4; ctx.stroke();
+      // 배 패널
+      ctx.fillStyle='#93a1c4'; roundRect(cx-u*0.6, baseY-u*1.8, u*1.2, u*0.9, u*0.12); ctx.fill();
+    }
+    // 팔 (stage>=2)
+    if(robotStage>=2){
+      ctx.strokeStyle='#c9d3e8'; ctx.lineWidth=u*0.28; ctx.lineCap='round';
+      line(cx-u*1.1, baseY-u*1.9, cx-u*1.8, baseY-u*1.2);
+      line(cx+u*1.1, baseY-u*1.9, cx+u*1.8, baseY-u*1.2);
+      ctx.fillStyle='#e0a055';
+      circle(cx-u*1.8, baseY-u*1.2, u*0.24); ctx.fill();
+      circle(cx+u*1.8, baseY-u*1.2, u*0.24); ctx.fill();
+    }
+    // 머리 + 센서 눈 (stage>=3)
+    if(robotStage>=3){
+      roundRect(cx-u*0.8, baseY-u*3.5, u*1.6, u*1.3, u*0.24);
+      ctx.fillStyle='#dfe7f5'; ctx.fill(); ctx.strokeStyle='#7f8db0'; ctx.lineWidth=4; ctx.stroke();
+      // 눈: 5년차에 불이 켜지면 청록으로 빛난다
+      ctx.fillStyle= (robotStage>=5 && lightsOn) ? '#57d9c8' : '#2b3a5c';
+      circle(cx-u*0.35, baseY-u*2.85, u*0.2); ctx.fill();
+      circle(cx+u*0.35, baseY-u*2.85, u*0.2); ctx.fill();
+    }
+    // 안테나/배터리 표시 (stage>=4)
+    if(robotStage>=4){
+      ctx.strokeStyle='#c9d3e8'; ctx.lineWidth=u*0.1;
+      line(cx, baseY-u*3.5, cx, baseY-u*4.1);
+      ctx.fillStyle='#ff9db1'; circle(cx, baseY-u*4.2, u*0.16); ctx.fill();
+      // 배터리 게이지
+      ctx.fillStyle='#2b3a5c'; roundRect(cx-u*0.5, baseY-u*1.65, u*1.0, u*0.22, u*0.05); ctx.fill();
+      ctx.fillStyle='#6ad06a'; roundRect(cx-u*0.46, baseY-u*1.62, u*0.92, u*0.16, u*0.04); ctx.fill();
+    }
+    // AI 두뇌 마크 (stage>=5)
+    if(robotStage>=5){
+      ctx.fillStyle= lightsOn ? '#e0a055' : '#7f8db0';
+      ctx.font='800 '+Math.round(u*0.5)+'px Pretendard, sans-serif';
+      ctx.fillText('AI', cx, baseY-u*2.55);
+      ctx.fillStyle='rgba(147,161,196,.9)'; ctx.font='700 '+Math.round(H*0.03)+'px Pretendard, sans-serif';
+      ctx.fillText(lightsOn?'💡 불 켜짐':'🌙 불 꺼짐', cx, baseY+u*0.9);
+    } else if(robotStage>=1){
+      ctx.fillStyle='rgba(147,161,196,.75)'; ctx.font='700 '+Math.round(H*0.03)+'px Pretendard, sans-serif';
+      ctx.fillText('다음 부품: '+(STAGES[robotStage]? STAGES[robotStage].part : '완성!'), cx, baseY+u*0.9);
+    }
+    ctx.textAlign='start';
+  }
+  function roundRect(x,y,w,h,r){ ctx.beginPath();
+    ctx.moveTo(x+r,y); ctx.arcTo(x+w,y,x+w,y+h,r); ctx.arcTo(x+w,y+h,x,y+h,r);
+    ctx.arcTo(x,y+h,x,y,r); ctx.arcTo(x,y,x+w,y,r); ctx.closePath(); }
+  function line(x1,y1,x2,y2){ ctx.beginPath(); ctx.moveTo(x1,y1); ctx.lineTo(x2,y2); ctx.stroke(); }
+
+  // ── 입력 ──────────────────────────────
+  function pressLane(lane){
+    if(!running) return;
+    judge(lane, performance.now());
+    var used=laneMap(STAGES[stageIdx].lanes);
+    if(used.indexOf(lane)<0) return;
+    var b=laneBtns[lane]; if(b){ b.classList.add('on'); setTimeout(function(){ b.classList.remove('on'); },80); }
+  }
+  document.addEventListener('keydown', function(e){
+    // Esc 는 부모 갤러리가 처리하도록 건드리지 않는다.
+    if(e.repeat) return;
+    if(e.code in KEYCODE){ e.preventDefault(); pressLane(KEYCODE[e.code]); }
+  });
+  laneBtns.forEach(function(b){
+    var lane=+b.getAttribute('data-lane');
+    b.addEventListener('pointerdown', function(e){ e.preventDefault(); pressLane(lane); });
+  });
+
+  // 갤러리 iframe 안에서 열려도 키가 먹도록 포커스 확보
+  try{ window.focus(); }catch(e){}
+  document.addEventListener('pointerdown', function(){ try{ window.focus(); }catch(e){} });
+
+  // ── 버튼 배선 ──────────────────────────────
+  id('btnStart').onclick=function(){ hide('ovTitle'); showYear(0); };
+  id('btnSave').onclick=saveScore;
+  id('nameInput').addEventListener('keydown', function(e){ if(e.key==='Enter'){ e.preventDefault(); saveScore(); } });
+  id('btnRestart').onclick=function(){
+    totals={score:0,perfect:0,good:0,miss:0,maxCombo:0}; robotStage=0; savedOnce=false;
+    var b=id('btnSave'); b.disabled=false; b.textContent='순위 저장';
+    hide('ovEnd'); showYear(0);
+  };
+
+  requestAnimationFrame(loop);
+})();
+</script>
+</body>
+</html>
