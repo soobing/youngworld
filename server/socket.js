@@ -21,14 +21,18 @@ const RETRO_FB_MAX = 400;   // 개인별 비밀 한마디 하나당
 // 남이 남에게 쓴 한마디는 서버 밖으로 절대 나가지 않는다(선생님도 못 본다).
 function retroPayload(meId) {
   const mine = Retro.paperOf(meId);
+  // 한마디를 남길 수 있는 사람 = 친구들 + 선생님(게스트와 나 자신은 빠진다).
+  // 선생님 카드는 맨 뒤에 둔다(친구들 다음에 자연스럽게 이어지도록).
+  const people = Avatars.allMessageable(meId)
+    .map((a) => ({ id: a.id, nickname: a.nickname, color: a.color, role: a.role }))
+    .sort((x, y) => (x.role === 'admin' ? 1 : 0) - (y.role === 'admin' ? 1 : 0));
   return {
-    people: Avatars.allMessageable(meId).map((a) => ({
-      id: a.id, nickname: a.nickname, color: a.color, role: a.role,
-    })),
+    people,
     mine: mine || null,
     myFeedbacks: Retro.feedbackFrom(meId),
     papers: Retro.allPapers(),
     received: Retro.feedbackTo(meId),
+    draft: Retro.draftOf(meId),   // 쓰다 만 글(본인에게만)
   };
 }
 
@@ -426,30 +430,50 @@ function setup(io) {
 
     // -----------------------------------------------------------------
     // 캠프파이어 회고 롤링페이퍼 (텐트 안 모닥불)
-    //   retro:load → 내가 볼 수 있는 것만 담아 retro:data 로 답한다.
-    //   retro:save → 공개 3칸 + 비밀 한마디를 한 번에 저장.
+    //   retro:load  → 내가 볼 수 있는 것만 담아 retro:data 로 답한다.
+    //   retro:draft → 쓰다 만 글을 그대로 맡아둔다(빈 칸이어도 OK).
+    //   retro:save  → 공개 3칸 + 비밀 한마디를 한 번에 저장(네 칸 모두 필수).
     // -----------------------------------------------------------------
+    const cutRetro = (v, max) => String(v == null ? '' : v).trim().slice(0, max);
+
+    // 비밀 한마디 대상은 "쪽지를 주고받을 수 있는 사람"(친구들 + 선생님, 게스트·나 자신 제외)으로 한정.
+    const cleanFeedbacks = (feedbacks) => {
+      const allowed = new Set(Avatars.allMessageable(avatar.id).map((a) => a.id));
+      return (Array.isArray(feedbacks) ? feedbacks : [])
+        .map((f) => ({ toId: Number(f && f.toId), body: cutRetro(f && f.body, RETRO_FB_MAX) }))
+        .filter((f) => allowed.has(f.toId));
+    };
+
     socket.on('retro:load', () => {
       if (deny('retro:view')) return;
       socket.emit('retro:data', retroPayload(avatar.id));
     });
 
+    // 임시저장 — 검사하지 않고 그대로 맡아둔다. 다른 사람에게는 알리지 않는다.
+    socket.on('retro:draft', ({ good, bad, nextStep, feedbacks }) => {
+      if (deny('retro:write')) return;
+      Retro.saveDraft({
+        authorId: avatar.id,
+        good: cutRetro(good, RETRO_MAX),
+        bad: cutRetro(bad, RETRO_MAX),
+        nextStep: cutRetro(nextStep, RETRO_MAX),
+        feedbacks: cleanFeedbacks(feedbacks).filter((f) => f.body),
+      });
+      socket.emit('retro:drafted', {});
+    });
+
     socket.on('retro:save', ({ good, bad, nextStep, feedbacks }) => {
       if (deny('retro:write')) return;
-      const cut = (v, max) => String(v == null ? '' : v).trim().slice(0, max);
+      const cut = cutRetro;
       const g = cut(good, RETRO_MAX), b = cut(bad, RETRO_MAX), n = cut(nextStep, RETRO_MAX);
       if (!g || !b || !n) {
         socket.emit('error', { code: 'BAD_RETRO', message: '좋았던 점·아쉬웠던 점·앞으로 하고 싶은 것을 모두 적어주세요.' });
         return;
       }
 
-      // 피드백 대상은 "쪽지를 주고받을 수 있는 사람"(게스트·나 자신 제외)으로 한정.
-      const allowed = new Set(Avatars.allMessageable(avatar.id).map((a) => a.id));
-      const clean = (Array.isArray(feedbacks) ? feedbacks : [])
-        .map((f) => ({ toId: Number(f && f.toId), body: cut(f && f.body, RETRO_FB_MAX) }))
-        .filter((f) => allowed.has(f.toId));
+      const clean = cleanFeedbacks(feedbacks);
       if (!clean.some((f) => f.body)) {
-        socket.emit('error', { code: 'BAD_RETRO_FB', message: '친구 한 명에게라도 비밀 한마디를 남겨주세요.' });
+        socket.emit('error', { code: 'BAD_RETRO_FB', message: '친구나 선생님 한 명에게라도 비밀 한마디를 남겨주세요.' });
         return;
       }
 
