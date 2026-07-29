@@ -134,6 +134,25 @@
     color:var(--ink); width:14ch; text-align:center; }
   .namebox input:focus{ outline:2px solid var(--brass); outline-offset:1px; }
 
+  /* ── 모바일(세로 화면): 게임 박스를 화면 가득 키우고 레인을 넓게 ── */
+  @media (max-aspect-ratio: 1/1){
+    .wrap{ padding:0; gap:0; }
+    .head{ padding:.5rem .5rem .3rem; }
+    .head .who{ font-size:clamp(9px,3vw,13px); }
+    .head h1{ font-size:clamp(15px,5vw,22px); }
+    .stage-box{ width:100%; max-width:none; flex:1; aspect-ratio:auto; height:auto;
+      border-radius:0; border-left:none; border-right:none; }
+    /* 세로에서는 로봇이 위쪽 띠로 가므로, 판정/콤보/레인버튼을 화면 전체 폭으로 */
+    .stage-box.portrait .judge{ right:0; top:56%; }
+    .stage-box.portrait .combo{ right:0; top:44%; }
+    .stage-box.portrait .lanebtns{ right:0; height:14%; }
+    .stage-box.portrait .lanebtns button{ font-size:clamp(15px,6vw,26px); margin:.8vmin; }
+    .stage-box.portrait .hud{ padding:1vmin 1.2vmin; }
+    .stage-box.portrait .chip{ font-size:clamp(9px,3vw,13px); padding:.5vmin 1vmin; }
+    .stage-box.portrait .chip.song{ max-width:44vw; }
+    .stage-box.portrait .mute{ width:9vw; height:9vw; }
+  }
+
   @media (prefers-reduced-motion:reduce){ *{ animation:none!important; } }
 </style>
 </head>
@@ -288,11 +307,39 @@
 
   // ── DOM ──────────────────────────────
   var cv = document.getElementById('cv'), ctx2d = cv.getContext('2d');
+  var box = document.getElementById('box');
   var elYear=id('hYear'), elScore=id('hScore'), elCombo=id('hCombo'), elSongName=id('hSongName');
   var judgeFx=id('judgeFx'), comboFx=id('comboFx');
   var laneBtnsWrap=id('lanebtns'), laneBtns=Array.prototype.slice.call(laneBtnsWrap.querySelectorAll('button'));
   var muteBtn=id('muteBtn');
   function id(x){ return document.getElementById(x); }
+
+  // ── 반응형 캔버스 + 레이아웃 ──────────────────────────────
+  //  캔버스 내부 해상도를 실제 박스 크기(×dpr)에 맞춰 선명하게 그린다.
+  //  가로(landscape): 왼쪽에 레인(62%) · 오른쪽에 로봇 공방(38%).
+  //  세로(portrait, 모바일): 위쪽 띠에 로봇 공방 · 아래 전체 폭에 레인 → 레인이 크고 시원함.
+  var LP = { portrait:false,
+    field:{x:0,y:0,w:1280*0.62,h:720}, shop:{x:1280*0.62,y:0,w:1280*0.38,h:720} };
+  function resize(){
+    var rect=box.getBoundingClientRect();
+    if(rect.width<2||rect.height<2) return;
+    var dpr=Math.min(window.devicePixelRatio||1, 2);
+    var w=Math.max(1,Math.round(rect.width*dpr)), h=Math.max(1,Math.round(rect.height*dpr));
+    if(cv.width!==w) cv.width=w;
+    if(cv.height!==h) cv.height=h;
+    var portrait = (rect.width/rect.height) < 1.1;
+    box.classList.toggle('portrait', portrait);
+    if(portrait){
+      var wsH=Math.round(cv.height*0.20);
+      LP={ portrait:true, field:{x:0,y:wsH,w:cv.width,h:cv.height-wsH}, shop:{x:0,y:0,w:cv.width,h:wsH} };
+    } else {
+      var fw=Math.round(cv.width*0.62);
+      LP={ portrait:false, field:{x:0,y:0,w:fw,h:cv.height}, shop:{x:fw,y:0,w:cv.width-fw,h:cv.height} };
+    }
+  }
+  window.addEventListener('resize', resize);
+  window.addEventListener('orientationchange', function(){ setTimeout(resize,120); });
+  if(window.ResizeObserver){ try{ new ResizeObserver(resize).observe(box); }catch(e){} }
 
   // ── 오디오 엔진(WebAudio 합성) ──────────────────────────────
   var muted=false, audio=null; // audio: null=미시도, false=미지원, obj=사용가능
@@ -561,7 +608,6 @@
   function escapeHtml(s){ return String(s).replace(/[&<>"']/g,function(c){ return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]; }); }
 
   // ── 렌더 루프 ──────────────────────────────
-  function fieldW(){ return cv.width*0.62; }
   function loop(){
     requestAnimationFrame(loop);
     var now=clock();
@@ -579,25 +625,25 @@
   }
 
   function drawCountdown(remain){
-    var W=fieldW();
-    var n=Math.ceil(remain);
+    var f=LP.field, cx=f.x+f.w/2, cy=f.y+f.h*0.48, n=Math.ceil(remain);
     ctx2d.save(); ctx2d.textAlign='center';
     ctx2d.fillStyle='rgba(224,160,85,.95)';
-    ctx2d.font='900 '+Math.round(cv.height*0.18)+'px Pretendard, sans-serif';
-    ctx2d.fillText(n>0?n:'▶', W/2, cv.height*0.5);
-    ctx2d.fillStyle='rgba(147,161,196,.9)'; ctx2d.font='700 '+Math.round(cv.height*0.04)+'px Pretendard, sans-serif';
-    ctx2d.fillText('준비…', W/2, cv.height*0.62);
+    ctx2d.font='900 '+Math.round(f.h*0.22)+'px Pretendard, sans-serif';
+    ctx2d.fillText(n>0?String(n):'▶', cx, cy);
+    ctx2d.fillStyle='rgba(147,161,196,.9)'; ctx2d.font='700 '+Math.round(f.h*0.05)+'px Pretendard, sans-serif';
+    ctx2d.fillText('준비…', cx, cy+f.h*0.12);
     ctx2d.restore();
   }
 
   function drawLanes(now, s){
-    var W=fieldW(), H=cv.height, used=laneMap(s.lanes), nLane=used.length;
-    var hitY=H*0.82, lw=W/nLane;
+    var fld=LP.field, ox=fld.x, oy=fld.y, W=fld.w, H=fld.h;
+    var used=laneMap(s.lanes), nLane=used.length;
+    var hitY=oy+H*0.82, topY=oy, lw=W/nLane;
     for(var i=0;i<nLane;i++){
-      var x=i*lw;
+      var x=ox+i*lw;
       ctx2d.fillStyle=(i%2===0)?'rgba(255,255,255,.015)':'rgba(255,255,255,.03)';
-      ctx2d.fillRect(x,0,lw,H);
-      ctx2d.strokeStyle='rgba(234,240,251,.06)'; ctx2d.lineWidth=2; ctx2d.strokeRect(x,0,lw,H);
+      ctx2d.fillRect(x,oy,lw,H);
+      ctx2d.strokeStyle='rgba(234,240,251,.06)'; ctx2d.lineWidth=2; ctx2d.strokeRect(x,oy,lw,H);
     }
     // 판정선(노래 박자에 맞춰 은은히 맥동)
     var song=SONGS[s.songIdx]; var pulse=0;
@@ -605,21 +651,21 @@
       var beat=60/song.bpm; var ph=((now-songStartTime)%beat)/beat; pulse=(1-ph)*0.5;
     }
     ctx2d.strokeStyle='rgba(224,160,85,'+(0.7+pulse*0.3)+')'; ctx2d.lineWidth=4;
-    ctx2d.beginPath(); ctx2d.moveTo(0,hitY); ctx2d.lineTo(W,hitY); ctx2d.stroke();
-    ctx2d.fillStyle='rgba(224,160,85,'+(0.10+pulse*0.14)+')'; ctx2d.fillRect(0,hitY-3,W,6);
+    ctx2d.beginPath(); ctx2d.moveTo(ox,hitY); ctx2d.lineTo(ox+W,hitY); ctx2d.stroke();
+    ctx2d.fillStyle='rgba(224,160,85,'+(0.10+pulse*0.14)+')'; ctx2d.fillRect(ox,hitY-3,W,6);
     // 레인 반짝임
     var na=[];
-    for(var f=0;f<flash.length;f++){ var age=now-flash[f].t; if(age>0.18) continue; na.push(flash[f]);
-      var li=used.indexOf(flash[f].lane); if(li<0) continue;
-      ctx2d.fillStyle='rgba(224,160,85,'+((1-age/0.18)*0.5)+')'; ctx2d.fillRect(li*lw,0,lw,H); }
+    for(var fi=0;fi<flash.length;fi++){ var age=now-flash[fi].t; if(age>0.18) continue; na.push(flash[fi]);
+      var li=used.indexOf(flash[fi].lane); if(li<0) continue;
+      ctx2d.fillStyle='rgba(224,160,85,'+((1-age/0.18)*0.5)+')'; ctx2d.fillRect(ox+li*lw,oy,lw,H); }
     flash=na;
-    // 노트
+    // 노트(판정선까지 낙하)
     if(running){
       for(var k=0;k<notes.length;k++){ var n=notes[k]; if(n.hit||n.dead) continue;
         var prog=1-(n.target-now)/s.travelSec; if(prog<-0.05||prog>1.1) continue;
         if(prog<0) prog=0;
         var li2=used.indexOf(n.lane); if(li2<0) continue;
-        drawPart(li2*lw+lw/2, prog*hitY, Math.min(lw,120)*0.34, n.lane);
+        drawPart(ox+li2*lw+lw/2, topY+prog*(hitY-topY), Math.min(lw,140)*0.34, n.lane);
       }
     }
   }
@@ -647,20 +693,26 @@
       if(i===0)ctx2d.moveTo(px,py); else ctx2d.lineTo(px,py);} ctx2d.closePath(); }
   function circle(cx,cy,r){ ctx2d.beginPath(); ctx2d.arc(cx,cy,r,0,Math.PI*2); ctx2d.closePath(); }
 
-  // ── 오른쪽 로봇 공방 ──────────────────────────────
+  // ── 로봇 공방(가로: 오른쪽 패널 / 세로: 위쪽 띠) ──────────────────────────────
   function drawWorkshop(){
-    var x0=fieldW(), W=cv.width-x0, H=cv.height;
-    ctx2d.fillStyle='rgba(255,255,255,.02)'; ctx2d.fillRect(x0,0,W,H);
-    ctx2d.strokeStyle='rgba(234,240,251,.08)'; ctx2d.lineWidth=2; ctx2d.strokeRect(x0+1,1,W-2,H-2);
-    ctx2d.fillStyle='rgba(147,161,196,.9)'; ctx2d.font='700 '+Math.round(H*0.035)+'px Pretendard, sans-serif';
-    ctx2d.textAlign='center'; ctx2d.fillText('나의 로봇 · '+robotStage+'/5', x0+W/2, H*0.10);
-    var cx=x0+W/2, baseY=H*0.86, u=H*0.12;
-    ctx2d.fillStyle='#1a2338'; ctx2d.fillRect(x0+W*0.12, baseY, W*0.76, H*0.05);
+    var r=LP.shop, x0=r.x, oy=r.y, W=r.w, H=r.h, portrait=LP.portrait;
+    ctx2d.fillStyle='rgba(255,255,255,.02)'; ctx2d.fillRect(x0,oy,W,H);
+    ctx2d.strokeStyle='rgba(234,240,251,.08)'; ctx2d.lineWidth=2; ctx2d.strokeRect(x0+1,oy+1,W-2,H-2);
+    var cx=x0+W/2;
+    // 로봇 크기·바닥 위치: 세로 띠는 납작하므로 더 작게 잡아 안에 들어가게.
+    var u = portrait ? H/6.2 : H*0.12;
+    var baseY = portrait ? oy+H*0.95 : oy+H*0.86;
+    var labelY = portrait ? oy+H*0.14 : oy+H*0.10;
+    ctx2d.fillStyle='rgba(147,161,196,.9)';
+    ctx2d.font='700 '+Math.round((portrait?H*0.13:H*0.035))+'px Pretendard, sans-serif';
+    ctx2d.textAlign='center'; ctx2d.fillText('나의 로봇 · '+robotStage+'/5', cx, labelY);
+    if(!portrait){ ctx2d.fillStyle='#1a2338'; ctx2d.fillRect(x0+W*0.12, baseY, W*0.76, H*0.05); }
     if(robotStage>=5){
       lightTimer+=1; if(lightTimer>90){ lightTimer=0; lightsOn=!lightsOn; }
-      if(lightsOn){ var g=ctx2d.createRadialGradient(cx,baseY-u*3.2,u*0.2,cx,baseY-u*3.2,u*4.2);
+      if(lightsOn){ var g=ctx2d.createRadialGradient(cx,baseY-u*3.2,u*0.2,cx,baseY-u*3.2,u*4.6);
         g.addColorStop(0,'rgba(255,224,150,.35)'); g.addColorStop(1,'rgba(255,224,150,0)');
-        ctx2d.fillStyle=g; ctx2d.fillRect(x0,0,W,H); }
+        // 불빛은 방 전체(캔버스)로 은은하게 번지게
+        ctx2d.fillStyle=g; ctx2d.fillRect(0,0,cv.width,cv.height); }
     }
     if(robotStage>=1){
       ctx2d.fillStyle='#2b3a5c'; circle(cx-u*0.9, baseY-u*0.2, u*0.5); ctx2d.fill();
@@ -692,9 +744,10 @@
     if(robotStage>=5){
       ctx2d.fillStyle=lightsOn?'#e0a055':'#7f8db0';
       ctx2d.font='800 '+Math.round(u*0.5)+'px Pretendard, sans-serif'; ctx2d.fillText('AI', cx, baseY-u*2.55);
-      ctx2d.fillStyle='rgba(147,161,196,.9)'; ctx2d.font='700 '+Math.round(H*0.03)+'px Pretendard, sans-serif';
-      ctx2d.fillText(lightsOn?'💡 불 켜짐':'🌙 불 꺼짐', cx, baseY+u*0.9);
-    } else if(robotStage>=1){
+      // 상태 문구는 공간이 넉넉한 가로 레이아웃에서만(세로 띠에선 넘치므로 생략)
+      if(!portrait){ ctx2d.fillStyle='rgba(147,161,196,.9)'; ctx2d.font='700 '+Math.round(H*0.03)+'px Pretendard, sans-serif';
+        ctx2d.fillText(lightsOn?'💡 불 켜짐':'🌙 불 꺼짐', cx, baseY+u*0.9); }
+    } else if(robotStage>=1 && !portrait){
       ctx2d.fillStyle='rgba(147,161,196,.75)'; ctx2d.font='700 '+Math.round(H*0.03)+'px Pretendard, sans-serif';
       ctx2d.fillText('다음 부품: '+(STAGES[robotStage]?STAGES[robotStage].part:'완성!'), cx, baseY+u*0.9);
     }
@@ -738,6 +791,7 @@
     hide('ovEnd'); showYear(0);
   };
 
+  resize();                 // 캔버스 해상도·레이아웃 초기화(첫 프레임 전에)
   requestAnimationFrame(loop);
 })();
 </script>
