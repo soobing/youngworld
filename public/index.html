@@ -288,6 +288,7 @@
         <section class="retro-pane" data-rpane="write">
           <p class="retro-guide">
             네 칸을 <b>한 가지씩은 꼭</b> 채워야 종이가 완성돼요. 짧아도 괜찮으니 솔직하게!
+            쓰는 동안 <b>자동으로 임시저장</b>되니까 창을 닫아도 사라지지 않아요.
             언제든 다시 열어 <b>고쳐 쓸 수 있어요</b>.
           </p>
 
@@ -316,12 +317,13 @@
           </div>
 
           <div class="retro-block retro-secret">
-            <label class="retro-label"><span class="retro-ic">💌</span>친구에게 남기는 한마디
+            <label class="retro-label"><span class="retro-ic">💌</span>친구 · 선생님에게 남기는 한마디
               <span class="retro-lock">🔒 비밀</span>
             </label>
             <p class="retro-private-note">
-              <b>여기 쓴 글은 받는 사람에게만 보여요.</b>
-              다른 친구도, 선생님도, 모두의 회고 탭에서도 절대 볼 수 없어요.
+              <b>여기 쓴 글은 받는 사람 한 명에게만 보여요.</b>
+              친구에게 쓴 글은 그 친구만, 선생님에게 쓴 글은 선생님만 볼 수 있어요.
+              다른 사람은 물론 모두의 회고 탭에서도 절대 볼 수 없어요.
               그러니 마음속에 있던 말을 편하게 적어도 괜찮아요.
             </p>
             <p class="retro-hint">
@@ -329,15 +331,20 @@
               ① 그 친구의 <b>작품</b>을 보고 좋았던 점 — "네 영상에서 ○○ 장면이 진짜 멋졌어"<br />
               ② <b>수업 시간</b>에 본 모습 — "막힐 때 포기 안 하고 계속 물어보는 게 대단했어"<br />
               ③ <b>고마웠던</b> 순간 — "내 오류 같이 봐줘서 고마웠어"<br />
-              ④ <b>응원</b>하는 말 — "네가 말한 그 꿈, 진짜 잘 어울려!"
+              ④ <b>응원</b>하는 말 — "네가 말한 그 꿈, 진짜 잘 어울려!"<br />
+              ⑤ <b>선생님</b>에게 — "수업에서 ○○이 제일 재미있었어요 / 다음엔 ○○도 해보고 싶어요"
             </p>
-            <p class="retro-hint retro-hint-min">최소 <b>한 명</b>에게는 남겨주세요. (5명 모두에게 써도 좋아요)</p>
+            <p class="retro-hint retro-hint-min">최소 <b>한 명</b>에게는 남겨주세요. (친구들과 선생님 모두에게 써도 좋아요)</p>
             <div id="retro-people"></div>
           </div>
 
           <div class="retro-actions">
             <div id="retro-checklist" class="retro-checklist"></div>
-            <button id="retro-save" class="retro-btn">🔥 모닥불에 올리기</button>
+            <div class="retro-btns">
+              <button id="retro-draft" class="retro-btn retro-btn-2nd">💾 임시저장</button>
+              <button id="retro-save" class="retro-btn">🔥 모닥불에 올리기</button>
+            </div>
+            <p id="retro-draft-line" class="retro-draft-line"></p>
             <p id="retro-line" class="retro-line"></p>
           </div>
         </section>
@@ -350,7 +357,7 @@
 
         <!-- ---------- 탭: 나에게 온 비밀 편지 ---------- -->
         <section class="retro-pane hidden" data-rpane="mine">
-          <p class="retro-guide">친구들이 <b>나에게만</b> 남긴 한마디예요. 나 말고는 아무도 못 봐요 🔒</p>
+          <p class="retro-guide">친구들과 선생님이 <b>나에게만</b> 남긴 한마디예요. 나 말고는 아무도 못 봐요 🔒</p>
           <div id="retro-received"></div>
         </section>
       </div>

@@ -49,6 +49,9 @@ export function connect(token, onReady) {
   // 최초 월드 상태.
   socket.on('world:init', (data) => {
     state.me = data.me;
+    // 작품(게임)에서 이름을 물어보지 않고 쓰도록 로그인 이름을 저장해 둔다.
+    // (같은 브라우저라 iframe 작품이 localStorage 로 읽을 수 있다. openPPT 의 ?me= 백업용)
+    try { if (data.me && data.me.nickname) localStorage.setItem('yw_nick', data.me.nickname); } catch (e) {}
     state.scene = data.scene;
     state.pendingPlayers = data.players || [];
     state.blackboard = data.blackboard || [];
@@ -67,7 +70,7 @@ export function connect(token, onReady) {
     'player:renamed', 'player:recolored', 'me:updated', 'peer:sent',
     'survey:mine', 'survey:changed',
     'mission:mine', 'mission:received', 'mission:changed', 'mission:remind',
-    'retro:data', 'retro:saved', 'retro:changed', 'retro:whisper',
+    'retro:data', 'retro:saved', 'retro:drafted', 'retro:changed', 'retro:whisper',
     'blackboard:update', 'gallery:update', 'guides:update', 'admin:done', 'error',
   ];
   passthrough.forEach((ev) => socket.on(ev, (d) => emitLocal(ev, d)));
