@@ -1,0 +1,661 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>김현영의 5년 뒤 나의 미래 — 국제고로 올라가기</title>
+<style>
+  html, body { margin:0; padding:0; height:100%; background:#0b1020; overflow:hidden;
+               font-family:'Apple SD Gothic Neo','Malgun Gothic',system-ui,sans-serif; -webkit-text-size-adjust:100%; }
+  #wrap { position:fixed; inset:0; }
+  #board { position:absolute; left:50%; top:50%; width:360px; height:560px;
+           transform:translate(-50%,-50%); transform-origin:center center;
+           background:#12162c; border-radius:14px; overflow:hidden;
+           box-shadow:0 18px 60px rgba(0,0,0,.6); touch-action:none; user-select:none; }
+  canvas { display:block; width:360px; height:560px; }
+
+  .screen { position:absolute; inset:0; display:flex; flex-direction:column; align-items:center;
+            justify-content:center; gap:10px; padding:22px; box-sizing:border-box; text-align:center;
+            color:#eef2ff; background:rgba(8,12,28,.88); backdrop-filter:blur(2px); }
+  .screen.hide { display:none; }
+  .screen h1 { margin:0; font-size:23px; letter-spacing:-.5px; }
+  .screen h2 { margin:0; font-size:20px; }
+  .screen p  { margin:0; font-size:13px; line-height:1.65; color:#b9c3e6; }
+  .screen .big { font-size:34px; font-weight:800; color:#ffd873; margin:2px 0; }
+  .tag { font-size:12px; color:#8fa0d0; }
+
+  button { font:inherit; font-size:15px; font-weight:700; color:#0b1020; background:#ffd873;
+           border:0; border-radius:10px; padding:11px 22px; cursor:pointer; }
+  button.ghost { background:transparent; color:#b9c3e6; border:1.5px solid #3b4675; font-weight:600; font-size:13px; padding:8px 16px; }
+  button:active { transform:translateY(1px); }
+  .row { display:flex; gap:8px; align-items:center; justify-content:center; flex-wrap:wrap; }
+  input { font:inherit; font-size:15px; padding:9px 11px; border-radius:9px; border:1.5px solid #3b4675;
+          background:#171d38; color:#eef2ff; width:150px; text-align:center; }
+
+  .list { width:100%; max-height:330px; overflow:auto; text-align:left; font-size:13px; }
+  .list .r { display:flex; gap:8px; padding:6px 9px; border-radius:7px; align-items:baseline; }
+  .list .r:nth-child(odd) { background:rgba(255,255,255,.05); }
+  .list .r .n { width:26px; color:#8fa0d0; font-variant-numeric:tabular-nums; }
+  .list .r .w { flex:1; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .list .r .g { font-size:11px; color:#8fa0d0; }
+  .list .r .s { font-weight:700; color:#ffd873; font-variant-numeric:tabular-nums; }
+  .list .r.me { outline:1.5px solid #ffd873; }
+</style>
+</head>
+<body>
+<div id="wrap"><div id="board">
+  <canvas id="cv" width="360" height="560"></canvas>
+
+  <div id="scStart" class="screen">
+    <p class="tag">김현영의 5년 뒤 나의 미래</p>
+    <h1>국제고로 올라가기</h1>
+    <p>5년 뒤 나는 국제고에서 공부하고 있다.<br>
+       거기까지 가려면 <b>세 개의 관문</b>을 넘어야 한다.</p>
+    <p class="tag">📄 자기소개서 &nbsp;→&nbsp; 🎤 면접 &nbsp;→&nbsp; 📚 국제고</p>
+    <p>발판을 밟고 <b>위로</b> 올라간다.<br>
+       📱 에 닿으면 <b>자신감</b>이 줄어든다. 끝.</p>
+    <p class="tag">⭐ 꿈 조각을 많이 모을수록 5년 뒤가 달라집니다<br>
+       ← → 방향키 · 화면을 손가락으로 끌어도 됩니다</p>
+    <div class="row"><button id="btnStart">시작하기</button></div>
+    <div class="row"><button class="ghost" id="btnRank1">🏆 기록 보기</button></div>
+  </div>
+
+  <div id="scOver" class="screen hide">
+    <p class="tag" id="ovTag">결과</p>
+    <h2 id="ovTitle">—</h2>
+    <div class="big" id="ovScore">0</div>
+    <p id="ovDetail">—</p>
+    <div class="row hide" id="nameRow">
+      <input id="nameIn" maxlength="12" placeholder="이름" autocomplete="off">
+      <button id="btnSave">기록 남기기</button>
+    </div>
+    <p class="tag" id="ovSaved"></p>
+    <div class="row">
+      <button id="btnAgain">다시 하기</button>
+      <button class="ghost" id="btnRank2">🏆 기록 보기</button>
+    </div>
+  </div>
+
+  <div id="scRank" class="screen hide">
+    <h2>🏆 기록</h2>
+    <p class="tag">국제고로 올라가기</p>
+    <div class="list" id="rankList"><p class="tag">불러오는 중…</p></div>
+    <div class="row"><button class="ghost" id="btnRankClose">닫기</button></div>
+  </div>
+</div></div>
+
+<script>
+// =====================================================================
+//  김현영의 「5년 뒤 나의 미래」 — 국제고로 올라가기
+//
+//  규칙 한 줄: 발판을 밟고 위로 올라간다. 핸드폰에 닿으면 자신감이 준다. 끝.
+//
+//  아래 숫자만 바꾸면 게임이 달라집니다. 하나씩 바꿔보고 직접 해보세요.
+// =====================================================================
+
+// ── 단계 설정 ────────────────────────────────────────────────────────
+var STAGE_MS = 15000;          // 한 단계 목표 시간(밀리초). 15000 = 15초 (한 판 약 45초)
+var CLIMB_SPEED = 210;         // 1초에 올라가는 높이(px). 이 둘이 단계 높이를 정한다
+                               //   (봇으로 재보니 실제로 1초에 210px 쯤 올라간다)
+var STAGE_H = STAGE_MS / 1000 * CLIMB_SPEED;   // = 2000px
+
+// 단계를 늘리려면 여기에 줄을 더하면 된다(배경색·이름만 정하면 됨)
+var STAGES = [
+  { name:'1단계 · 자기소개서', goal:'1차 서류 합격!', where:'밤에 원서 쓰는 책상',
+    sky:['#0d1730','#2b4272'], plat:'#8b6b45', platTop:'#c49a63', deco:'📄',
+    items:['📄','✏️','📝','📎'], scene:'desk' },
+  { name:'2단계 · 면접',       goal:'2차 면접 통과!', where:'면접장',
+    sky:['#2a1636','#63356b'], plat:'#6d4a7a', platTop:'#b183c0', deco:'🎤',
+    items:['🎤','🪑','👔','❓'], scene:'interview' },
+  { name:'3단계 · 국제고',     goal:'국제고 도착!',   where:'국제고 교실',
+    sky:['#0e2a2a','#1f7a6c'], plat:'#3f6f5f', platTop:'#6fc3a2', deco:'📚',
+    items:['📚','🌏','🔤','🎒'], scene:'school' }
+];
+
+// ── 움직임 ──────────────────────────────────────────────────────────
+var GRAVITY   = 1800;   // 중력(px/초²). 크면 무겁게 떨어진다
+var JUMP_V    = 640;    // 점프 힘. 크면 높이 뛴다(114px까지 오른다 — 발판 간격보다 넉넉해야 한다)
+var MOVE_SPEED= 260;    // 좌우 속도(px/초) — 방향키와 손가락이 똑같은 속도
+
+// ── 자신감(계속 줄어드는 것) ─────────────────────────────────────────
+var CONF_MAX   = 100;   // 자신감 최대치
+var CONF_DRAIN = 0.4;   // 1초마다 저절로 줄어드는 양 (한 판 45초 → 18)
+var HIT_COST   = 7;     // 📱 핸드폰에 닿았을 때
+var FALL_COST  = 15;    // 아래로 떨어졌을 때
+var STAGE_HEAL = 15;    // 한 단계를 통과하면 돌려받는 자신감
+
+// ── 점수 ────────────────────────────────────────────────────────────
+var SCORE_STAR   = 100; // ⭐ 꿈 조각 하나
+var SCORE_STAGE  = 300; // 한 단계 통과
+var SCORE_FINISH = 500; // 3단계까지 완주 보너스(끝까지 가는 게 항상 이득이어야 한다)
+var SCORE_CONF   = 10;  // 남은 자신감 1당
+var STARS_ABROAD = 20;  // 이만큼 모으고 완주하면 결말이 「유학」(전체 36개 중)
+
+// ── 판 만들기 ───────────────────────────────────────────────────────
+var PLAT_GAP = 50;      // 발판 사이 높이 (점프 높이의 절반쯤이어야 여유가 있다)
+var PLAT_REACH = 100;   // 다음 발판이 옆으로 벌어질 수 있는 최대 거리(한 번에 닿을 수 있어야 한다)
+var PLAT_W   = 82;
+var PLAT_H   = 12;
+var STARS_PER_STAGE = 12;
+
+// ── 기록(랭킹) ──────────────────────────────────────────────────────
+var GAME_KEY = 'hyunyoung-game5';
+
+// =====================================================================
+//  여기서부터는 게임이 돌아가게 하는 부분
+// =====================================================================
+var BW = 360, BH = 560;
+var cv = document.getElementById('cv');
+var ctx = cv.getContext('2d');
+var board = document.getElementById('board');
+
+var scStart = document.getElementById('scStart');
+var scOver  = document.getElementById('scOver');
+var scRank  = document.getElementById('scRank');
+
+var G = null;
+
+// 화면 크기 맞추기 — 폰에서 가로로 삐져나가지 않게 통째로 줄인다
+function fit() {
+  var w = (window.innerWidth || BW), h = (window.innerHeight || BH);
+  var s = Math.min(w / BW, h / BH);
+  board.style.transform = 'translate(-50%,-50%) scale(' + s + ')';
+}
+window.addEventListener('resize', fit);
+fit();
+
+// 판마다 똑같은 지형이 나오도록 하는 간단한 난수(씨앗을 주면 항상 같은 결과)
+function rng(seed) {
+  var s = seed >>> 0;
+  return function () { s = (s * 1664525 + 1013904223) >>> 0; return s / 4294967296; };
+}
+
+// ── 소리 (파일 없이 만드는 8비트 효과음) ─────────────────────────────
+var AC = null;
+function beep(freq, ms, type, vol) {
+  try {
+    if (!AC) { var A = window.AudioContext || window.webkitAudioContext; if (!A) return; AC = new A(); }
+    var o = AC.createOscillator(), g = AC.createGain();
+    o.type = type || 'square'; o.frequency.value = freq;
+    g.gain.value = vol == null ? 0.05 : vol;
+    o.connect(g); g.connect(AC.destination);
+    o.start();
+    g.gain.exponentialRampToValueAtTime(0.0001, AC.currentTime + ms / 1000);
+    o.stop(AC.currentTime + ms / 1000);
+  } catch (e) {}
+}
+
+// ── 조작: 방향키 + 손가락, 속도는 똑같이, 마지막에 쓴 입력만 듣는다 ──
+var input = { left:false, right:false, touchX:null, mode:'key' };
+
+window.addEventListener('keydown', function (e) {
+  var k = e.key;
+  if (k === 'ArrowLeft'  || k === 'a') { input.left = true;  input.mode = 'key'; input.touchX = null; e.preventDefault(); }
+  if (k === 'ArrowRight' || k === 'd') { input.right = true; input.mode = 'key'; input.touchX = null; e.preventDefault(); }
+});
+window.addEventListener('keyup', function (e) {
+  var k = e.key;
+  if (k === 'ArrowLeft'  || k === 'a') input.left = false;
+  if (k === 'ArrowRight' || k === 'd') input.right = false;
+});
+
+function boardX(clientX) {
+  var r = board.getBoundingClientRect();
+  var s = (r.width || BW) / BW;
+  return (clientX - r.left) / (s || 1);
+}
+function onPoint(e) {
+  if (!G || G.over) return;
+  var p = (e.touches && e.touches[0]) ? e.touches[0] : e;
+  if (p.clientX == null) return;
+  input.mode = 'touch';
+  input.touchX = boardX(p.clientX);
+  if (e.preventDefault) e.preventDefault();
+}
+board.addEventListener('pointerdown', onPoint);
+board.addEventListener('pointermove', function (e) { if (input.mode === 'touch' || (e.buttons && e.buttons > 0)) onPoint(e); });
+board.addEventListener('touchstart', onPoint, { passive:false });
+board.addEventListener('touchmove',  onPoint, { passive:false });
+
+// ── 한 단계 만들기 ──────────────────────────────────────────────────
+function buildStage(i) {
+  var r = rng(1234 + i * 977);
+  var plats = [], phones = [], stars = [];
+  var count = Math.ceil(STAGE_H / PLAT_GAP) + 2;
+
+  var prevX = (BW - PLAT_W) / 2;
+  for (var n = 0; n < count; n++) {
+    var y = BH - 60 - n * PLAT_GAP;
+    // 다음 발판은 한 번의 점프로 닿을 수 있는 거리 안에만 놓는다.
+    // (아무 데나 놓으면 아무리 잘해도 닿지 않는 자리가 생겨서 게임이 성립하지 않는다)
+    var x = n === 0 ? prevX
+          : Math.max(12, Math.min(BW - PLAT_W - 12, prevX + (r() * 2 - 1) * PLAT_REACH));
+    prevX = x;
+    // 2·3단계에서는 일부 발판이 좌우로 움직인다(뒤로 갈수록 어려워지게)
+    var moves = (i >= 1 && n > 3 && r() < 0.12 + i * 0.10);
+    // 맨 아래 발판은 바닥처럼 넓게 — 시작하자마자 떨어져 버리면 억울하다
+    var w = n === 0 ? BW : PLAT_W;
+    if (n === 0) x = 0;
+    plats.push({ x:x, y:y, w:w, h:PLAT_H, x0:x, mv:moves ? (r() < .5 ? -1 : 1) * (28 + r() * 26) : 0, t:r() * 6 });
+  }
+
+  // 📱 핸드폰 — 발판 사이 빈 곳에서 좌우로 왔다갔다 한다.
+  //   길목을 통째로 막으면 아무리 잘해도 못 지나가므로, 흔들리는 폭을 좁게 둔다.
+  for (var m = 5; m < count - 1; m += 5) {
+    var py = plats[m].y - PLAT_GAP / 2;
+    var amp = 30 + r() * 50;
+    phones.push({ cx:40 + r() * (BW - 80), y:py, amp:amp, sp:0.6 + r() * 0.8, t:r() * 6, x:0, r:15 });
+  }
+
+  // ⭐ 꿈 조각 — 절반은 안전한 발판 위, 절반은 핸드폰 바로 옆(욕심내야 닿는 자리)
+  var safeSlots = [], k;
+  for (k = 2; k < count - 1; k++) safeSlots.push(k);
+  for (k = 0; k < STARS_PER_STAGE; k++) {
+    if (k % 2 === 0 && phones.length) {
+      var ph = phones[Math.floor(r() * phones.length) ];
+      stars.push({ x:Math.max(16, Math.min(BW - 16, ph.cx + (r() < .5 ? -1 : 1) * (ph.amp + 22))), y:ph.y - 6, got:false, risky:true });
+    } else {
+      var pi = safeSlots[Math.floor(r() * safeSlots.length)];
+      stars.push({ x:plats[pi].x + PLAT_W / 2, y:plats[pi].y - 26, got:false, risky:false });
+    }
+  }
+  return { plats:plats, phones:phones, stars:stars, topY: BH - 60 - STAGE_H };
+}
+
+// ── 한 판 시작 ──────────────────────────────────────────────────────
+function newGame() {
+  G = {
+    stage: 0, level: buildStage(0),
+    p: { x: BW / 2 - 13, y: BH - 100, w: 26, h: 30, vx: 0, vy: -JUMP_V, face: 1 },
+    cam: 0, conf: CONF_MAX, score: 0, stars: 0, cleared: 0,
+    over: false, win: false, msg: STAGES[0].name, msgT: 2.2, inv: 0, t: 0, last: 0
+  };
+  input.left = input.right = false; input.touchX = null; input.mode = 'key';
+  scStart.classList.add('hide'); scOver.classList.add('hide'); scRank.classList.add('hide');
+  requestAnimationFrame(loop);
+}
+
+function endGame(win) {
+  if (G.over) return;
+  G.over = true; G.win = win;
+  if (win) G.score += SCORE_FINISH;
+  G.score += Math.round(Math.max(0, G.conf) * SCORE_CONF);
+  beep(win ? 880 : 160, win ? 260 : 420, win ? 'square' : 'sawtooth', 0.06);
+  showResult();
+}
+
+// ── 매 프레임 계산 ──────────────────────────────────────────────────
+function update(dt) {
+  var p = G.p, L = G.level;
+  G.t += dt;
+
+  // 좌우 — 손가락도 방향키와 같은 속도로 "걸어간다"(순간이동 없음)
+  var dir = 0;
+  if (input.mode === 'touch' && input.touchX != null) {
+    var d = input.touchX - (p.x + p.w / 2);
+    if (Math.abs(d) > 3) dir = d > 0 ? 1 : -1;
+  } else {
+    if (input.left)  dir -= 1;
+    if (input.right) dir += 1;
+  }
+  var step = dir * MOVE_SPEED * dt;
+  if (input.mode === 'touch' && input.touchX != null) {
+    var need = input.touchX - (p.x + p.w / 2);
+    if (Math.abs(need) < Math.abs(step)) step = need;
+  }
+  p.x += step;
+  if (dir) p.face = dir;
+  if (p.x < -p.w) p.x = BW;            // 옆으로 나가면 반대편에서 나온다
+  if (p.x > BW) p.x = -p.w;
+
+  // 위아래
+  p.vy += GRAVITY * dt;
+  var py0 = p.y;
+  p.y += p.vy * dt;
+
+  // 움직이는 발판
+  for (var i = 0; i < L.plats.length; i++) {
+    var pl = L.plats[i];
+    if (pl.mv) { pl.t += dt; pl.x = pl.x0 + Math.sin(pl.t * 1.1) * pl.mv; }
+  }
+
+  // 발판 밟기 — 내려올 때만(아래에서 위로 통과할 수 있게)
+  if (p.vy > 0) {
+    for (var j = 0; j < L.plats.length; j++) {
+      var q = L.plats[j];
+      var footPrev = py0 + p.h, foot = p.y + p.h;
+      if (footPrev <= q.y + 2 && foot >= q.y && p.x + p.w > q.x + 4 && p.x < q.x + q.w - 4) {
+        p.y = q.y - p.h; p.vy = -JUMP_V;
+        beep(520, 45, 'square', 0.03);
+        break;
+      }
+    }
+  }
+
+  // 📱 핸드폰
+  if (G.inv > 0) G.inv -= dt;
+  for (var k = 0; k < L.phones.length; k++) {
+    var ph = L.phones[k];
+    ph.t += dt * ph.sp;
+    ph.x = ph.cx + Math.sin(ph.t) * ph.amp;
+    if (G.inv <= 0 &&
+        Math.abs((p.x + p.w / 2) - ph.x) < ph.r + p.w / 2 - 4 &&
+        Math.abs((p.y + p.h / 2) - ph.y) < ph.r + p.h / 2 - 4) {
+      G.conf -= HIT_COST; G.inv = 1.0;
+      beep(140, 180, 'sawtooth', 0.05);
+    }
+  }
+
+  // ⭐ 꿈 조각
+  for (var s = 0; s < L.stars.length; s++) {
+    var st = L.stars[s];
+    if (st.got) continue;
+    if (Math.abs((p.x + p.w / 2) - st.x) < 20 && Math.abs((p.y + p.h / 2) - st.y) < 22) {
+      st.got = true; G.stars++; G.score += SCORE_STAR;
+      beep(1180, 70, 'square', 0.04);
+    }
+  }
+
+  // 자신감은 가만히 있어도 줄어든다
+  G.conf -= CONF_DRAIN * dt;
+
+  // 카메라는 위로만 따라간다
+  var want = p.y - BH * 0.45;
+  if (want < G.cam) G.cam = want;
+
+  // 아래로 떨어짐 — 죽지 않고 자신감을 잃은 뒤 아래 발판에서 다시 시작
+  if (p.y > G.cam + BH + 40) {
+    G.conf -= FALL_COST;
+    beep(200, 260, 'triangle', 0.05);
+    var best = null;
+    for (var b = 0; b < L.plats.length; b++) {
+      var pb = L.plats[b];
+      if (pb.y < G.cam + BH - 30 && (!best || pb.y > best.y)) best = pb;
+    }
+    if (best) { p.x = best.x + (best.w - p.w) / 2; p.y = best.y - p.h; }
+    else { p.x = BW / 2 - p.w / 2; p.y = G.cam + BH - 120; }
+    p.vy = -JUMP_V; G.inv = 1.0;
+  }
+
+  // 자신감이 다 떨어지면 끝
+  if (G.conf <= 0) { G.conf = 0; endGame(false); return; }
+
+  // 꼭대기 도착 = 그 단계 통과
+  if (p.y + p.h <= L.topY) {
+    G.cleared++; G.score += SCORE_STAGE;
+    G.conf = Math.min(CONF_MAX, G.conf + STAGE_HEAL);
+    beep(760, 120, 'square', 0.05);
+    if (G.stage >= STAGES.length - 1) { endGame(true); return; }
+    G.stage++;
+    G.level = buildStage(G.stage);
+    G.p.x = BW / 2 - p.w / 2; G.p.y = BH - 100; G.p.vy = -JUMP_V;
+    G.cam = 0; G.inv = 1.0;
+    G.msg = STAGES[G.stage].name; G.msgT = 2.0;
+  }
+
+  if (G.msgT > 0) G.msgT -= dt;
+}
+
+// ── 나 그리기 ───────────────────────────────────────────────────────
+//   동그란 머리 + 네모 몸. 단순한 게 제일 귀엽다(현영님 선택).
+function drawMe(p, t) {
+  ctx.fillStyle = '#ffd873';
+  ctx.fillRect(p.x + 4, p.y + 10, p.w - 8, p.h - 10);                        // 몸
+  ctx.beginPath(); ctx.arc(p.x + p.w / 2, p.y + 8, 9, 0, 6.284); ctx.fill(); // 머리
+  ctx.fillStyle = '#0b1020';                                                 // 눈
+  ctx.fillRect(p.x + p.w / 2 - 4 + p.face * 2, p.y + 5, 2, 3);
+  ctx.fillRect(p.x + p.w / 2 + 2 + p.face * 2, p.y + 5, 2, 3);
+}
+
+// ── 단계마다 다른 배경 ──────────────────────────────────────────────
+//   올라가면 배경도 같이 흘러가야(= 시차) 내가 올라가고 있다는 게 느껴진다.
+function drawScene(S, cam) {
+  var par = cam * 0.3;                       // 배경은 천천히 따라 흐른다
+  var wrap = function (base, span) { return ((base - par) % span + span) % span; };
+
+  if (S.scene === 'desk') {
+    // 밤에 원서 쓰는 책상 — 창문, 달, 별
+    ctx.fillStyle = 'rgba(255,255,255,.55)';
+    for (var s = 0; s < 22; s++) {
+      var sy = wrap(s * 91, 900) - 60, sx = (s * 137) % BW;
+      ctx.fillRect(sx, sy, 2, 2);
+    }
+    ctx.fillStyle = 'rgba(255,240,200,.30)';
+    ctx.beginPath(); ctx.arc(BW - 58, wrap(120, 900) - 40, 26, 0, 6.284); ctx.fill();
+    for (var w = 0; w < 3; w++) {             // 창틀
+      var wy = wrap(w * 300 + 60, 900) - 100;
+      ctx.strokeStyle = 'rgba(255,255,255,.13)'; ctx.lineWidth = 6;
+      ctx.strokeRect(28, wy, 130, 170);
+      ctx.lineWidth = 4; ctx.beginPath();
+      ctx.moveTo(93, wy); ctx.lineTo(93, wy + 170);
+      ctx.moveTo(28, wy + 85); ctx.lineTo(158, wy + 85); ctx.stroke();
+    }
+  } else if (S.scene === 'interview') {
+    // 면접장 — 양옆 커튼, 위에서 내려오는 조명
+    var grd = ctx.createLinearGradient(BW / 2, 0, BW / 2, BH);
+    grd.addColorStop(0, 'rgba(255,231,170,.20)'); grd.addColorStop(1, 'rgba(255,231,170,0)');
+    ctx.fillStyle = grd;
+    ctx.beginPath(); ctx.moveTo(BW / 2 - 34, 0); ctx.lineTo(BW / 2 + 34, 0);
+    ctx.lineTo(BW / 2 + 150, BH); ctx.lineTo(BW / 2 - 150, BH); ctx.closePath(); ctx.fill();
+    ctx.fillStyle = 'rgba(120,40,70,.35)';
+    for (var c = 0; c < 9; c++) {             // 커튼 주름
+      var cy = wrap(c * 130, 1170) - 130;
+      ctx.fillRect(0, cy, 34, 110);
+      ctx.fillRect(BW - 34, cy + 40, 34, 110);
+    }
+    ctx.fillStyle = 'rgba(255,255,255,.10)';  // 면접관 책상
+    for (var d = 0; d < 3; d++) ctx.fillRect(40, wrap(d * 390 + 200, 1170) - 60, BW - 80, 22);
+  } else {
+    // 국제고 교실 — 칠판, 창문, 시계
+    for (var b = 0; b < 3; b++) {
+      var by = wrap(b * 320 + 40, 960) - 120;
+      ctx.fillStyle = 'rgba(20,70,60,.55)'; ctx.fillRect(24, by, 190, 118);
+      ctx.strokeStyle = 'rgba(230,220,190,.45)'; ctx.lineWidth = 5; ctx.strokeRect(24, by, 190, 118);
+      ctx.strokeStyle = 'rgba(255,255,255,.35)'; ctx.lineWidth = 3;
+      ctx.beginPath();
+      ctx.moveTo(40, by + 34); ctx.lineTo(150, by + 34);
+      ctx.moveTo(40, by + 58); ctx.lineTo(186, by + 58);
+      ctx.moveTo(40, by + 82); ctx.lineTo(120, by + 82); ctx.stroke();
+      ctx.fillStyle = 'rgba(255,255,255,.16)';  // 시계
+      ctx.beginPath(); ctx.arc(BW - 52, by + 46, 20, 0, 6.284); ctx.fill();
+    }
+  }
+
+  // 단계를 나타내는 물건들이 뒤에서 흘러간다
+  ctx.save();
+  ctx.globalAlpha = 0.22; ctx.textAlign = 'center'; ctx.font = '42px system-ui';
+  for (var i = 0; i < 8; i++) {
+    ctx.fillText(S.items[i % S.items.length], 34 + ((i * 113) % (BW - 68)), wrap(i * 150, 1200) - 120);
+  }
+  ctx.restore();
+}
+
+// ── 그리기 ──────────────────────────────────────────────────────────
+function draw() {
+  var S = STAGES[G.stage], L = G.level, p = G.p;
+
+  var g = ctx.createLinearGradient(0, 0, 0, BH);
+  g.addColorStop(0, S.sky[0]); g.addColorStop(1, S.sky[1]);
+  ctx.fillStyle = g; ctx.fillRect(0, 0, BW, BH);
+
+  drawScene(S, G.cam);
+
+  ctx.save();
+  ctx.translate(0, -G.cam);
+
+  // 꼭대기 목표선
+  ctx.fillStyle = '#ffd873';
+  ctx.fillRect(0, L.topY - 6, BW, 5);
+  ctx.font = '20px system-ui'; ctx.textAlign = 'center';
+  ctx.fillText('🎯', BW / 2, L.topY - 14);
+  ctx.font = 'bold 12px system-ui'; ctx.fillStyle = '#ffd873';
+  ctx.fillText(S.goal, BW / 2, L.topY - 34);
+
+  // 발판
+  for (var i = 0; i < L.plats.length; i++) {
+    var q = L.plats[i];
+    if (q.y < G.cam - 30 || q.y > G.cam + BH + 30) continue;
+    ctx.fillStyle = S.plat;   ctx.fillRect(q.x, q.y, q.w, q.h);
+    ctx.fillStyle = S.platTop; ctx.fillRect(q.x, q.y, q.w, 4);
+    if (q.mv) { ctx.font = '11px system-ui'; ctx.textAlign = 'center'; ctx.fillText(S.deco, q.x + q.w / 2, q.y - 3); }
+  }
+
+  // ⭐ 꿈 조각
+  ctx.font = '19px system-ui'; ctx.textAlign = 'center';
+  for (var s = 0; s < L.stars.length; s++) {
+    var st = L.stars[s];
+    if (st.got || st.y < G.cam - 30 || st.y > G.cam + BH + 30) continue;
+    ctx.fillText('⭐', st.x, st.y + 7);
+  }
+
+  // 📱 핸드폰
+  ctx.font = '24px system-ui';
+  for (var k = 0; k < L.phones.length; k++) {
+    var ph = L.phones[k];
+    if (ph.y < G.cam - 40 || ph.y > G.cam + BH + 40) continue;
+    ctx.fillText('📱', ph.x, ph.y + 9);
+  }
+
+  // 나
+  ctx.globalAlpha = (G.inv > 0 && Math.floor(G.t * 14) % 2) ? 0.35 : 1;
+  drawMe(p, G.t);
+  ctx.globalAlpha = 1;
+
+  ctx.restore();
+
+  // ── 화면에 계속 보이는 숫자는 둘뿐: 자신감 · 점수 ──
+  ctx.fillStyle = 'rgba(8,12,28,.62)'; ctx.fillRect(0, 0, BW, 50);
+  ctx.textAlign = 'left';
+  ctx.font = 'bold 11px system-ui'; ctx.fillStyle = '#b9c3e6';
+  ctx.fillText('자신감', 10, 21);
+  var bw = 108, bx = 52, ratio = Math.max(0, G.conf) / CONF_MAX;
+  ctx.fillStyle = '#2a3358'; ctx.fillRect(bx, 12, bw, 11);
+  ctx.fillStyle = ratio > .5 ? '#68d9a0' : ratio > .25 ? '#ffd873' : '#ff7a7a';
+  ctx.fillRect(bx, 12, bw * ratio, 11);
+  ctx.textAlign = 'right';
+  ctx.font = 'bold 15px system-ui'; ctx.fillStyle = '#ffd873';
+  ctx.fillText(String(G.score), BW - 10, 23);
+
+  // 지금 어디인지 — 숫자가 아니라 글자로 (이야기는 여기에 담는다)
+  ctx.textAlign = 'left';
+  ctx.font = 'bold 11px system-ui'; ctx.fillStyle = 'rgba(238,242,255,.8)';
+  ctx.fillText(S.name + '  ·  ' + S.where, 10, 42);
+
+  // 단계 이름은 넘어갈 때만 잠깐 (숫자가 아니라 글자로 이야기를 담는다)
+  if (G.msgT > 0) {
+    ctx.globalAlpha = Math.min(1, G.msgT);
+    ctx.textAlign = 'center';
+    ctx.font = 'bold 20px system-ui'; ctx.fillStyle = '#eef2ff';
+    ctx.fillText(G.msg, BW / 2, BH / 2 - 10);
+    ctx.globalAlpha = 1;
+  }
+}
+
+// ── 시계 ────────────────────────────────────────────────────────────
+function loop(ts) {
+  if (!G || G.over) return;
+  if (!G.last) G.last = ts;
+  var dt = Math.min(0.033, (ts - G.last) / 1000);
+  G.last = ts;
+  update(dt);
+  if (!G.over) { draw(); requestAnimationFrame(loop); }
+}
+
+// =====================================================================
+//  결과 · 기록(랭킹)
+// =====================================================================
+function token() { try { return localStorage.getItem('yw_token') || ''; } catch (e) { return ''; } }
+
+// 내가 로그인 사용자인지 미리 물어본다(결과 화면에서 이 답을 기다렸다가 이름칸을 정한다)
+var mePromise = fetch('/api/game/me', {
+  method:'POST', headers:{ 'Content-Type':'application/json' },
+  body: JSON.stringify({ token: token() })
+}).then(function (r) { return r.json(); }).catch(function () { return { needsName:true, nickname:null }; });
+
+function endingOf() {
+  if (!G.win) return '도전 중';
+  return G.stars >= STARS_ABROAD ? '유학' : '대학교';
+}
+
+function showResult() {
+  var ending = endingOf();
+  document.getElementById('ovTag').textContent = G.win ? '5년 뒤 —' : '아직 도착하지 못했다';
+  document.getElementById('ovTitle').textContent =
+    G.win ? (ending === '유학' ? '🛫 국제고를 거쳐 유학!' : '🎓 국제고를 거쳐 대학교로!')
+          : '😮‍💨 자신감이 바닥났다';
+  document.getElementById('ovScore').textContent = G.score;
+  document.getElementById('ovDetail').textContent =
+    (G.win ? '3단계 완주 · ' : (G.cleared + '단계까지 · ')) +
+    '⭐ ' + G.stars + '개 · 남은 자신감 ' + Math.round(G.conf) +
+    (G.win && ending === '대학교' ? '\n⭐를 ' + STARS_ABROAD + '개 넘게 모으면 유학길이 열립니다' : '');
+  document.getElementById('ovSaved').textContent = '';
+  document.getElementById('nameRow').classList.add('hide');
+  scOver.classList.remove('hide');
+
+  var payload = { score: G.score, grade: ending, stars: G.stars, cleared: G.cleared };
+  mePromise.then(function (me) {
+    if (me && me.needsName === false) {
+      saveScore(payload, null);                       // 로그인 사용자는 바로 저장
+    } else {
+      document.getElementById('nameRow').classList.remove('hide');   // 게스트는 이름을 받는다
+      document.getElementById('btnSave').onclick = function () {
+        var nm = document.getElementById('nameIn').value.trim();
+        if (!nm) { document.getElementById('ovSaved').textContent = '이름을 써야 기록이 남습니다.'; return; }
+        saveScore(payload, nm);
+      };
+    }
+  });
+}
+
+function saveScore(payload, name) {
+  var msg = document.getElementById('ovSaved');
+  msg.textContent = '기록하는 중…';
+  fetch('/api/game/score', {
+    method:'POST', headers:{ 'Content-Type':'application/json' },
+    body: JSON.stringify({
+      gameKey: GAME_KEY, token: token(), playerName: name || '',
+      score: payload.score, grade: payload.grade,
+      detail: JSON.stringify({ stars: payload.stars, cleared: payload.cleared })
+    })
+  }).then(function (r) { return r.json(); }).then(function (d) {
+    if (d && d.ok) {
+      document.getElementById('nameRow').classList.add('hide');
+      msg.textContent = '🏆 ' + d.playerName + ' — ' + d.rank + '등 / ' + d.total + '명';
+    } else {
+      msg.textContent = (d && d.message) || '기록에 실패했습니다.';
+    }
+  }).catch(function () { msg.textContent = '기록에 실패했습니다(서버 연결).'; });
+}
+
+function openRank() {
+  scRank.classList.remove('hide');
+  var box = document.getElementById('rankList');
+  box.innerHTML = '<p class="tag">불러오는 중…</p>';
+  fetch('/api/game/ranking?gameKey=' + GAME_KEY + '&limit=20')
+    .then(function (r) { return r.json(); })
+    .then(function (d) {
+      var rows = (d && d.ranking) || [];
+      if (!rows.length) { box.innerHTML = '<p class="tag">아직 기록이 없습니다. 첫 기록의 주인공이 되어보세요!</p>'; return; }
+      box.innerHTML = rows.map(function (r, i) {
+        var medal = ['🥇','🥈','🥉'][i] || (i + 1);
+        return '<div class="r"><span class="n">' + medal + '</span>' +
+               '<span class="w">' + esc(r.player_name) + ' <span class="g">' + esc(r.grade || '') + '</span></span>' +
+               '<span class="s">' + r.score + '</span></div>';
+      }).join('');
+    })
+    .catch(function () { box.innerHTML = '<p class="tag">기록을 불러오지 못했습니다(서버 연결).</p>'; });
+}
+function esc(s) {
+  return String(s == null ? '' : s).replace(/[&<>"]/g, function (c) {
+    return { '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;' }[c];
+  });
+}
+
+document.getElementById('btnStart').onclick = newGame;
+document.getElementById('btnAgain').onclick = newGame;
+document.getElementById('btnRank1').onclick = openRank;
+document.getElementById('btnRank2').onclick = openRank;
+document.getElementById('btnRankClose').onclick = function () { scRank.classList.add('hide'); };
+</script>
+</body>
+</html>
