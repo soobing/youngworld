@@ -206,6 +206,7 @@ function ensureSeed() {
   const STUDENT_GAMES = [
     { nickname: '최승찬', slug: 'seungchan', title: '최승찬의 5년 뒤 나의 미래' },
     { nickname: '박효진', slug: 'park', title: '박효진의 5년 뒤 나의 미래' },
+    { nickname: '김현영', slug: 'hyunyoung', title: '김현영의 국제고로 올라가기' },
   ];
   for (const s of STUDENT_GAMES) {
     const who = Avatars.byNickname(s.nickname);
