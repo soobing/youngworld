@@ -196,7 +196,22 @@
          노트는 그 해의 노래 멜로디를 따라와요 — 누르면 멜로디를 연주하는 셈이에요.
          한 해 한 해, 옆의 로봇이 완성돼 갑니다. 5년차엔, 제가 꿈꾸던 그 장치예요.</p>
       <p class="keys">레인 키 <b>D</b> <b>F</b> <b>J</b> <b>K</b> · 또는 화면 아래 버튼 · 터치 · 🔊로 음소거</p>
-      <button class="btn" id="btnStart">1년차 시작 🎵</button>
+      <div class="btnrow">
+        <button class="btn" id="btnStart">1년차 시작 🎵</button>
+        <button class="btn ghost" id="btnRankPreview">🏆 순위 보기</button>
+      </div>
+    </div>
+
+    <!-- 순위 미리보기: 플레이 전에도 볼 수 있다. 읽기만 하므로 기존 기록은 바뀌지 않는다. -->
+    <div class="overlay hidden" id="ovRank">
+      <h2>🏆 <span class="g">명예의 전당</span></h2>
+      <p>지금까지 쌓인 기록이에요. 게임을 완주하면 여기에 이름을 올릴 수 있어요.</p>
+      <div class="rank" id="rankWrapPre">
+        <ol id="rankListPre"><li class="empty">기록을 불러오는 중…</li></ol>
+      </div>
+      <div class="btnrow">
+        <button class="btn" id="btnRankBack">시작 화면으로</button>
+      </div>
     </div>
 
     <!-- 해 시작 안내 -->
@@ -585,13 +600,16 @@
         renderRanking(lb.map(function(x){ return {playerName:x.name, score:x.score}; }), name, null);
       });
   }
-  function loadRanking(){
+  // 순위는 읽기 전용으로만 불러온다(저장 API 를 부르지 않으므로 기존 기록이 바뀌지 않는다).
+  //  ol 을 주면 그 목록에, 없으면 엔딩 화면 목록(rankList)에 그린다.
+  function loadRanking(ol){
+    ol = ol || id('rankList');
     fetch('/api/game/ranking?gameKey='+GAME_KEY+'&limit=20').then(function(r){ return r.json(); })
-      .then(function(d){ renderRanking((d&&d.ranking)||[], null, null); })
-      .catch(function(){ var lb=loadLB(); renderRanking(lb.map(function(x){ return {playerName:x.name, score:x.score}; }), null, null); });
+      .then(function(d){ renderRanking((d&&d.ranking)||[], null, null, ol); })
+      .catch(function(){ var lb=loadLB(); renderRanking(lb.map(function(x){ return {playerName:x.name, score:x.score}; }), null, null, ol); });
   }
-  function renderRanking(list, meName, meRank){
-    var ol=id('rankList'); ol.innerHTML='';
+  function renderRanking(list, meName, meRank, ol){
+    ol = ol || id('rankList'); ol.innerHTML='';
     if(!list || !list.length){ ol.innerHTML='<li class="empty">아직 기록이 없어요. 첫 기록의 주인공이 되어보세요!</li>'; return; }
     list.forEach(function(row,i){
       var nm = (row.player_name!=null) ? row.player_name : row.playerName;
@@ -783,6 +801,10 @@
 
   // ── 버튼 배선 ──────────────────────────────
   id('btnStart').onclick=function(){ ensureAudio(); if(audio) audio.resume(); hide('ovTitle'); showYear(0); };
+  // 순위 미리보기: 시작 화면 ↔ 순위 화면. 읽기만 하므로 기록에 영향 없음.
+  id('btnRankPreview').onclick=function(){ hide('ovTitle'); show('ovRank');
+    id('rankListPre').innerHTML='<li class="empty">기록을 불러오는 중…</li>'; loadRanking(id('rankListPre')); };
+  id('btnRankBack').onclick=function(){ hide('ovRank'); show('ovTitle'); };
   id('btnSave').onclick=saveScore;
   id('nameInput').addEventListener('keydown', function(e){ if(e.key==='Enter'){ e.preventDefault(); saveScore(); } });
   id('btnRestart').onclick=function(){
