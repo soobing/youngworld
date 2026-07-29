@@ -58,6 +58,9 @@
         font-size:clamp(13px,2.2vmin,18px); border-radius:12px; padding:1.2vmin 3vmin; cursor:pointer;
         box-shadow:0 8px 22px rgba(255,122,46,.4); }
   .btn:hover{ filter:brightness(1.06); }
+  .btn.ghost{ background:transparent; color:var(--gold); box-shadow:none; border:2px solid var(--gold); }
+  .btn.ghost:hover{ filter:none; background:rgba(255,210,74,.12); }
+  .brow{ display:flex; gap:1.4vmin; flex-wrap:wrap; justify-content:center; }
   .keys{ font-size:clamp(10px,1.7vmin,13px); color:#9a8fc0; }
   .timer{ font-variant-numeric:tabular-nums; }
   .overlay .brk{ font-size:clamp(10px,1.7vmin,14px); color:#9a8fc0; }
@@ -95,7 +98,10 @@
       <h2>5년 뒤, 나는 어떤 사람일까?</h2>
       <p>한 해가 하나의 <b style="color:#fff">퀘스트</b>예요. 공을 <b style="color:var(--gold)">끌었다 놓아</b> 각도·힘을 정하고,<br>그 해의 골을 <b style="color:#fff">3번</b> 넣으면 다음 해로 갑니다. 🏀→🥅</p>
       <div class="quests" id="questList"></div>
-      <button class="btn" id="start">▶ 시작하기</button>
+      <div class="brow">
+        <button class="btn" id="start">▶ 시작하기</button>
+        <button class="btn ghost" id="showRanks">🏆 순위보기</button>
+      </div>
       <div class="keys">공을 드래그해서 놓으면 슛 · 마우스/터치 모두 OK</div>
     </div>
 
@@ -115,6 +121,13 @@
       </div>
       <div class="ranks" id="ranks"></div>
       <button class="btn" id="replay">↺ 다시 하기</button>
+    </div>
+
+    <div class="overlay hidden" id="board">
+      <h2>🏆 순위표</h2>
+      <p>5년을 가장 빨리 완주한 기록이에요.</p>
+      <div class="ranks" id="boardRanks"></div>
+      <button class="btn" id="boardBack">← 뒤로</button>
     </div>
   </div>
   <div class="foot">농구로 5년 퀘스트 깨기 · AI와 함께 만든 게임 · 영월드</div>
@@ -150,7 +163,7 @@
   const LB_KEY = 'game5_seungchan_ranks';   // 순위표(localStorage)
 
   const $ = (id) => document.getElementById(id);
-  const overlays = { title:$('title'), clear:$('clear'), ending:$('ending') };
+  const overlays = { title:$('title'), clear:$('clear'), ending:$('ending'), board:$('board') };
   const show = (n) => { for(const k in overlays) overlays[k].classList.toggle('hidden', k!==n); };
   const hideAll = () => { for(const k in overlays) overlays[k].classList.add('hidden'); };
   $('questList').innerHTML = STAGES.map((s,i)=>`<div><span class="n">${i+1}년차</span>${s.quest}</div>`).join('');
@@ -177,13 +190,15 @@
   function loadLB(){ try{ return JSON.parse(localStorage.getItem(LB_KEY)) || []; }catch(e){ return []; } }
   function saveLB(l){ try{ localStorage.setItem(LB_KEY, JSON.stringify(l)); }catch(e){} }
   function escapeHtml(s){ return String(s).replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
-  function renderRanks(hi){
+  function ranksHtml(hi){
     const list = loadLB();
-    $('ranks').innerHTML = list.length
+    return list.length
       ? list.map((e,i)=>{ const me = hi && e.name===hi.name && e.ms===hi.ms;
           return `<div class="${me?'me':''}"><span class="rk">${i+1}</span><span class="nm">${escapeHtml(e.name)}</span><span class="tm">${fmt(e.ms)}</span></div>`; }).join('')
       : '<div class="empty">아직 기록이 없어요. 1등이 되어보세요!</div>';
   }
+  function renderRanks(hi){ $('ranks').innerHTML = ranksHtml(hi); }
+  function showBoard(){ $('boardRanks').innerHTML = ranksHtml(null); show('board'); }
   function showEnding(){
     $('finalTime').textContent = fmt(totalMs);
     $('breakdown').textContent = yearTimes.map((t,i)=>`${i+1}년차 ${fmt(t)}`).join('  ·  ');
@@ -196,11 +211,16 @@
   function saveScore(){
     const inp=$('nameInput'), btn=$('saveScore');
     let name=(inp.value||'').trim(); if(!name) name='익명'; name=name.slice(0,10);
-    const list=loadLB(); const entry={ name, ms:Math.round(totalMs) };
-    list.push(entry); list.sort((a,b)=>a.ms-b.ms);
-    saveLB(list.slice(0,10));
+    const ms=Math.round(totalMs);
+    let list=loadLB();
+    const prev=list.find(e=>e.name===name);
+    if(prev){ if(ms < prev.ms) prev.ms=ms; }   // 같은 이름이면 더 빠른 기록으로 갱신(자기 최고기록 유지)
+    else { list.push({ name, ms }); }          // 처음 보는 이름이면 새로 저장
+    list.sort((a,b)=>a.ms-b.ms);
+    list=list.slice(0,10);
+    saveLB(list);
     inp.disabled=true; btn.disabled=true;
-    renderRanks(entry);
+    renderRanks(list.find(e=>e.name===name) || { name, ms });
   }
   function resetBall(){ ball.x=REST_X; ball.y=REST_Y; ball.vx=0; ball.vy=0; ball.rest=true; }
 
@@ -215,10 +235,13 @@
     ball.vx=vx; ball.vy=vy; ball.rest=false;
   });
 
-  function scored(prevY){
-    const h = hoop();
-    // 림 높이를 아래로 통과 + 림 개구부 안 + 아래로 이동
-    return ball.vy>0 && prevY < h.y && ball.y >= h.y && ball.x > h.x+6 && ball.x < h.x+RIMW-6;
+  function scored(prevX, prevY, h){
+    // 이번 프레임에 림 높이를 아래로 통과했는가?
+    if(!(ball.vy>0 && prevY < h.y && ball.y >= h.y)) return false;
+    // 통과하는 '순간'의 x를 보간해서 림 개구부 안인지 확인 (빠른/대각선 슛도 정확히)
+    const t = (h.y - prevY) / (ball.y - prevY);
+    const xc = prevX + (ball.x - prevX) * t;
+    return xc > h.x+6 && xc < h.x+RIMW-6;
   }
   function makeShot(){
     makes++; flash=45; $('score').textContent = `🏀 ${makes} / ${NEED}`;
@@ -228,11 +251,11 @@
   function update(){
     frame++;
     if(ball.rest) return;
-    const prevY = ball.y, h = hoop();
+    const prevX = ball.x, prevY = ball.y, h = hoop();
     ball.vy += GRAV; ball.x += ball.vx; ball.y += ball.vy;
 
     // 골인 판정
-    if(scored(prevY)){ makeShot(); return; }
+    if(scored(prevX, prevY, h)){ makeShot(); return; }
 
     // 백보드(림 뒤 세로벽) 반사
     const bx = h.x + RIMW + 6;
@@ -252,24 +275,64 @@
     if(ball.x < -60 || ball.x > W+60 || ball.y > H+120) resetBall();
   }
 
+  // 둥근 사각형 path (fill/stroke 는 호출부에서)
+  function roundRect(x,y,w,h,r){ ctx.beginPath(); ctx.moveTo(x+r,y);
+    ctx.arcTo(x+w,y,x+w,y+h,r); ctx.arcTo(x+w,y+h,x,y+h,r);
+    ctx.arcTo(x,y+h,x,y,r); ctx.arcTo(x,y,x+w,y,r); ctx.closePath(); }
+
+  function drawCourt(){
+    // 마룻바닥
+    const fg=ctx.createLinearGradient(0,GY,0,H); fg.addColorStop(0,'#6a54a0'); fg.addColorStop(1,'#463670');
+    ctx.fillStyle=fg; ctx.fillRect(0,GY,W,H-GY);
+    // 코트 라인(윗선)
+    ctx.fillStyle='rgba(255,210,74,.55)'; ctx.fillRect(0,GY,W,3);
+    // 마루 결
+    ctx.strokeStyle='rgba(255,255,255,.06)'; ctx.lineWidth=1;
+    for(let x=48; x<W; x+=70){ ctx.beginPath(); ctx.moveTo(x,GY+4); ctx.lineTo(x-16,H); ctx.stroke(); }
+  }
+
   function drawHoop(){
     const h = hoop();
-    // 백보드(코드 화면 느낌)
-    ctx.fillStyle='#20143b'; ctx.fillRect(h.x+RIMW-2, h.y-96, 18, 108);
-    ctx.strokeStyle='#4a3a72'; ctx.strokeRect(h.x+RIMW-2, h.y-96, 18, 108);
-    ctx.fillStyle='#5a4790'; for(let i=0;i<5;i++) ctx.fillRect(h.x+RIMW+2, h.y-86+i*16, 10, 4);
+    const bx = h.x+RIMW;                         // 림–백보드 접점
+    // 지지 암
+    ctx.strokeStyle='#8a78c0'; ctx.lineWidth=6; ctx.lineCap='round';
+    ctx.beginPath(); ctx.moveTo(bx, h.y); ctx.lineTo(bx+8, h.y); ctx.stroke();
+    // 백보드 (충돌벽 h.x+RIMW+6 에 앞면을 맞춤)
+    const boardX=bx+6, boardY=h.y-92, boardW=18, boardH=104;
+    roundRect(boardX, boardY, boardW, boardH, 4);
+    ctx.fillStyle='rgba(244,240,255,.94)'; ctx.fill();
+    ctx.strokeStyle='#b7a9e0'; ctx.lineWidth=2; ctx.stroke();
+    // 백보드 조준 사각형(주황)
+    ctx.strokeStyle='#ff7a2e'; ctx.lineWidth=3;
+    ctx.strokeRect(boardX+4, h.y-38, boardW-8, 28);
     // 림
-    ctx.strokeStyle='#ff7a2e'; ctx.lineWidth=5; ctx.beginPath(); ctx.moveTo(h.x,h.y); ctx.lineTo(h.x+RIMW,h.y); ctx.stroke();
-    // 네트
-    ctx.strokeStyle='rgba(255,255,255,.55)'; ctx.lineWidth=1.5;
-    for(let i=0;i<=6;i++){ const t=i/6; ctx.beginPath(); ctx.moveTo(h.x+RIMW*t, h.y); ctx.lineTo(h.x+RIMW*(0.25+0.5*t), h.y+34); ctx.stroke(); }
-    ctx.lineWidth=1;
+    ctx.strokeStyle='#ff7a2e'; ctx.lineWidth=6; ctx.lineCap='round';
+    ctx.beginPath(); ctx.moveTo(h.x,h.y); ctx.lineTo(h.x+RIMW,h.y); ctx.stroke();
+    // 네트 (세로줄)
+    ctx.strokeStyle='rgba(255,255,255,.6)'; ctx.lineWidth=1.4;
+    const nb=36;
+    for(let i=0;i<=6;i++){ const t=i/6; ctx.beginPath(); ctx.moveTo(h.x+RIMW*t, h.y); ctx.lineTo(h.x+RIMW*(0.22+0.56*t), h.y+nb); ctx.stroke(); }
+    // 네트 (가로줄)
+    for(let j=1;j<=2;j++){ const yy=h.y+nb*j/3, s=0.09*j; ctx.beginPath();
+      ctx.moveTo(h.x+RIMW*s, yy); ctx.lineTo(h.x+RIMW*(1-s), yy); ctx.stroke(); }
+    ctx.lineWidth=1; ctx.lineCap='butt';
   }
   function drawBall(){
-    ctx.fillStyle='#ff7a2e'; ctx.beginPath(); ctx.arc(ball.x,ball.y,R,0,Math.PI*2); ctx.fill();
-    ctx.strokeStyle='#b8480a'; ctx.lineWidth=2;
-    ctx.beginPath(); ctx.moveTo(ball.x-R,ball.y); ctx.lineTo(ball.x+R,ball.y);
-    ctx.moveTo(ball.x,ball.y-R); ctx.lineTo(ball.x,ball.y+R); ctx.stroke(); ctx.lineWidth=1;
+    // 바닥 그림자(높이에 따라 옅고 작게)
+    const gap=Math.max(0, GY-ball.y), sh=Math.max(0.06, 1-gap/320);
+    ctx.fillStyle='rgba(0,0,0,'+(0.3*sh)+')';
+    ctx.beginPath(); ctx.ellipse(ball.x, GY-2, R*(0.55+0.55*sh), 4*sh+2, 0,0,Math.PI*2); ctx.fill();
+    // 공(방사형 음영)
+    const bg=ctx.createRadialGradient(ball.x-5, ball.y-6, 3, ball.x, ball.y, R);
+    bg.addColorStop(0,'#ffb36b'); bg.addColorStop(1,'#e8620c');
+    ctx.fillStyle=bg; ctx.beginPath(); ctx.arc(ball.x,ball.y,R,0,Math.PI*2); ctx.fill();
+    // 농구 라인
+    ctx.strokeStyle='#7a2f06'; ctx.lineWidth=2;
+    ctx.beginPath();
+    ctx.moveTo(ball.x-R,ball.y); ctx.lineTo(ball.x+R,ball.y);
+    ctx.moveTo(ball.x,ball.y-R); ctx.lineTo(ball.x,ball.y+R);
+    ctx.arc(ball.x,ball.y,R,0,Math.PI*2);
+    ctx.stroke(); ctx.lineWidth=1;
   }
   function drawAim(){
     if(!aiming) return;
@@ -281,17 +344,27 @@
   }
   function drawShooter(){
     const x=REST_X, y=GY;
-    ctx.fillStyle='#c7cede'; ctx.fillRect(x-16, y-46, 32, 46);           // 몸(후드)
-    ctx.fillStyle='#f2c9a0'; ctx.beginPath(); ctx.arc(x, y-54, 12, 0, Math.PI*2); ctx.fill(); // 머리
-    ctx.fillStyle='#2b1b4d'; ctx.fillRect(x-11, y-64, 22, 7);            // 머리카락
-    ctx.fillStyle='#ff7a2e'; ctx.fillRect(x-16, y-58, 4, 10); ctx.fillRect(x+12, y-58, 4, 10); // 헤드폰
+    // 그림자
+    ctx.fillStyle='rgba(0,0,0,.22)'; ctx.beginPath(); ctx.ellipse(x, y-2, 22, 5, 0,0,Math.PI*2); ctx.fill();
+    // 다리
+    ctx.fillStyle='#3a2f5a'; ctx.fillRect(x-12, y-19, 9, 19); ctx.fillRect(x+3, y-19, 9, 19);
+    // 몸(후드)
+    ctx.fillStyle='#5b8dff'; roundRect(x-16, y-50, 32, 34, 8); ctx.fill();
+    // 슛하는 팔
+    ctx.strokeStyle='#5b8dff'; ctx.lineWidth=8; ctx.lineCap='round';
+    ctx.beginPath(); ctx.moveTo(x+9, y-42); ctx.lineTo(x+21, y-56); ctx.stroke();
+    ctx.lineWidth=1; ctx.lineCap='butt';
+    // 머리 + 머리카락
+    ctx.fillStyle='#f2c9a0'; ctx.beginPath(); ctx.arc(x, y-58, 11, 0, Math.PI*2); ctx.fill();
+    ctx.fillStyle='#2b1b4d'; ctx.beginPath(); ctx.arc(x, y-61, 11, Math.PI, 0); ctx.fill();
+    // 헤드폰
+    ctx.fillStyle='#ff7a2e'; ctx.fillRect(x-14, y-60, 4, 8); ctx.fillRect(x+10, y-60, 4, 8);
   }
 
   function draw(){
     const g=ctx.createLinearGradient(0,0,0,H); g.addColorStop(0,'#3a2568'); g.addColorStop(1,'#1a1030');
     ctx.fillStyle=g; ctx.fillRect(0,0,W,H);
-    // 코트 바닥
-    ctx.fillStyle='#4a3a72'; ctx.fillRect(0,GY,W,H-GY); ctx.fillStyle='#6a54a0'; ctx.fillRect(0,GY,W,5);
+    drawCourt();
     drawHoop(); drawShooter(); drawAim(); drawBall();
     showTimer(totalMs + (performance.now() - yearStartTime));   // 스톱워치 갱신
     if(flash>0){ flash--; ctx.fillStyle='rgba(255,210,74,'+(flash/45)+')'; ctx.font='bold 54px sans-serif'; ctx.textAlign='center';
@@ -314,6 +387,8 @@
   function nextStage(){ hideAll(); loadStage(stageIdx+1); running=true; loop(); }
 
   $('start').addEventListener('click', startGame);
+  $('showRanks').addEventListener('click', showBoard);
+  $('boardBack').addEventListener('click', ()=>show('title'));
   $('next').addEventListener('click', nextStage);
   $('replay').addEventListener('click', startGame);
   $('saveScore').addEventListener('click', saveScore);
