@@ -1,0 +1,241 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>최승찬의 10년 뒤 나의 미래 — 영월드</title>
+<!--
+  ============================================================
+  📚 slot 3 「10년 뒤 나의 미래(웹툰)」 — 최승찬 · 시네마틱 웹툰 [일러스트판]
+  ============================================================
+  ▶ 자체 완결형 HTML 1파일(인라인 CSS/JS). 그림은 저장소 안의 실제 일러스트를 사용.
+    /works/seungchan/webtoon10.html 로 열림 (URL 규칙: isSafeDocUrl).
+    server/seed.js 의 WORK_FOLDERS 에 seungchan 이 이미 있어, 서버 재시작 시 slot 3 자동 등록.
+
+  ▶ 그림: seungchan/dream/frames/01~05.png (dream 영상용으로 이미 그려진 웹툰풍 일러스트,
+    헤드폰 낀 승찬 캐릭터·보라/주황 톤). 손그림 SVG 대신 이 실제 그림을 컷 배경(full-bleed)으로 쓴다.
+      01 밤에 혼자 코딩 · 02 강가 석양 뒷모습 · 03 AI 채팅 · 04 설계+AI+노트 · 05 팀 회의
+    자막/제목은 그림 위에 오버레이(반투명 내레이션 박스 = dream 포스터 자막과 통일).
+
+  ▶ 포맷: 한 페이지 = 한 컷(그림 1장 꽉 차게). 방향키 ← → · 화면 클릭 · 버튼 · 점으로 넘김.
+    - ① 표지(01)  ② 함께(05)  ③ 재도전(03)  ④ 몰입(04)  ⑤ 마무리(02)
+
+  ▶ 이야기(자기소개에서 이어짐): 초3 스크래치→포기→AI로 재도전 한 최승찬이
+    10년 뒤(26살) '사람들과 함께 코딩하는 개발자'가 되어 여전히 좋아하는 일을 하며 산다.
+
+  ▶▶ 이어쓰기: 컷 추가는 <section class="page"> 를 복제하고 img src / .narr 텍스트만 바꾸면 된다.
+     새 그림을 넣으려면 /works/seungchan/dream/frames/ (또는 img/) 에 파일을 두고 src 교체.
+-->
+<style>
+  :root{
+    --ink:#15161d; --accent:#e8590c; --navy:#1b2f57; --gold:#ffd24a;
+  }
+  *{ box-sizing:border-box; margin:0; padding:0; }
+  html,body{ height:100%; }
+  body{
+    font-family:"Apple SD Gothic Neo","Pretendard","Noto Sans KR",-apple-system,"Malgun Gothic",sans-serif;
+    color:#fff; background:#07080f; overflow:hidden;
+  }
+  .deck{ position:fixed; inset:0; }
+
+  /* ---- 컷(한 페이지 = 그림 한 장) ---- */
+  .page{
+    position:absolute; inset:0;
+    display:flex; align-items:center; justify-content:center;
+    background:#07080f;
+    opacity:0; visibility:hidden; transform:scale(1.015);
+    transition:opacity .45s ease, transform .6s ease;
+  }
+  .page.active{ opacity:1; visibility:visible; transform:none; }
+
+  .art{
+    position:absolute; inset:0; width:100%; height:100%;
+    object-fit:cover; object-position:center;
+    /* 페이지가 활성화되면 아주 천천히 확대(켄 번즈) — 살아있는 느낌 */
+    transform:scale(1); transition:transform 7s ease-out;
+  }
+  .page.active .art{ transform:scale(1.06); }
+
+  /* 위/아래 어둡게 — 자막·제목 가독성 */
+  .scrim{
+    position:absolute; inset:0; pointer-events:none;
+    background:
+      linear-gradient(180deg, rgba(6,8,16,.42) 0%, rgba(6,8,16,0) 24%),
+      linear-gradient(0deg, rgba(6,8,16,.82) 0%, rgba(6,8,16,.12) 34%, rgba(6,8,16,0) 52%);
+  }
+
+  /* ---- 내레이션 자막 박스 (dream 포스터 자막과 통일된 스타일) ---- */
+  .narr{
+    position:absolute; left:50%; bottom:15vh; transform:translateX(-50%);
+    max-width:min(78vw,760px); text-align:center;
+    background:rgba(12,14,24,.72); backdrop-filter:blur(2px);
+    border:2px solid rgba(255,255,255,.16); border-radius:12px;
+    padding:14px 22px; font-weight:700; line-height:1.5;
+    font-size:clamp(15px,2.7vmin,24px);
+    text-shadow:0 2px 8px rgba(0,0,0,.7);
+    opacity:0; transform:translate(-50%,14px); transition:opacity .5s ease .25s, transform .5s ease .25s;
+  }
+  .page.active .narr{ opacity:1; transform:translate(-50%,0); }
+  .narr b{ color:var(--gold); }
+
+  /* ---- 표지(제목) 오버레이 ---- */
+  .cover-cap{
+    position:absolute; inset:0; z-index:2; display:flex; flex-direction:column;
+    align-items:center; justify-content:center; text-align:center; gap:12px; padding:6%;
+    opacity:0; transition:opacity .6s ease .2s;
+  }
+  .page.active .cover-cap{ opacity:1; }
+  .cover-cap .tag{ display:inline-block; background:var(--accent); color:#fff; font-weight:800;
+    font-size:clamp(11px,1.9vmin,16px); padding:5px 14px; border-radius:22px; border:2px solid rgba(0,0,0,.4);
+    box-shadow:2px 2px 0 rgba(0,0,0,.45); }
+  .cover-cap h1{ font-size:clamp(30px,7vmin,72px); line-height:1.12; font-weight:900;
+    text-shadow:3px 4px 0 rgba(0,0,0,.55), 0 8px 30px rgba(0,0,0,.6); }
+  .cover-cap h1 .y{ color:var(--gold); }
+  .cover-cap .sub{ font-size:clamp(13px,2.3vmin,22px); font-weight:600;
+    text-shadow:0 2px 10px rgba(0,0,0,.8); }
+
+  /* ---- 마무리 ---- */
+  .closing .narr{ bottom:20vh; max-width:min(84vw,820px); }
+  .closing h2{ font-size:clamp(24px,5.4vmin,50px); font-weight:900; line-height:1.22;
+    text-shadow:3px 4px 0 rgba(0,0,0,.5), 0 6px 24px rgba(0,0,0,.6); }
+  .closing p{ font-size:clamp(13px,2.3vmin,20px); font-weight:600; line-height:1.55; margin-top:8px; }
+  .closing .brand{ display:inline-block; margin-top:14px; background:#fff; color:var(--accent); font-weight:900;
+    border-radius:12px; padding:10px 20px; font-size:clamp(13px,2.4vmin,21px);
+    border:2.5px solid var(--ink); box-shadow:3px 3px 0 rgba(0,0,0,.45); }
+
+  /* 컷 번호 배지 */
+  .no{
+    position:absolute; top:14px; left:14px; z-index:3; padding:4px 12px; border-radius:20px;
+    background:rgba(12,14,24,.7); border:2px solid rgba(255,255,255,.18);
+    font-weight:800; font-size:clamp(11px,1.7vmin,14px); letter-spacing:.02em;
+  }
+
+  /* ---- 하단 네비 ---- */
+  .hud{
+    position:fixed; left:0; right:0; bottom:0; height:8vmin; min-height:56px;
+    display:flex; align-items:center; justify-content:center; gap:2.2vmin;
+    background:rgba(7,8,15,.9); z-index:20; border-top:2px solid rgba(255,255,255,.08);
+  }
+  .hud button{
+    width:clamp(42px,6vmin,56px); height:clamp(36px,5vmin,48px);
+    border:none; border-radius:11px; background:var(--accent); color:#fff;
+    font-size:clamp(16px,2.6vmin,22px); cursor:pointer; transition:transform .1s, background .15s, opacity .15s;
+    box-shadow:0 3px 10px rgba(0,0,0,.4);
+  }
+  .hud button:hover{ background:#ff7a1a; } .hud button:active{ transform:translateY(2px); }
+  .hud button:disabled{ opacity:.28; cursor:default; }
+  .count{ font-size:clamp(14px,2.2vmin,18px); font-variant-numeric:tabular-nums; min-width:66px; text-align:center; }
+  .count b{ color:var(--gold); }
+  .dots{ display:flex; gap:10px; }
+  .dots i{ width:12px; height:12px; border-radius:50%; background:#3a4056; cursor:pointer; transition:background .15s, transform .15s; }
+  .dots i.on{ background:var(--gold); transform:scale(1.25); }
+  .hint{ position:fixed; top:2vmin; right:2.4vmin; z-index:20; color:#e9ecf5; font-size:12px; text-align:right;
+    font-weight:600; background:rgba(7,8,15,.55); padding:6px 12px; border-radius:16px; border:1px solid rgba(255,255,255,.14); }
+
+  @media (prefers-reduced-motion: reduce){
+    .page, .art, .narr, .cover-cap{ transition:none; }
+    .page.active .art{ transform:none; }
+  }
+</style>
+</head>
+<body>
+<div class="deck">
+
+  <!-- ① 표지 -->
+  <section class="page active cover">
+    <img class="art" src="/works/seungchan/dream/frames/01.png" alt="헤드폰을 낀 소년이 밤에 스탠드 불빛 아래 컴퓨터로 코딩하는 모습">
+    <div class="scrim"></div>
+    <div class="no">① 표지</div>
+    <div class="cover-cap">
+      <span class="tag">📚 최승찬의 웹툰</span>
+      <h1>10년 뒤,<br><span class="y">나의 미래</span></h1>
+      <div class="sub">지금은 고1. 10년 뒤의 나는 어떤 모습일까?</div>
+    </div>
+  </section>
+
+  <!-- ② 함께 -->
+  <section class="page">
+    <img class="art" src="/works/seungchan/dream/frames/05.png" alt="해질녘 도시가 보이는 사무실에서 여러 사람이 코드 화면 앞에 모여 함께 의논하는 모습">
+    <div class="scrim"></div>
+    <div class="no">② 10년 뒤</div>
+    <div class="narr">10년 뒤. 나는 <b>사람들과 함께 코딩하는 개발자</b>가 되어 있었다.</div>
+  </section>
+
+  <!-- ③ 재도전 -->
+  <section class="page">
+    <img class="art" src="/works/seungchan/dream/frames/03.png" alt="노트북에서 AI 채팅창에 물음표를 띄우고 코드를 완성해가는 소년">
+    <div class="scrim"></div>
+    <div class="no">③ 사실은</div>
+    <div class="narr">사실 난, 한때 코딩을 <b>포기</b>했었다.<br>다시 날 붙잡아준 건 — <b>AI</b>였다.</div>
+  </section>
+
+  <!-- ④ 몰입 -->
+  <section class="page">
+    <img class="art" src="/works/seungchan/dream/frames/04.png" alt="AI 채팅과 설계 화면을 띄우고 노트에 메모하며 프로그램을 만드는 소년">
+    <div class="scrim"></div>
+    <div class="no">④ 지금은</div>
+    <div class="narr">이제는 만들고 싶은 걸 <b>마음껏</b> 만든다.<br>어릴 적 그리던 '<b>내 프로그램</b>'을.</div>
+  </section>
+
+  <!-- ⑤ 마무리 -->
+  <section class="page closing">
+    <img class="art" src="/works/seungchan/dream/frames/02.png" alt="헤드폰을 낀 소년이 강가에 앉아 노을 지는 도시를 바라보는 뒷모습">
+    <div class="scrim"></div>
+    <div class="no">⑤ 그리고</div>
+    <div class="narr">
+      <h2>좋아하는 일은,<br>변하지 않더라.</h2>
+      <p>한 번은 완전히 포기했지만, 결국 다시 돌아왔다.<br>10년 뒤에도 나는 여전히 — <b>하고 싶은 일을 하며 산다.</b></p>
+      <div class="brand">최승찬, 10년 뒤에도 진행 중 🚀</div>
+    </div>
+  </section>
+
+  <!-- 안내 + 네비 -->
+  <div class="hint">← → 방향키 · 화면 클릭으로 넘기기</div>
+  <nav class="hud">
+    <button id="prev" aria-label="이전">◀</button>
+    <div class="dots" id="dots"></div>
+    <span class="count"><b id="cur">1</b> / <span id="tot">5</span></span>
+    <button id="next" aria-label="다음">▶</button>
+  </nav>
+</div>
+
+<script>
+  const pages = Array.from(document.querySelectorAll('.page'));
+  const dotsWrap = document.getElementById('dots');
+  const curEl = document.getElementById('cur');
+  const prevBtn = document.getElementById('prev');
+  const nextBtn = document.getElementById('next');
+  document.getElementById('tot').textContent = pages.length;
+  let i = 0;
+
+  pages.forEach((_, k) => {
+    const d = document.createElement('i');
+    d.addEventListener('click', (e) => { e.stopPropagation(); show(k); });
+    dotsWrap.appendChild(d);
+  });
+  const dots = Array.from(dotsWrap.children);
+
+  function show(n) {
+    i = Math.max(0, Math.min(pages.length - 1, n));
+    pages.forEach((p, k) => p.classList.toggle('active', k === i));
+    dots.forEach((d, k) => d.classList.toggle('on', k === i));
+    curEl.textContent = i + 1;
+    prevBtn.disabled = i === 0;
+    nextBtn.disabled = i === pages.length - 1;
+  }
+
+  prevBtn.addEventListener('click', (e) => { e.stopPropagation(); show(i - 1); });
+  nextBtn.addEventListener('click', (e) => { e.stopPropagation(); show(i + 1); });
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'ArrowRight' || e.key === ' ') { show(i + 1); e.preventDefault(); }
+    if (e.key === 'ArrowLeft') { show(i - 1); e.preventDefault(); }
+  });
+  document.querySelector('.deck').addEventListener('click', (e) => {
+    if (e.target.closest('.hud')) return;
+    show(i + 1);
+  });
+
+  show(0);
+</script>
+</body>
+</html>
