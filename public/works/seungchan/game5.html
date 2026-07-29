@@ -32,14 +32,14 @@
   *{ box-sizing:border-box; margin:0; padding:0; }
   html,body{ height:100%; }
   body{ font-family:"Apple SD Gothic Neo","Pretendard","Noto Sans KR",-apple-system,"Malgun Gothic",sans-serif;
-        background:#140d26; color:var(--ink); overflow:hidden; }
+        background:#eef3fa; color:var(--ink); overflow:hidden; }
   .wrap{ position:fixed; inset:0; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:1.4vmin; padding:2vmin; }
   .head{ text-align:center; }
-  .who{ font-size:clamp(11px,1.8vmin,15px); font-weight:800; color:var(--dim); letter-spacing:.04em; }
-  h1{ font-size:clamp(18px,3.2vmin,32px); margin-top:.4vmin; }
+  .who{ font-size:clamp(11px,1.8vmin,15px); font-weight:800; color:#5b6577; letter-spacing:.04em; }
+  h1{ font-size:clamp(18px,3.2vmin,32px); margin-top:.4vmin; color:#1f2540; }
   h1 .g{ color:var(--gold); }
   .stage-box{ position:relative; width:min(100%,1040px); aspect-ratio:16/9; border-radius:16px; overflow:hidden;
-        border:1px solid #4a3a72; box-shadow:0 18px 50px rgba(0,0,0,.5); background:#000; }
+        border:1px solid #c3d0e2; box-shadow:0 14px 40px rgba(40,60,90,.22); background:#dce6f4; }
   canvas{ width:100%; height:100%; display:block; touch-action:none; cursor:crosshair; }
   .hud{ position:absolute; top:0; left:0; right:0; display:flex; justify-content:space-between; align-items:center;
         padding:1.4vmin 2vmin; gap:1vmin; pointer-events:none; }
@@ -68,6 +68,9 @@
   .save input{ font-family:inherit; font-size:clamp(12px,2vmin,16px); padding:.9vmin 1.4vmin; border-radius:10px;
         border:1px solid #6a5a96; background:#20143b; color:#fff; width:min(46vw,220px); }
   .save input:disabled{ opacity:.5; }
+  .save.hidden{ display:none; }
+  .autoNote{ font-size:clamp(11px,1.9vmin,15px); color:var(--gold); font-weight:800; }
+  .autoNote.hidden{ display:none; }
   .ranks{ width:min(100%,360px); display:flex; flex-direction:column; gap:.4vmin; max-height:32vh; overflow:auto; }
   .ranks div{ display:flex; align-items:center; gap:1vmin; background:rgba(20,13,38,.6); border:1px solid #4a3a72;
         border-radius:8px; padding:.6vmin 1.2vmin; font-size:clamp(11px,1.8vmin,15px); }
@@ -76,7 +79,7 @@
   .ranks .tm{ font-variant-numeric:tabular-nums; color:var(--gold); font-weight:800; }
   .ranks .me{ border-color:var(--gold); background:rgba(255,210,74,.14); }
   .ranks .empty{ color:#9a8fc0; justify-content:center; }
-  .foot{ font-size:clamp(10px,1.5vmin,12px); color:#5b5080; }
+  .foot{ font-size:clamp(10px,1.5vmin,12px); color:#8a90a4; }
 </style>
 </head>
 <body>
@@ -115,10 +118,11 @@
       <h2>5년 뒤, 최승찬 —<br><span style="color:var(--gold)">사람들과 함께 코딩하는 사람</span> 🚀</h2>
       <p>전체 기록 <b id="finalTime" style="color:var(--gold)">—</b></p>
       <p class="brk" id="breakdown"></p>
-      <div class="save">
+      <div class="save hidden" id="saveRow">
         <input id="nameInput" maxlength="10" placeholder="이름 (최대 10자)" autocomplete="off">
         <button class="btn" id="saveScore">순위 저장</button>
       </div>
+      <div class="autoNote hidden" id="autoNote"></div>
       <div class="ranks" id="ranks"></div>
       <button class="btn" id="replay">↺ 다시 하기</button>
     </div>
@@ -154,13 +158,28 @@
     { year:5, quest:'사람들과 함께 코딩하는 개발자',      hx:840, hy:185, ax:60,  ay:70, sp:0.032 },
   ];
 
+  // 슛이 빗나갔을 때 뜨는(플레이어 약올리는) 문구들. 랜덤으로 하나 고른다.
+  const TAUNTS = [
+    '에어볼~ 🏀💨', '그걸 놓쳐요? 🙄', '골대가 웃네요 😏', '아까비~ 🫠',
+    '손 떨렸어요? 🤏', '우리 강아지도 넣겠다 🐶', '골대: 안 들어와~ 😝',
+    '5년 뒤가 걱정되네요 😅', '농구 배운 거 맞아요? ❓', '이게 최선인가요? 🤨',
+    '눈 감고 던졌어요? 🙈', '다시! (한숨) 😮‍💨', '리바운드도 없네 📉', '벽돌 굽는 중 🧱',
+  ];
+
   const ball = { x:150, y:GY-R, vx:0, vy:0, rest:true };
   const REST_X = 150, REST_Y = GY - R;
   let stageIdx = 0, makes = 0, frame = 0, running = false;
   let aiming = false, aimPt = {x:0,y:0}, flash = 0;
+  let missMsg = '', missTimer = 0;   // 빗나감 문구 + 남은 표시 프레임
   let totalMs = 0, yearStartTime = 0;      // 스톱워치: 완주한 해들의 합 + 현재 해 진행분
   const yearTimes = [];                     // 해마다 클리어에 걸린 시간(ms)
   const LB_KEY = 'game5_seungchan_ranks';   // 순위표(localStorage)
+  // youngworld 에서 열면 ppt.js 가 ?me=<로그인이름> 을 붙여준다.
+  // 이 이름이 있으면 순위표에 직접 입력받지 않고 이 이름으로 자동 저장한다.
+  const YW_NAME = (() => {
+    try { const n = new URLSearchParams(location.search).get('me'); return n ? n.trim().slice(0,10) : ''; }
+    catch(e){ return ''; }
+  })();
 
   const $ = (id) => document.getElementById(id);
   const overlays = { title:$('title'), clear:$('clear'), ending:$('ending'), board:$('board') };
@@ -202,15 +221,28 @@
   function showEnding(){
     $('finalTime').textContent = fmt(totalMs);
     $('breakdown').textContent = yearTimes.map((t,i)=>`${i+1}년차 ${fmt(t)}`).join('  ·  ');
-    const inp=$('nameInput'), btn=$('saveScore');
-    inp.value=''; inp.disabled=false; btn.disabled=false;
-    renderRanks(null);
     show('ending');
-    setTimeout(()=>{ try{ inp.focus(); }catch(e){} }, 60);
+    if (YW_NAME) {
+      // youngworld 로그인 이름으로 자동 저장(같은 사람이면 더 빠른 기록만 남긴다).
+      $('saveRow').classList.add('hidden');
+      $('autoNote').classList.remove('hidden');
+      $('autoNote').textContent = `🏀 ${YW_NAME} 님 기록 저장 완료 · 가장 빠른 기록만 순위에 남겨요`;
+      saveScore(YW_NAME);
+    } else {
+      // 앱 밖에서 파일만 직접 열었을 때(이름 정보 없음): 예전처럼 직접 입력.
+      $('autoNote').classList.add('hidden');
+      $('saveRow').classList.remove('hidden');
+      const inp=$('nameInput'), btn=$('saveScore');
+      inp.value=''; inp.disabled=false; btn.disabled=false;
+      renderRanks(null);
+      setTimeout(()=>{ try{ inp.focus(); }catch(e){} }, 60);
+    }
   }
-  function saveScore(){
+  // nameArg 가 있으면(youngworld 자동 저장) 그 이름으로, 없으면 입력창 값으로 저장.
+  function saveScore(nameArg){
     const inp=$('nameInput'), btn=$('saveScore');
-    let name=(inp.value||'').trim(); if(!name) name='익명'; name=name.slice(0,10);
+    let name=(typeof nameArg==='string' ? nameArg : (inp.value||'')).trim();
+    if(!name) name='익명'; name=name.slice(0,10);
     const ms=Math.round(totalMs);
     let list=loadLB();
     const prev=list.find(e=>e.name===name);
@@ -244,8 +276,14 @@
     return xc > h.x+6 && xc < h.x+RIMW-6;
   }
   function makeShot(){
-    makes++; flash=45; $('score').textContent = `🏀 ${makes} / ${NEED}`;
+    makes++; flash=45; missTimer=0; $('score').textContent = `🏀 ${makes} / ${NEED}`;
     if(makes>=NEED) stageClear(); else resetBall();
+  }
+  // 빗나간 슛: 약올리는 문구를 랜덤으로 띄우고 공을 원위치.
+  function missShot(){
+    missMsg = TAUNTS[Math.floor(Math.random()*TAUNTS.length)];
+    missTimer = 100;
+    resetBall();
   }
 
   function update(){
@@ -268,11 +306,11 @@
       if(d < R+5){ const nx=dx/d, ny=dy/d; ball.x=rx+nx*(R+5); ball.y=h.y+ny*(R+5);
         const dot=ball.vx*nx+ball.vy*ny; ball.vx=(ball.vx-2*dot*nx)*REST; ball.vy=(ball.vy-2*dot*ny)*REST; }
     }
-    // 바닥 바운스 → 잦아들면 리셋(놓친 슛)
+    // 바닥 바운스 → 잦아들면 리셋(놓친 슛 = 빗나감)
     if(ball.y+R > GY){ ball.y=GY-R; ball.vy=-ball.vy*REST; ball.vx*=0.82;
-      if(Math.abs(ball.vy)<1.4 && Math.abs(ball.vx)<1.2) resetBall(); }
-    // 화면 밖
-    if(ball.x < -60 || ball.x > W+60 || ball.y > H+120) resetBall();
+      if(Math.abs(ball.vy)<1.4 && Math.abs(ball.vx)<1.2) missShot(); }
+    // 화면 밖(이것도 빗나감)
+    if(ball.x < -60 || ball.x > W+60 || ball.y > H+120) missShot();
   }
 
   // 둥근 사각형 path (fill/stroke 는 호출부에서)
@@ -281,13 +319,13 @@
     ctx.arcTo(x,y+h,x,y,r); ctx.arcTo(x,y,x+w,y,r); ctx.closePath(); }
 
   function drawCourt(){
-    // 마룻바닥
-    const fg=ctx.createLinearGradient(0,GY,0,H); fg.addColorStop(0,'#6a54a0'); fg.addColorStop(1,'#463670');
+    // 마룻바닥(밝은 단풍나무 마루)
+    const fg=ctx.createLinearGradient(0,GY,0,H); fg.addColorStop(0,'#f2d9a0'); fg.addColorStop(1,'#e4bc72');
     ctx.fillStyle=fg; ctx.fillRect(0,GY,W,H-GY);
     // 코트 라인(윗선)
-    ctx.fillStyle='rgba(255,210,74,.55)'; ctx.fillRect(0,GY,W,3);
+    ctx.fillStyle='rgba(196,120,40,.6)'; ctx.fillRect(0,GY,W,3);
     // 마루 결
-    ctx.strokeStyle='rgba(255,255,255,.06)'; ctx.lineWidth=1;
+    ctx.strokeStyle='rgba(120,80,30,.10)'; ctx.lineWidth=1;
     for(let x=48; x<W; x+=70){ ctx.beginPath(); ctx.moveTo(x,GY+4); ctx.lineTo(x-16,H); ctx.stroke(); }
   }
 
@@ -295,13 +333,15 @@
     const h = hoop();
     const bx = h.x+RIMW;                         // 림–백보드 접점
     // 지지 암
-    ctx.strokeStyle='#8a78c0'; ctx.lineWidth=6; ctx.lineCap='round';
+    ctx.strokeStyle='#8b93a0'; ctx.lineWidth=6; ctx.lineCap='round';
     ctx.beginPath(); ctx.moveTo(bx, h.y); ctx.lineTo(bx+8, h.y); ctx.stroke();
-    // 백보드 (충돌벽 h.x+RIMW+6 에 앞면을 맞춤)
+    // 백보드 (충돌벽 h.x+RIMW+6 에 앞면을 맞춤). 밝은 배경에서도 뜨게 옅은 그림자.
     const boardX=bx+6, boardY=h.y-92, boardW=18, boardH=104;
+    ctx.save(); ctx.shadowColor='rgba(40,60,90,.25)'; ctx.shadowBlur=8; ctx.shadowOffsetX=-2; ctx.shadowOffsetY=3;
     roundRect(boardX, boardY, boardW, boardH, 4);
-    ctx.fillStyle='rgba(244,240,255,.94)'; ctx.fill();
-    ctx.strokeStyle='#b7a9e0'; ctx.lineWidth=2; ctx.stroke();
+    ctx.fillStyle='#ffffff'; ctx.fill();
+    ctx.restore();
+    ctx.strokeStyle='#9aa3b4'; ctx.lineWidth=2; ctx.stroke();
     // 백보드 조준 사각형(주황)
     ctx.strokeStyle='#ff7a2e'; ctx.lineWidth=3;
     ctx.strokeRect(boardX+4, h.y-38, boardW-8, 28);
@@ -309,7 +349,7 @@
     ctx.strokeStyle='#ff7a2e'; ctx.lineWidth=6; ctx.lineCap='round';
     ctx.beginPath(); ctx.moveTo(h.x,h.y); ctx.lineTo(h.x+RIMW,h.y); ctx.stroke();
     // 네트 (세로줄)
-    ctx.strokeStyle='rgba(255,255,255,.6)'; ctx.lineWidth=1.4;
+    ctx.strokeStyle='rgba(90,100,115,.55)'; ctx.lineWidth=1.4;
     const nb=36;
     for(let i=0;i<=6;i++){ const t=i/6; ctx.beginPath(); ctx.moveTo(h.x+RIMW*t, h.y); ctx.lineTo(h.x+RIMW*(0.22+0.56*t), h.y+nb); ctx.stroke(); }
     // 네트 (가로줄)
@@ -339,7 +379,7 @@
     let vx=(aimPt.x-ball.x)*K, vy=(aimPt.y-ball.y)*K;
     const m=Math.hypot(vx,vy); if(m>MAXV){ vx=vx/m*MAXV; vy=vy/m*MAXV; }
     let sx=ball.x, sy=ball.y, svx=vx, svy=vy;
-    ctx.fillStyle='rgba(255,210,74,.8)';
+    ctx.fillStyle='rgba(232,98,12,.85)';
     for(let i=0;i<20;i++){ svy+=GRAV; sx+=svx; sy+=svy; if(i%2===0){ ctx.beginPath(); ctx.arc(sx,sy,3,0,Math.PI*2); ctx.fill(); } }
   }
   function drawShooter(){
@@ -362,13 +402,19 @@
   }
 
   function draw(){
-    const g=ctx.createLinearGradient(0,0,0,H); g.addColorStop(0,'#3a2568'); g.addColorStop(1,'#1a1030');
+    const g=ctx.createLinearGradient(0,0,0,H); g.addColorStop(0,'#f4f8fd'); g.addColorStop(1,'#dbe6f4');
     ctx.fillStyle=g; ctx.fillRect(0,0,W,H);
     drawCourt();
     drawHoop(); drawShooter(); drawAim(); drawBall();
     showTimer(totalMs + (performance.now() - yearStartTime));   // 스톱워치 갱신
-    if(flash>0){ flash--; ctx.fillStyle='rgba(255,210,74,'+(flash/45)+')'; ctx.font='bold 54px sans-serif'; ctx.textAlign='center';
-      ctx.fillText('골인! ⭐', W/2, 140); ctx.textAlign='left'; }
+    if(flash>0){ flash--; ctx.font='bold 54px sans-serif'; ctx.textAlign='center';
+      ctx.lineWidth=6; ctx.strokeStyle='rgba(255,255,255,'+(flash/45)+')'; ctx.strokeText('골인! ⭐', W/2, 140);
+      ctx.fillStyle='rgba(232,98,12,'+(flash/45)+')'; ctx.fillText('골인! ⭐', W/2, 140); ctx.textAlign='left'; ctx.lineWidth=1; }
+    // 빗나감 약올림 문구(골인 효과와 겹치지 않을 때만)
+    if(missTimer>0){ missTimer--; if(flash<=0){ const a=Math.min(1, missTimer/55);
+      ctx.font='bold 40px sans-serif'; ctx.textAlign='center';
+      ctx.lineWidth=6; ctx.strokeStyle='rgba(255,255,255,'+a+')'; ctx.strokeText(missMsg, W/2, H*0.42);
+      ctx.fillStyle='rgba(226,59,59,'+a+')'; ctx.fillText(missMsg, W/2, H*0.42); ctx.textAlign='left'; ctx.lineWidth=1; } }
   }
 
   function loop(){ if(!running) return; update(); draw(); requestAnimationFrame(loop); }
