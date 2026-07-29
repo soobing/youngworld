@@ -1,0 +1,821 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>박효진의 5년 뒤 나의 미래 — 영월드</title>
+<!--
+  ============================================================
+  🎮🤖🎵 slot 2 「5년 뒤 나의 미래(게임)」 — 박효진 · 로봇 공장 리듬 조립
+  ============================================================
+  ▶ 자체 완결형 HTML 1파일(인라인 CSS/JS, 외부 의존성 X).
+    /works/park/game5.html 로 열림 (URL 규칙: isSafeDocUrl).
+
+  ▶ 컨셉: 5년 뒤 박효진은 "로봇 만드는 공학도". 컨베이어로 흘러오는 로봇 부품을
+    판정선에 닿는 순간 리듬에 맞춰 눌러 조립한다. 한 스테이지 = 1년차. 해가 갈수록
+    노래가 빨라지고 레인이 늘며, 옆의 로봇이 한 단계씩 완성된다. 5년차엔 자기소개의
+    꿈 — "생활 패턴을 분석해 불을 켜고 꺼주는 스마트홈 로봇" 완성.
+
+  ▶ 음악(핵심): 노래 5곡을 WebAudio 로 직접 합성한다(외부 음원 X → CSP·저작권 안전).
+    노트는 그 곡의 멜로디 음(onset)에 정확히 맞춰 내려온다 → 누르면 멜로디를 "연주"하는 셈.
+    오디오 시계(AudioContext.currentTime)를 기준으로 노트 낙하·판정·음 재생이 모두 동기화된다.
+    소리 못 켜는 환경이면 무음 + performance.now() 시계로 폴백(게임은 그대로 됨).
+    우상단 🔊 버튼으로 음소거 토글.
+
+  ▶ 조작: 레인 키 D F J K (스테이지별 2~4개) 또는 화면 하단 터치 버튼.
+    Perfect / Good / Miss + 콤보. 정확도 60% 이상이면 그 해 합격 → 다음 해.
+
+  ▶ 점수: 완주하면 gameKey 'park-game5' 로 서버(/api/game/score)에 저장 → 순위표.
+    로그인(yw_token)이면 본인 닉네임, 아니면 이름 입력. 서버 없으면 localStorage 폴백.
+
+  ▶ 이어쓰기: 곡은 SONGS 배열(bpm·lead 멜로디·bass·kick·hat·loops)로 정의.
+    lead 의 음 하나 = 게임 노트 하나(레인은 음 높이로 배정). 난이도는 bpm·loops·lead 밀도로 조절.
+-->
+<style>
+  :root{
+    --bg:#0f1524; --panel:#151d30; --line:#2a3550; --ink:#eaf0fb; --dim:#93a1c4;
+    --brass:#e0a055; --brass2:#96560f; --cyan:#57d9c8; --good:#6ad06a; --bad:#ff6b6b;
+    --grid:rgba(234,240,251,.05);
+  }
+  *{ box-sizing:border-box; margin:0; padding:0; }
+  html,body{ height:100%; }
+  body{
+    font-family:"Pretendard Variable",Pretendard,"Apple SD Gothic Neo","Noto Sans KR",
+                -apple-system,"Malgun Gothic",sans-serif;
+    background:var(--bg); color:var(--ink); overflow:hidden; -webkit-font-smoothing:antialiased;
+    word-break:keep-all;
+  }
+  .wrap{ position:fixed; inset:0; display:flex; flex-direction:column; align-items:center;
+         justify-content:center; gap:1.2vmin; padding:2vmin; }
+  .head{ text-align:center; }
+  .who{ font-size:clamp(10px,1.7vmin,14px); font-weight:800; color:var(--dim); letter-spacing:.14em; }
+  h1{ font-size:clamp(16px,2.9vmin,28px); margin-top:.3vmin; letter-spacing:-.02em; }
+  h1 .g{ color:var(--brass); }
+
+  .stage-box{ position:relative; width:min(100%,1040px); aspect-ratio:16/9; border-radius:16px;
+    overflow:hidden; border:1px solid var(--line); box-shadow:0 18px 50px rgba(0,0,0,.5);
+    background:
+      linear-gradient(var(--grid) 1px,transparent 1px),
+      linear-gradient(90deg,var(--grid) 1px,transparent 1px),
+      radial-gradient(120% 80% at 70% 0%,#1b2740 0%,#0d1220 70%);
+    background-size:34px 34px,34px 34px,100% 100%; }
+  canvas{ position:absolute; inset:0; width:100%; height:100%; display:block; touch-action:none; }
+
+  .hud{ position:absolute; top:0; left:0; right:0; display:flex; justify-content:space-between;
+    align-items:flex-start; padding:1.4vmin 1.8vmin; gap:1vmin; pointer-events:none; z-index:3; }
+  .chip{ background:rgba(13,18,32,.72); border:1px solid var(--line); border-radius:10px;
+    padding:.6vmin 1.2vmin; font-size:clamp(10px,1.8vmin,15px); font-weight:800; }
+  .chip .k{ color:var(--dim); font-weight:700; margin-right:.5em; letter-spacing:.06em; }
+  .chip .brass{ color:var(--brass); } .chip .cyan{ color:var(--cyan); }
+  .hud .left{ display:flex; flex-direction:column; gap:.7vmin; align-items:flex-start; }
+  .hud .right{ text-align:right; display:flex; flex-direction:column; gap:.7vmin; align-items:flex-end; }
+  .chip.song{ max-width:34vmin; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .chip.song .note{ color:var(--cyan); margin-right:.4em; }
+
+  .mute{ position:absolute; top:1.4vmin; right:1.4vmin; z-index:6; pointer-events:auto;
+    width:5vmin; height:5vmin; min-width:30px; min-height:30px; border-radius:10px;
+    border:1px solid var(--line); background:rgba(13,18,32,.8); color:var(--ink);
+    font-size:clamp(13px,2.4vmin,20px); cursor:pointer; display:none; align-items:center;
+    justify-content:center; }
+  .mute.show{ display:flex; }
+
+  .judge{ position:absolute; left:0; right:38%; top:52%; text-align:center; z-index:3;
+    font-weight:900; font-size:clamp(18px,4vmin,40px); pointer-events:none; opacity:0;
+    text-shadow:0 2px 10px rgba(0,0,0,.6); }
+  .combo{ position:absolute; left:0; right:38%; top:38%; text-align:center; z-index:3;
+    font-weight:900; font-size:clamp(14px,2.6vmin,24px); color:var(--brass); pointer-events:none; opacity:0; }
+
+  .lanebtns{ position:absolute; left:0; right:38%; bottom:0; height:16%; display:flex; z-index:3; }
+  .lanebtns button{ flex:1; margin:.6vmin; border:1px solid var(--line);
+    background:rgba(21,29,48,.6); color:var(--dim); border-radius:10px; font-family:inherit;
+    font-weight:900; font-size:clamp(12px,2.2vmin,20px); cursor:pointer; touch-action:manipulation;
+    transition:background .05s,transform .05s; }
+  .lanebtns button:active,.lanebtns button.on{ background:var(--brass); color:#20130a; transform:translateY(1px); }
+  .lanebtns button[hidden]{ display:none; }
+
+  .overlay{ position:absolute; inset:0; z-index:5; display:flex; flex-direction:column;
+    align-items:center; justify-content:center; gap:1.6vmin; text-align:center; padding:5vmin;
+    background:rgba(9,13,22,.86); backdrop-filter:blur(2px); }
+  .overlay.hidden{ display:none; }
+  .overlay h2{ font-size:clamp(18px,3.6vmin,36px); line-height:1.28; letter-spacing:-.02em; }
+  .overlay h2 .g{ color:var(--brass); }
+  .overlay p{ color:var(--dim); font-size:clamp(12px,2vmin,17px); line-height:1.65; max-width:46ch; }
+  .overlay .keys{ color:var(--dim); font-size:clamp(11px,1.9vmin,15px); }
+  .overlay .keys b{ color:var(--ink); background:#20293f; border:1px solid var(--line);
+    border-radius:6px; padding:.15em .5em; margin:0 .1em; }
+  .btn{ background:var(--brass); color:#20130a; border:none; font-family:inherit; font-weight:900;
+    font-size:clamp(13px,2.2vmin,18px); border-radius:12px; padding:1.1vmin 3vmin; cursor:pointer;
+    box-shadow:0 8px 22px rgba(224,160,85,.32); }
+  .btn:hover{ filter:brightness(1.06); } .btn.ghost{ background:transparent; color:var(--dim);
+    border:1px solid var(--line); box-shadow:none; }
+  .btnrow{ display:flex; gap:1vmin; flex-wrap:wrap; justify-content:center; }
+
+  .stats{ display:flex; gap:1.4vmin; flex-wrap:wrap; justify-content:center; margin:.4vmin 0; }
+  .stat{ background:var(--panel); border:1px solid var(--line); border-radius:10px;
+    padding:.8vmin 1.6vmin; min-width:9ch; }
+  .stat .n{ font-size:clamp(15px,2.8vmin,26px); font-weight:900; }
+  .stat .n.p{ color:var(--good); } .stat .n.g{ color:var(--brass); } .stat .n.m{ color:var(--bad); }
+  .stat .l{ font-size:clamp(9px,1.5vmin,12px); color:var(--dim); letter-spacing:.08em; margin-top:.2vmin; }
+
+  .rank{ width:min(92%,40ch); text-align:left; }
+  .rank h3{ font-size:clamp(12px,2vmin,16px); color:var(--dim); letter-spacing:.1em; margin-bottom:.6vmin; }
+  .rank ol{ list-style:none; display:flex; flex-direction:column; gap:.3vmin; max-height:26vmin; overflow-y:auto; }
+  .rank li{ display:flex; justify-content:space-between; gap:1em; font-size:clamp(11px,1.9vmin,15px);
+    padding:.5vmin .9vmin; border:1px solid var(--line); border-radius:8px; background:var(--panel);
+    font-variant-numeric:tabular-nums; }
+  .rank li.me{ border-color:var(--brass); background:rgba(224,160,85,.12); }
+  .rank li .who2{ color:var(--ink); font-weight:700; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .rank li .sc{ color:var(--brass); font-weight:900; }
+  .rank .empty{ color:var(--dim); font-size:clamp(11px,1.8vmin,14px); padding:.6vmin; }
+
+  .namebox{ display:flex; gap:.8vmin; flex-wrap:wrap; justify-content:center; }
+  .namebox input{ font-family:inherit; font-size:clamp(13px,2.2vmin,17px); font-weight:700;
+    padding:.9vmin 1.4vmin; border-radius:10px; border:1px solid var(--line); background:var(--panel);
+    color:var(--ink); width:14ch; text-align:center; }
+  .namebox input:focus{ outline:2px solid var(--brass); outline-offset:1px; }
+
+  /* ── 모바일(세로 화면): 게임 박스를 화면 가득 키우고 레인을 넓게 ── */
+  @media (max-aspect-ratio: 1/1){
+    .wrap{ padding:0; gap:0; }
+    .head{ padding:.5rem .5rem .3rem; }
+    .head .who{ font-size:clamp(9px,3vw,13px); }
+    .head h1{ font-size:clamp(15px,5vw,22px); }
+    .stage-box{ width:100%; max-width:none; flex:1; aspect-ratio:auto; height:auto;
+      border-radius:0; border-left:none; border-right:none; }
+    /* 세로에서는 로봇이 위쪽 띠로 가므로, 판정/콤보/레인버튼을 화면 전체 폭으로 */
+    .stage-box.portrait .judge{ right:0; top:56%; }
+    .stage-box.portrait .combo{ right:0; top:44%; }
+    .stage-box.portrait .lanebtns{ right:0; height:14%; }
+    .stage-box.portrait .lanebtns button{ font-size:clamp(15px,6vw,26px); margin:.8vmin; }
+    .stage-box.portrait .hud{ padding:1vmin 1.2vmin; }
+    .stage-box.portrait .chip{ font-size:clamp(9px,3vw,13px); padding:.5vmin 1vmin; }
+    .stage-box.portrait .chip.song{ max-width:44vw; }
+    .stage-box.portrait .mute{ width:9vw; height:9vw; }
+  }
+
+  @media (prefers-reduced-motion:reduce){ *{ animation:none!important; } }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="head">
+    <div class="who">5년 뒤 나의 미래 · 박효진</div>
+    <h1>로봇 공장 <span class="g">리듬 조립</span></h1>
+  </div>
+
+  <div class="stage-box" id="box">
+    <canvas id="cv" width="1280" height="720"></canvas>
+
+    <div class="hud">
+      <div class="left">
+        <div class="chip"><span class="k">YEAR</span><span class="brass" id="hYear">1</span><span class="k" style="margin-left:.5em">/ 5</span></div>
+        <div class="chip song" id="hSong"><span class="note">♪</span><span id="hSongName">—</span></div>
+      </div>
+      <div class="right">
+        <div class="chip"><span class="k">SCORE</span><span id="hScore">0</span></div>
+        <div class="chip"><span class="k">COMBO</span><span class="cyan" id="hCombo">0</span></div>
+      </div>
+    </div>
+
+    <button class="mute" id="muteBtn" aria-label="소리 켜기/끄기">🔊</button>
+
+    <div class="combo" id="comboFx"></div>
+    <div class="judge" id="judgeFx"></div>
+
+    <div class="lanebtns" id="lanebtns">
+      <button data-lane="0" hidden>D</button>
+      <button data-lane="1">F</button>
+      <button data-lane="2">J</button>
+      <button data-lane="3" hidden>K</button>
+    </div>
+
+    <!-- 타이틀 -->
+    <div class="overlay" id="ovTitle">
+      <h2>5년 뒤, 나는 <span class="g">로봇을 만드는 공학도</span></h2>
+      <p>노래에 맞춰 흘러오는 부품이 <b style="color:#eaf0fb">판정선</b>에 닿는 순간 눌러 조립하세요.
+         노트는 그 해의 노래 멜로디를 따라와요 — 누르면 멜로디를 연주하는 셈이에요.
+         한 해 한 해, 옆의 로봇이 완성돼 갑니다. 5년차엔, 제가 꿈꾸던 그 장치예요.</p>
+      <p class="keys">레인 키 <b>D</b> <b>F</b> <b>J</b> <b>K</b> · 또는 화면 아래 버튼 · 터치 · 🔊로 음소거</p>
+      <div class="btnrow">
+        <button class="btn" id="btnStart">1년차 시작 🎵</button>
+        <button class="btn ghost" id="btnRankPreview">🏆 순위 보기</button>
+      </div>
+    </div>
+
+    <!-- 순위 미리보기: 플레이 전에도 볼 수 있다. 읽기만 하므로 기존 기록은 바뀌지 않는다. -->
+    <div class="overlay hidden" id="ovRank">
+      <h2>🏆 <span class="g">명예의 전당</span></h2>
+      <p>지금까지 쌓인 기록이에요. 게임을 완주하면 여기에 이름을 올릴 수 있어요.</p>
+      <div class="rank" id="rankWrapPre">
+        <ol id="rankListPre"><li class="empty">기록을 불러오는 중…</li></ol>
+      </div>
+      <div class="btnrow">
+        <button class="btn" id="btnRankBack">시작 화면으로</button>
+      </div>
+    </div>
+
+    <!-- 해 시작 안내 -->
+    <div class="overlay hidden" id="ovYear">
+      <h2 id="ovYearTitle"></h2>
+      <p id="ovYearDesc"></p>
+      <p class="keys" id="ovYearKeys"></p>
+      <button class="btn" id="btnYearGo">시작</button>
+    </div>
+
+    <!-- 해 결과 -->
+    <div class="overlay hidden" id="ovResult">
+      <h2 id="ovResultTitle"></h2>
+      <div class="stats">
+        <div class="stat"><div class="n p" id="rPerfect">0</div><div class="l">PERFECT</div></div>
+        <div class="stat"><div class="n g" id="rGood">0</div><div class="l">GOOD</div></div>
+        <div class="stat"><div class="n m" id="rMiss">0</div><div class="l">MISS</div></div>
+        <div class="stat"><div class="n" id="rAcc">0%</div><div class="l">정확도</div></div>
+      </div>
+      <p id="ovResultMsg"></p>
+      <div class="btnrow" id="ovResultBtns"></div>
+    </div>
+
+    <!-- 엔딩 -->
+    <div class="overlay hidden" id="ovEnd">
+      <h2 id="ovEndTitle">🤖 완성! <span class="g">스마트홈 로봇</span></h2>
+      <p id="ovEndMsg">5년 뒤, 상상만 하던 장치를 진짜로 만들었습니다.
+         이 로봇은 생활 패턴을 읽어 스스로 방의 불을 켜고 끕니다.</p>
+      <div class="stats">
+        <div class="stat"><div class="n g" id="eScore">0</div><div class="l">최종 점수</div></div>
+        <div class="stat"><div class="n" id="eAcc">0%</div><div class="l">평균 정확도</div></div>
+        <div class="stat"><div class="n cyan" id="eMaxCombo">0</div><div class="l">최대 콤보</div></div>
+      </div>
+      <div class="namebox" id="nameBox">
+        <input id="nameInput" maxlength="12" placeholder="이름 입력" autocomplete="off">
+        <button class="btn" id="btnSave">순위 저장</button>
+      </div>
+      <div class="rank" id="rankWrap">
+        <h3>🏆 명예의 전당</h3>
+        <ol id="rankList"><li class="empty">기록을 불러오는 중…</li></ol>
+      </div>
+      <div class="btnrow">
+        <button class="btn ghost" id="btnRestart">처음부터 다시</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+(function(){
+  "use strict";
+
+  // ── 노래 5곡: WebAudio 로 직접 합성한다(외부 음원 X). ─────────────────────
+  //  bpm: 빠르기, loops: 16스텝(8분음표 격자) 패턴을 몇 번 반복하는지.
+  //  lead: 멜로디(음 높이 MIDI, 0=쉼표). 이 멜로디 음 하나가 곧 게임 노트 하나다.
+  //  bass/kick/hat: 반주. 게임 판정과는 무관하고 소리만 낸다.
+  //  → 노트가 정확히 멜로디에 맞춰 내려오므로, 잘 치면 멜로디를 "연주"하게 된다.
+  var SONGS = [
+    { name:'첫 걸음', bpm:88, loops:3,
+      lead:[60,0,62,0, 64,0,65,0, 67,0,65,0, 64,0,62,0],
+      bass:[48,0,0,0,0,0,0,0, 43,0,0,0,0,0,0,0],
+      kick:[1,0,0,0,1,0,0,0,1,0,0,0,1,0,0,0],
+      hat: [0,0,1,0,0,0,1,0,0,0,1,0,0,0,1,0] },
+    { name:'톱니바퀴 왈츠', bpm:104, loops:3,
+      lead:[67,0,64,0, 60,0,64,0, 65,0,69,0, 67,0,64,0],
+      bass:[53,0,0,0,0,0,0,0, 48,0,0,0,0,0,0,0],
+      kick:[1,0,0,0,1,0,0,0,1,0,0,0,1,0,1,0],
+      hat: [0,0,1,0,0,1,1,0,0,0,1,0,0,1,1,0] },
+    { name:'센서 스텝', bpm:120, loops:3,
+      lead:[72,0,71,69, 67,0,69,71, 72,0,74,72, 71,69,67,0],
+      bass:[55,0,0,0,55,0,0,0, 53,0,0,0,53,0,0,0],
+      kick:[1,0,0,0,1,0,1,0,1,0,0,0,1,0,1,0],
+      hat: [0,1,1,0,0,1,1,0,0,1,1,0,0,1,1,0] },
+    { name:'전류가 흐르면', bpm:138, loops:4,
+      lead:[69,0,72,0, 71,69,67,0, 69,71,72,0, 74,72,71,69],
+      bass:[57,0,0,0,52,0,0,0, 55,0,0,0,53,0,0,0],
+      kick:[1,0,0,0,1,0,1,0,1,0,0,0,1,0,1,0],
+      hat: [0,1,1,1,0,1,1,1,0,1,1,1,0,1,1,1] },
+    { name:'스마트홈 피날레', bpm:152, loops:4,
+      lead:[72,0,76,74, 72,0,69,71, 72,0,76,77, 74,0,72,0],
+      bass:[48,0,0,0,43,0,0,0, 45,0,0,0,41,0,0,0],
+      kick:[1,0,1,0,1,0,1,0,1,0,1,0,1,0,1,0],
+      hat: [0,1,0,1,0,1,0,1,0,1,0,1,0,1,0,1] }
+  ];
+  // 도레미… 음계(레인 배정용). 멜로디 음이 이 안에서 몇 번째인지로 레인을 정한다.
+  var SCALE=[60,62,64,65,67,69,71,72,74,76,77];
+
+  // ── 무대(스테이지): 1~5년차. songIdx 로 위 SONGS 와 연결. ────────────────
+  var STAGES = [
+    { year:1, lanes:2, songIdx:0, travelSec:1.55, part:'바퀴와 몸통', title:'1년차 · 첫 로봇',
+      desc:'제일 기본, 굴러가는 바퀴 로봇부터. 느린 노래에 맞춰 천천히 조립!' },
+    { year:2, lanes:3, songIdx:1, travelSec:1.45, part:'팔', title:'2년차 · 팔을 달다',
+      desc:'물건을 집는 팔을 답니다. 레인이 하나 늘고, 노래가 조금 빨라져요.' },
+    { year:3, lanes:3, songIdx:2, travelSec:1.35, part:'센서 눈', title:'3년차 · 세상을 보다',
+      desc:'주변을 인식하는 센서 눈. 멜로디가 촘촘해집니다.' },
+    { year:4, lanes:4, songIdx:3, travelSec:1.25, part:'배터리와 회로', title:'4년차 · 스스로 움직이다',
+      desc:'배터리와 회로를 넣어 오래 버티게. 네 레인 모두 사용!' },
+    { year:5, lanes:4, songIdx:4, travelSec:1.15, part:'AI 두뇌', title:'5년차 · 꿈꾸던 그 장치',
+      desc:'생활 패턴을 읽어 불을 켜고 꺼주는 스마트홈 로봇. 마지막, 가장 빠릅니다!' }
+  ];
+  var LANE_KEYS = ['D','F','J','K'];
+  var KEYCODE = { KeyD:0, KeyF:1, KeyJ:2, KeyK:3 };
+  function laneMap(n){ return n===2 ? [1,2] : n===3 ? [0,1,2] : [0,1,2,3]; }
+
+  var PERFECT_S = 0.055, GOOD_S = 0.12; // 판정 창(초)
+  var GAME_KEY = 'park-game5';
+  var LB_KEY = 'game5_park_ranks';
+
+  // ── DOM ──────────────────────────────
+  var cv = document.getElementById('cv'), ctx2d = cv.getContext('2d');
+  var box = document.getElementById('box');
+  var elYear=id('hYear'), elScore=id('hScore'), elCombo=id('hCombo'), elSongName=id('hSongName');
+  var judgeFx=id('judgeFx'), comboFx=id('comboFx');
+  var laneBtnsWrap=id('lanebtns'), laneBtns=Array.prototype.slice.call(laneBtnsWrap.querySelectorAll('button'));
+  var muteBtn=id('muteBtn');
+  function id(x){ return document.getElementById(x); }
+
+  // ── 반응형 캔버스 + 레이아웃 ──────────────────────────────
+  //  캔버스 내부 해상도를 실제 박스 크기(×dpr)에 맞춰 선명하게 그린다.
+  //  가로(landscape): 왼쪽에 레인(62%) · 오른쪽에 로봇 공방(38%).
+  //  세로(portrait, 모바일): 위쪽 띠에 로봇 공방 · 아래 전체 폭에 레인 → 레인이 크고 시원함.
+  var LP = { portrait:false,
+    field:{x:0,y:0,w:1280*0.62,h:720}, shop:{x:1280*0.62,y:0,w:1280*0.38,h:720} };
+  function resize(){
+    var rect=box.getBoundingClientRect();
+    if(rect.width<2||rect.height<2) return;
+    var dpr=Math.min(window.devicePixelRatio||1, 2);
+    var w=Math.max(1,Math.round(rect.width*dpr)), h=Math.max(1,Math.round(rect.height*dpr));
+    if(cv.width!==w) cv.width=w;
+    if(cv.height!==h) cv.height=h;
+    var portrait = (rect.width/rect.height) < 1.1;
+    box.classList.toggle('portrait', portrait);
+    if(portrait){
+      var wsH=Math.round(cv.height*0.20);
+      LP={ portrait:true, field:{x:0,y:wsH,w:cv.width,h:cv.height-wsH}, shop:{x:0,y:0,w:cv.width,h:wsH} };
+    } else {
+      var fw=Math.round(cv.width*0.62);
+      LP={ portrait:false, field:{x:0,y:0,w:fw,h:cv.height}, shop:{x:fw,y:0,w:cv.width-fw,h:cv.height} };
+    }
+  }
+  window.addEventListener('resize', resize);
+  window.addEventListener('orientationchange', function(){ setTimeout(resize,120); });
+  if(window.ResizeObserver){ try{ new ResizeObserver(resize).observe(box); }catch(e){} }
+
+  // ── 오디오 엔진(WebAudio 합성) ──────────────────────────────
+  var muted=false, audio=null; // audio: null=미시도, false=미지원, obj=사용가능
+  function ensureAudio(){
+    if(audio!==null) return audio;
+    var AC = window.AudioContext || window.webkitAudioContext;
+    if(!AC){ audio=false; return false; }
+    var ctx = new AC();
+    var master = ctx.createGain(); master.gain.value = muted?0:0.32; master.connect(ctx.destination);
+    // 하이햇용 화이트노이즈 버퍼(한 번 만들어 재사용)
+    var nb = ctx.createBuffer(1, Math.floor(ctx.sampleRate*0.2), ctx.sampleRate);
+    var nd = nb.getChannelData(0); for(var i=0;i<nd.length;i++) nd[i]=Math.random()*2-1;
+    function freq(midi){ return 440*Math.pow(2,(midi-69)/12); }
+    audio = {
+      ctx:ctx, master:master,
+      resume:function(){ if(ctx.state==='suspended'){ try{ ctx.resume(); }catch(e){} } },
+      tone:function(dest,t,midi,dur,type,gain){
+        var o=ctx.createOscillator(), g=ctx.createGain();
+        o.type=type; o.frequency.value=freq(midi); o.connect(g); g.connect(dest);
+        var a=0.008, r=Math.min(0.12,dur*0.5);
+        g.gain.setValueAtTime(0.0001,t);
+        g.gain.linearRampToValueAtTime(gain,t+a);
+        g.gain.setValueAtTime(gain,t+Math.max(a,dur-r));
+        g.gain.linearRampToValueAtTime(0.0001,t+dur);
+        o.start(t); o.stop(t+dur+0.03);
+      },
+      kick:function(dest,t){
+        var o=ctx.createOscillator(), g=ctx.createGain();
+        o.type='sine'; o.frequency.setValueAtTime(150,t);
+        o.frequency.exponentialRampToValueAtTime(50,t+0.12);
+        g.gain.setValueAtTime(0.9,t); g.gain.exponentialRampToValueAtTime(0.001,t+0.16);
+        o.connect(g); g.connect(dest); o.start(t); o.stop(t+0.19);
+      },
+      hat:function(dest,t){
+        var s=ctx.createBufferSource(); s.buffer=nb;
+        var hp=ctx.createBiquadFilter(); hp.type='highpass'; hp.frequency.value=7000;
+        var g=ctx.createGain(); g.gain.setValueAtTime(0.22,t);
+        g.gain.exponentialRampToValueAtTime(0.001,t+0.05);
+        s.connect(hp); hp.connect(g); g.connect(dest); s.start(t); s.stop(t+0.06);
+      }
+    };
+    return audio;
+  }
+  // 게임 마스터 시계(초). 오디오가 있으면 오디오 시계, 없으면 성능 시계.
+  function clock(){ return (audio && audio.ctx) ? audio.ctx.currentTime : performance.now()/1000; }
+
+  var stageGain=null;
+  function stopSong(){
+    if(stageGain && audio){
+      try{ stageGain.gain.cancelScheduledValues(audio.ctx.currentTime);
+           stageGain.gain.setValueAtTime(0.0001, audio.ctx.currentTime);
+           stageGain.disconnect(); }catch(e){}
+    }
+    stageGain=null;
+  }
+
+  // 스테이지의 노래를 예약 재생하고, 게임 노트 배열을 만들어 돌려준다.
+  function scheduleSong(stage){
+    var song=SONGS[stage.songIdx];
+    var used=laneMap(stage.lanes);
+    var eighth = 30/song.bpm;              // 8분음표 길이(초)
+    var steps = song.lead.length;
+    var leadIn = Math.max(1.8, stage.travelSec + 0.35); // 첫 노트가 화면에 뜰 시간 확보
+    var t0 = clock() + leadIn;             // 노래 시작 절대시각
+    var gp=[];                             // 게임 노트
+
+    var a = ensureAudio();
+    var dest=null;
+    if(a){ a.resume(); stageGain=a.ctx.createGain(); stageGain.gain.value=1; stageGain.connect(a.master); dest=stageGain; }
+
+    for(var loop=0; loop<song.loops; loop++){
+      for(var s=0;s<steps;s++){
+        var at = t0 + (loop*steps + s)*eighth;
+        var mel = song.lead[s];
+        if(mel){
+          if(a) a.tone(dest, at, mel, eighth*1.7, 'triangle', 0.5);
+          gp.push({ target:at, lane:laneForMidi(mel, used), hit:false, dead:false });
+        }
+        if(a){
+          var b=song.bass[s]; if(b) a.tone(dest, at, b, eighth*1.9, 'sawtooth', 0.20);
+          if(song.kick[s]) a.kick(dest, at);
+          if(song.hat[s])  a.hat(dest, at);
+        }
+      }
+    }
+    songStartTime = t0;
+    lastNoteTime = gp.length ? gp[gp.length-1].target : t0;
+    return gp;
+  }
+
+  function laneForMidi(midi, used){
+    var idx=SCALE.indexOf(midi);
+    if(idx<0) idx=Math.round((midi-60)*7/12);
+    var d=((idx%used.length)+used.length)%used.length;
+    return used[d];
+  }
+
+  // ── 상태 ──────────────────────────────
+  var stageIdx=0, running=false, notes=[], songStartTime=0, lastNoteTime=0;
+  var score=0, combo=0, maxCombo=0;
+  var tally={perfect:0,good:0,miss:0};
+  var totals={score:0,perfect:0,good:0,miss:0,maxCombo:0};
+  var flash=[];
+  var robotStage=0, lightsOn=true, lightTimer=0;
+
+  function show(x){ id(x).classList.remove('hidden'); }
+  function hide(x){ id(x).classList.add('hidden'); }
+  function fmt(n){ return n.toLocaleString('en-US'); }
+
+  // ── 게임 진행 ──────────────────────────────
+  function startStage(i){
+    stageIdx=i; var s=STAGES[i];
+    stopSong();
+    score=0; combo=0; maxCombo=0; tally={perfect:0,good:0,miss:0};
+    elYear.textContent=s.year; elScore.textContent='0'; elCombo.textContent='0';
+    elSongName.textContent=SONGS[s.songIdx].name;
+    var used=laneMap(s.lanes);
+    laneBtns.forEach(function(b,idx){ var on=used.indexOf(idx)>=0; b.hidden=!on; b.classList.remove('on'); });
+    muteBtn.classList.add('show');
+    notes = scheduleSong(s);   // 노래 예약 + 노트 생성
+    running=true;
+  }
+
+  function judge(lane, now){
+    var best=null, bestAbs=1e9;
+    for(var i=0;i<notes.length;i++){
+      var n=notes[i]; if(n.lane!==lane||n.hit||n.dead) continue;
+      var d=Math.abs(n.target-now); if(d<bestAbs){ bestAbs=d; best=n; }
+    }
+    flashLane(lane);
+    if(!best || bestAbs>GOOD_S) return; // 허공 침 — 감점 없음
+    best.hit=true;
+    if(bestAbs<=PERFECT_S) hitResult('PERFECT',100); else hitResult('GOOD',55);
+  }
+  function hitResult(kind, base){
+    if(kind==='PERFECT') tally.perfect++; else tally.good++;
+    combo++; if(combo>maxCombo) maxCombo=combo;
+    score += base + Math.min(combo,50)*2;
+    elScore.textContent=fmt(score); elCombo.textContent=combo;
+    popJudge(kind, kind==='PERFECT'?'#6ad06a':'#e0a055');
+    if(combo>0 && combo%10===0) popCombo(combo+' COMBO!');
+  }
+  function missNote(){ tally.miss++; combo=0; elCombo.textContent='0'; popJudge('MISS','#ff6b6b'); }
+
+  function popJudge(text,color){
+    judgeFx.textContent=text; judgeFx.style.color=color;
+    judgeFx.style.transition='none'; judgeFx.style.opacity='1'; judgeFx.style.transform='translateY(0) scale(1.08)';
+    requestAnimationFrame(function(){ judgeFx.style.transition='opacity .38s, transform .38s';
+      judgeFx.style.opacity='0'; judgeFx.style.transform='translateY(-8px) scale(1)'; });
+  }
+  function popCombo(text){
+    comboFx.textContent=text;
+    comboFx.style.transition='none'; comboFx.style.opacity='1'; comboFx.style.transform='scale(1.12)';
+    requestAnimationFrame(function(){ comboFx.style.transition='opacity .5s, transform .5s';
+      comboFx.style.opacity='0'; comboFx.style.transform='scale(1)'; });
+  }
+  function flashLane(lane){ flash.push({lane:lane, t:clock()}); }
+
+  function stageDone(now){
+    if(now < lastNoteTime + 0.4) return false;
+    for(var i=0;i<notes.length;i++){ if(!notes[i].hit && !notes[i].dead) return false; }
+    return true;
+  }
+
+  function endStage(){
+    running=false; stopSong();
+    var s=STAGES[stageIdx];
+    var total=tally.perfect+tally.good+tally.miss;
+    var acc = total? Math.round((tally.perfect+tally.good*0.5)/total*100) : 0;
+    var pass = acc>=60;
+    id('rPerfect').textContent=tally.perfect; id('rGood').textContent=tally.good;
+    id('rMiss').textContent=tally.miss; id('rAcc').textContent=acc+'%';
+    var t=id('ovResultTitle'), m=id('ovResultMsg'), btns=id('ovResultBtns'); btns.innerHTML='';
+    if(pass){
+      totals.score+=score; totals.perfect+=tally.perfect; totals.good+=tally.good;
+      totals.miss+=tally.miss; if(maxCombo>totals.maxCombo) totals.maxCombo=maxCombo;
+      robotStage=stageIdx+1;
+      t.innerHTML=(acc>=90?'🌟 완벽에 가까워요!':acc>=75?'👍 훌륭해요!':'✅ 합격!')+
+        ' <span class="g">'+s.part+'</span> 조립 완료';
+      m.textContent = stageIdx<STAGES.length-1
+        ? (STAGES[stageIdx+1].year+'년차로 갑니다. 로봇이 한 단계 더 자랐어요.')
+        : '드디어 5년차까지 왔어요.';
+      var b=document.createElement('button'); b.className='btn';
+      b.textContent = stageIdx<STAGES.length-1 ? (STAGES[stageIdx+1].year+'년차로') : '완성 보기';
+      b.onclick=function(){ hide('ovResult'); if(stageIdx<STAGES.length-1) showYear(stageIdx+1); else showEnding(); };
+      btns.appendChild(b);
+    } else {
+      t.innerHTML='조금 아쉬워요 — <span class="g">'+acc+'%</span>';
+      m.textContent='정확도 60%를 넘기면 이 해를 합격해요. 노래를 타면서 다시 한 번!';
+      var r=document.createElement('button'); r.className='btn'; r.textContent='이 해 다시';
+      r.onclick=function(){ hide('ovResult'); showYear(stageIdx); };
+      btns.appendChild(r);
+    }
+    show('ovResult');
+  }
+
+  function showYear(i){
+    stageIdx=i; var s=STAGES[i], song=SONGS[s.songIdx];
+    id('ovYearTitle').innerHTML=s.title;
+    id('ovYearDesc').textContent=s.desc;
+    var used=laneMap(s.lanes).map(function(l){ return LANE_KEYS[l]; });
+    id('ovYearKeys').innerHTML='🎵 <b style="color:#57d9c8">'+song.name+'</b> · 레인 '+
+      used.map(function(k){ return '<b style="color:#eaf0fb">'+k+'</b>'; }).join(' ');
+    show('ovYear');
+    id('btnYearGo').onclick=function(){ hide('ovYear'); startStage(i); };
+  }
+
+  function showEnding(){
+    robotStage=5; stopSong(); muteBtn.classList.remove('show');
+    id('eScore').textContent=fmt(totals.score);
+    var tot=totals.perfect+totals.good+totals.miss;
+    id('eAcc').textContent=(tot?Math.round((totals.perfect+totals.good*0.5)/tot*100):0)+'%';
+    id('eMaxCombo').textContent=totals.maxCombo;
+    show('ovEnd'); prefillName(); loadRanking();
+  }
+
+  // ── 점수 저장(서버 우선, 실패 시 localStorage) ──────────────────────────────
+  function token(){ try{ return localStorage.getItem('yw_token'); }catch(e){ return null; } }
+  var savedOnce=false;
+  function prefillName(){
+    var inp=id('nameInput');
+    fetch('/api/game/me',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({token:token()})})
+      .then(function(r){ return r.json(); })
+      .then(function(d){ if(d && d.nickname && !d.isGuest){ inp.value=d.nickname; inp.disabled=true; inp.title='로그인 계정으로 저장됩니다'; } })
+      .catch(function(){});
+  }
+  function saveScore(){
+    if(savedOnce) return;
+    var name=(id('nameInput').value||'').trim();
+    var payload={ gameKey:GAME_KEY, token:token(), playerName:name, score:totals.score,
+      grade:'5년 완주', detail:'P'+totals.perfect+'/G'+totals.good+'/M'+totals.miss };
+    var btn=id('btnSave'); btn.disabled=true; btn.textContent='저장 중…';
+    fetch('/api/game/score',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)})
+      .then(function(r){ return r.json().then(function(j){ return {ok:r.ok,j:j}; }); })
+      .then(function(res){ if(!res.ok) throw new Error(res.j&&res.j.message||'저장 실패');
+        savedOnce=true; btn.textContent='저장됨 ✓'; renderRanking(res.j.ranking, res.j.playerName, res.j.rank); })
+      .catch(function(){
+        if(!name){ btn.disabled=false; btn.textContent='순위 저장'; id('nameInput').focus();
+          id('nameInput').placeholder='이름을 입력하세요'; return; }
+        var lb=loadLB(); lb.push({name:name, score:totals.score});
+        lb.sort(function(a,b){ return b.score-a.score; }); lb=lb.slice(0,20); saveLB(lb);
+        savedOnce=true; btn.textContent='저장됨 ✓ (내 기기)';
+        renderRanking(lb.map(function(x){ return {playerName:x.name, score:x.score}; }), name, null);
+      });
+  }
+  // 순위는 읽기 전용으로만 불러온다(저장 API 를 부르지 않으므로 기존 기록이 바뀌지 않는다).
+  //  ol 을 주면 그 목록에, 없으면 엔딩 화면 목록(rankList)에 그린다.
+  function loadRanking(ol){
+    ol = ol || id('rankList');
+    fetch('/api/game/ranking?gameKey='+GAME_KEY+'&limit=20').then(function(r){ return r.json(); })
+      .then(function(d){ renderRanking((d&&d.ranking)||[], null, null, ol); })
+      .catch(function(){ var lb=loadLB(); renderRanking(lb.map(function(x){ return {playerName:x.name, score:x.score}; }), null, null, ol); });
+  }
+  function renderRanking(list, meName, meRank, ol){
+    ol = ol || id('rankList'); ol.innerHTML='';
+    if(!list || !list.length){ ol.innerHTML='<li class="empty">아직 기록이 없어요. 첫 기록의 주인공이 되어보세요!</li>'; return; }
+    list.forEach(function(row,i){
+      var nm = (row.player_name!=null) ? row.player_name : row.playerName;
+      var li=document.createElement('li');
+      var isMe = (meRank && (i+1)===meRank) || (meName && nm===meName && i<3);
+      if(isMe) li.className='me';
+      li.innerHTML='<span class="who2">'+(i+1)+'. '+escapeHtml(nm||'익명')+'</span>'+
+                   '<span class="sc">'+fmt(row.score||0)+'</span>';
+      ol.appendChild(li);
+    });
+  }
+  function loadLB(){ try{ return JSON.parse(localStorage.getItem(LB_KEY))||[]; }catch(e){ return []; } }
+  function saveLB(l){ try{ localStorage.setItem(LB_KEY, JSON.stringify(l)); }catch(e){} }
+  function escapeHtml(s){ return String(s).replace(/[&<>"']/g,function(c){ return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]; }); }
+
+  // ── 렌더 루프 ──────────────────────────────
+  function loop(){
+    requestAnimationFrame(loop);
+    var now=clock();
+    ctx2d.clearRect(0,0,cv.width,cv.height);
+    drawWorkshop();
+    var s = STAGES[stageIdx] || STAGES[0];
+    drawLanes(now, s);
+    if(running){
+      for(var i=0;i<notes.length;i++){ var n=notes[i];
+        if(!n.hit && !n.dead && now - n.target > GOOD_S){ n.dead=true; missNote(); } }
+      // 카운트다운(노래 시작 전)
+      if(now < songStartTime) drawCountdown(songStartTime-now);
+      if(stageDone(now)) endStage();
+    }
+  }
+
+  function drawCountdown(remain){
+    var f=LP.field, cx=f.x+f.w/2, cy=f.y+f.h*0.48, n=Math.ceil(remain);
+    ctx2d.save(); ctx2d.textAlign='center';
+    ctx2d.fillStyle='rgba(224,160,85,.95)';
+    ctx2d.font='900 '+Math.round(f.h*0.22)+'px Pretendard, sans-serif';
+    ctx2d.fillText(n>0?String(n):'▶', cx, cy);
+    ctx2d.fillStyle='rgba(147,161,196,.9)'; ctx2d.font='700 '+Math.round(f.h*0.05)+'px Pretendard, sans-serif';
+    ctx2d.fillText('준비…', cx, cy+f.h*0.12);
+    ctx2d.restore();
+  }
+
+  function drawLanes(now, s){
+    var fld=LP.field, ox=fld.x, oy=fld.y, W=fld.w, H=fld.h;
+    var used=laneMap(s.lanes), nLane=used.length;
+    var hitY=oy+H*0.82, topY=oy, lw=W/nLane;
+    for(var i=0;i<nLane;i++){
+      var x=ox+i*lw;
+      ctx2d.fillStyle=(i%2===0)?'rgba(255,255,255,.015)':'rgba(255,255,255,.03)';
+      ctx2d.fillRect(x,oy,lw,H);
+      ctx2d.strokeStyle='rgba(234,240,251,.06)'; ctx2d.lineWidth=2; ctx2d.strokeRect(x,oy,lw,H);
+    }
+    // 판정선(노래 박자에 맞춰 은은히 맥동)
+    var song=SONGS[s.songIdx]; var pulse=0;
+    if(running && now>=songStartTime){
+      var beat=60/song.bpm; var ph=((now-songStartTime)%beat)/beat; pulse=(1-ph)*0.5;
+    }
+    ctx2d.strokeStyle='rgba(224,160,85,'+(0.7+pulse*0.3)+')'; ctx2d.lineWidth=4;
+    ctx2d.beginPath(); ctx2d.moveTo(ox,hitY); ctx2d.lineTo(ox+W,hitY); ctx2d.stroke();
+    ctx2d.fillStyle='rgba(224,160,85,'+(0.10+pulse*0.14)+')'; ctx2d.fillRect(ox,hitY-3,W,6);
+    // 레인 반짝임
+    var na=[];
+    for(var fi=0;fi<flash.length;fi++){ var age=now-flash[fi].t; if(age>0.18) continue; na.push(flash[fi]);
+      var li=used.indexOf(flash[fi].lane); if(li<0) continue;
+      ctx2d.fillStyle='rgba(224,160,85,'+((1-age/0.18)*0.5)+')'; ctx2d.fillRect(ox+li*lw,oy,lw,H); }
+    flash=na;
+    // 노트(판정선까지 낙하)
+    if(running){
+      for(var k=0;k<notes.length;k++){ var n=notes[k]; if(n.hit||n.dead) continue;
+        var prog=1-(n.target-now)/s.travelSec; if(prog<-0.05||prog>1.1) continue;
+        if(prog<0) prog=0;
+        var li2=used.indexOf(n.lane); if(li2<0) continue;
+        drawPart(ox+li2*lw+lw/2, topY+prog*(hitY-topY), Math.min(lw,140)*0.34, n.lane);
+      }
+    }
+  }
+
+  function drawPart(x,y,r,lane){
+    ctx2d.save(); ctx2d.translate(x,y);
+    ctx2d.shadowColor='rgba(0,0,0,.5)'; ctx2d.shadowBlur=8; ctx2d.shadowOffsetY=3;
+    var col=['#57d9c8','#e0a055','#8fb2ff','#ff9db1'][lane];
+    ctx2d.fillStyle=col; ctx2d.strokeStyle='rgba(0,0,0,.35)'; ctx2d.lineWidth=3;
+    if(lane===0){ gear(0,0,r,8); ctx2d.fill(); ctx2d.stroke();
+      ctx2d.fillStyle='rgba(15,21,36,.9)'; circle(0,0,r*0.4); ctx2d.fill(); }
+    else if(lane===1){ poly(0,0,r,6,Math.PI/6); ctx2d.fill(); ctx2d.stroke();
+      ctx2d.fillStyle='rgba(15,21,36,.85)'; poly(0,0,r*0.42,6,Math.PI/6); ctx2d.fill(); }
+    else if(lane===2){ ctx2d.fillRect(-r*0.8,-r*0.8,r*1.6,r*1.6); ctx2d.strokeRect(-r*0.8,-r*0.8,r*1.6,r*1.6);
+      ctx2d.fillStyle='rgba(15,21,36,.85)'; ctx2d.fillRect(-r*0.4,-r*0.4,r*0.8,r*0.8); }
+    else { ctx2d.fillRect(-r*0.7,-r,r*1.4,r*2); ctx2d.strokeRect(-r*0.7,-r,r*1.4,r*2);
+      ctx2d.fillStyle='rgba(15,21,36,.85)'; ctx2d.fillRect(-r*0.28,-r*1.2,r*0.56,r*0.25); }
+    ctx2d.restore();
+  }
+  function gear(cx,cy,r,teeth){ ctx2d.beginPath();
+    for(var i=0;i<teeth*2;i++){ var ang=Math.PI*i/teeth, rr=(i%2===0)?r:r*0.74;
+      var px=cx+Math.cos(ang)*rr, py=cy+Math.sin(ang)*rr; if(i===0)ctx2d.moveTo(px,py); else ctx2d.lineTo(px,py);} ctx2d.closePath(); }
+  function poly(cx,cy,r,n,rot){ ctx2d.beginPath();
+    for(var i=0;i<n;i++){ var a=rot+Math.PI*2*i/n, px=cx+Math.cos(a)*r, py=cy+Math.sin(a)*r;
+      if(i===0)ctx2d.moveTo(px,py); else ctx2d.lineTo(px,py);} ctx2d.closePath(); }
+  function circle(cx,cy,r){ ctx2d.beginPath(); ctx2d.arc(cx,cy,r,0,Math.PI*2); ctx2d.closePath(); }
+
+  // ── 로봇 공방(가로: 오른쪽 패널 / 세로: 위쪽 띠) ──────────────────────────────
+  function drawWorkshop(){
+    var r=LP.shop, x0=r.x, oy=r.y, W=r.w, H=r.h, portrait=LP.portrait;
+    ctx2d.fillStyle='rgba(255,255,255,.02)'; ctx2d.fillRect(x0,oy,W,H);
+    ctx2d.strokeStyle='rgba(234,240,251,.08)'; ctx2d.lineWidth=2; ctx2d.strokeRect(x0+1,oy+1,W-2,H-2);
+    var cx=x0+W/2;
+    // 로봇 크기·바닥 위치: 세로 띠는 납작하므로 더 작게 잡아 안에 들어가게.
+    var u = portrait ? H/6.2 : H*0.12;
+    var baseY = portrait ? oy+H*0.95 : oy+H*0.86;
+    var labelY = portrait ? oy+H*0.14 : oy+H*0.10;
+    ctx2d.fillStyle='rgba(147,161,196,.9)';
+    ctx2d.font='700 '+Math.round((portrait?H*0.13:H*0.035))+'px Pretendard, sans-serif';
+    ctx2d.textAlign='center'; ctx2d.fillText('나의 로봇 · '+robotStage+'/5', cx, labelY);
+    if(!portrait){ ctx2d.fillStyle='#1a2338'; ctx2d.fillRect(x0+W*0.12, baseY, W*0.76, H*0.05); }
+    if(robotStage>=5){
+      lightTimer+=1; if(lightTimer>90){ lightTimer=0; lightsOn=!lightsOn; }
+      if(lightsOn){ var g=ctx2d.createRadialGradient(cx,baseY-u*3.2,u*0.2,cx,baseY-u*3.2,u*4.6);
+        g.addColorStop(0,'rgba(255,224,150,.35)'); g.addColorStop(1,'rgba(255,224,150,0)');
+        // 불빛은 방 전체(캔버스)로 은은하게 번지게
+        ctx2d.fillStyle=g; ctx2d.fillRect(0,0,cv.width,cv.height); }
+    }
+    if(robotStage>=1){
+      ctx2d.fillStyle='#2b3a5c'; circle(cx-u*0.9, baseY-u*0.2, u*0.5); ctx2d.fill();
+      circle(cx+u*0.9, baseY-u*0.2, u*0.5); ctx2d.fill();
+      roundRect(cx-u*1.1, baseY-u*2.2, u*2.2, u*2.0, u*0.28);
+      ctx2d.fillStyle='#c9d3e8'; ctx2d.fill(); ctx2d.strokeStyle='#7f8db0'; ctx2d.lineWidth=4; ctx2d.stroke();
+      ctx2d.fillStyle='#93a1c4'; roundRect(cx-u*0.6, baseY-u*1.8, u*1.2, u*0.9, u*0.12); ctx2d.fill();
+    }
+    if(robotStage>=2){
+      ctx2d.strokeStyle='#c9d3e8'; ctx2d.lineWidth=u*0.28; ctx2d.lineCap='round';
+      line(cx-u*1.1, baseY-u*1.9, cx-u*1.8, baseY-u*1.2);
+      line(cx+u*1.1, baseY-u*1.9, cx+u*1.8, baseY-u*1.2);
+      ctx2d.fillStyle='#e0a055'; circle(cx-u*1.8, baseY-u*1.2, u*0.24); ctx2d.fill();
+      circle(cx+u*1.8, baseY-u*1.2, u*0.24); ctx2d.fill();
+    }
+    if(robotStage>=3){
+      roundRect(cx-u*0.8, baseY-u*3.5, u*1.6, u*1.3, u*0.24);
+      ctx2d.fillStyle='#dfe7f5'; ctx2d.fill(); ctx2d.strokeStyle='#7f8db0'; ctx2d.lineWidth=4; ctx2d.stroke();
+      ctx2d.fillStyle=(robotStage>=5 && lightsOn)?'#57d9c8':'#2b3a5c';
+      circle(cx-u*0.35, baseY-u*2.85, u*0.2); ctx2d.fill();
+      circle(cx+u*0.35, baseY-u*2.85, u*0.2); ctx2d.fill();
+    }
+    if(robotStage>=4){
+      ctx2d.strokeStyle='#c9d3e8'; ctx2d.lineWidth=u*0.1; line(cx, baseY-u*3.5, cx, baseY-u*4.1);
+      ctx2d.fillStyle='#ff9db1'; circle(cx, baseY-u*4.2, u*0.16); ctx2d.fill();
+      ctx2d.fillStyle='#2b3a5c'; roundRect(cx-u*0.5, baseY-u*1.65, u*1.0, u*0.22, u*0.05); ctx2d.fill();
+      ctx2d.fillStyle='#6ad06a'; roundRect(cx-u*0.46, baseY-u*1.62, u*0.92, u*0.16, u*0.04); ctx2d.fill();
+    }
+    if(robotStage>=5){
+      ctx2d.fillStyle=lightsOn?'#e0a055':'#7f8db0';
+      ctx2d.font='800 '+Math.round(u*0.5)+'px Pretendard, sans-serif'; ctx2d.fillText('AI', cx, baseY-u*2.55);
+      // 상태 문구는 공간이 넉넉한 가로 레이아웃에서만(세로 띠에선 넘치므로 생략)
+      if(!portrait){ ctx2d.fillStyle='rgba(147,161,196,.9)'; ctx2d.font='700 '+Math.round(H*0.03)+'px Pretendard, sans-serif';
+        ctx2d.fillText(lightsOn?'💡 불 켜짐':'🌙 불 꺼짐', cx, baseY+u*0.9); }
+    } else if(robotStage>=1 && !portrait){
+      ctx2d.fillStyle='rgba(147,161,196,.75)'; ctx2d.font='700 '+Math.round(H*0.03)+'px Pretendard, sans-serif';
+      ctx2d.fillText('다음 부품: '+(STAGES[robotStage]?STAGES[robotStage].part:'완성!'), cx, baseY+u*0.9);
+    }
+    ctx2d.textAlign='start';
+  }
+  function roundRect(x,y,w,h,r){ ctx2d.beginPath(); ctx2d.moveTo(x+r,y);
+    ctx2d.arcTo(x+w,y,x+w,y+h,r); ctx2d.arcTo(x+w,y+h,x,y+h,r);
+    ctx2d.arcTo(x,y+h,x,y,r); ctx2d.arcTo(x,y,x+w,y,r); ctx2d.closePath(); }
+  function line(x1,y1,x2,y2){ ctx2d.beginPath(); ctx2d.moveTo(x1,y1); ctx2d.lineTo(x2,y2); ctx2d.stroke(); }
+
+  // ── 입력 ──────────────────────────────
+  function pressLane(lane){
+    if(!running) return;
+    judge(lane, clock());
+    var used=laneMap(STAGES[stageIdx].lanes); if(used.indexOf(lane)<0) return;
+    var b=laneBtns[lane]; if(b){ b.classList.add('on'); setTimeout(function(){ b.classList.remove('on'); },80); }
+  }
+  document.addEventListener('keydown', function(e){
+    if(e.repeat) return;
+    if(e.code in KEYCODE){ e.preventDefault(); pressLane(KEYCODE[e.code]); }
+  });
+  laneBtns.forEach(function(b){ var lane=+b.getAttribute('data-lane');
+    b.addEventListener('pointerdown', function(e){ e.preventDefault(); pressLane(lane); }); });
+
+  // 음소거 토글
+  function setMuted(m){ muted=m; muteBtn.textContent=m?'🔇':'🔊';
+    if(audio && audio.master) audio.master.gain.value = m?0:0.32; }
+  muteBtn.addEventListener('click', function(){ setMuted(!muted); });
+
+  // 갤러리 iframe 대응: 포커스 확보. Esc 는 건드리지 않는다(부모 갤러리가 닫음).
+  try{ window.focus(); }catch(e){}
+  document.addEventListener('pointerdown', function(){ try{ window.focus(); }catch(e){} });
+
+  // ── 버튼 배선 ──────────────────────────────
+  id('btnStart').onclick=function(){ ensureAudio(); if(audio) audio.resume(); hide('ovTitle'); showYear(0); };
+  // 순위 미리보기: 시작 화면 ↔ 순위 화면. 읽기만 하므로 기록에 영향 없음.
+  id('btnRankPreview').onclick=function(){ hide('ovTitle'); show('ovRank');
+    id('rankListPre').innerHTML='<li class="empty">기록을 불러오는 중…</li>'; loadRanking(id('rankListPre')); };
+  id('btnRankBack').onclick=function(){ hide('ovRank'); show('ovTitle'); };
+  id('btnSave').onclick=saveScore;
+  id('nameInput').addEventListener('keydown', function(e){ if(e.key==='Enter'){ e.preventDefault(); saveScore(); } });
+  id('btnRestart').onclick=function(){
+    totals={score:0,perfect:0,good:0,miss:0,maxCombo:0}; robotStage=0; savedOnce=false;
+    var b=id('btnSave'); b.disabled=false; b.textContent='순위 저장';
+    hide('ovEnd'); showYear(0);
+  };
+
+  resize();                 // 캔버스 해상도·레이아웃 초기화(첫 프레임 전에)
+  requestAnimationFrame(loop);
+})();
+</script>
+</body>
+</html>
