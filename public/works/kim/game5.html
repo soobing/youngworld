@@ -1,0 +1,1020 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no">
+<title>미드 무빙 연습장 — 김선우</title>
+<style>
+  *{ box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+  /* 폰(안드로이드·아이폰)에서 화면이 끌려 내려가거나 확대되지 않게 막는다 */
+  html,body{
+    margin:0; padding:0; width:100%; height:100%; overflow:hidden; background:#0b0e14;
+    position:fixed; overscroll-behavior:none; touch-action:none;
+    -webkit-user-select:none; user-select:none; -webkit-touch-callout:none;
+  }
+  /* 폰을 세로로 들면 게임판이 너무 작아진다 — 가로로 돌리라고 안내 */
+  #rot{
+    position:fixed; inset:0; z-index:50; display:none; background:#0b0e14;
+    align-items:center; justify-content:center; text-align:center; padding:34px;
+    font-size:17px; font-weight:800; line-height:1.9; color:#e8ecf3;
+  }
+  #rot span{ display:block; font-size:44px; margin-bottom:10px; }
+  @media (orientation:portrait) and (max-width:860px){ #rot{ display:flex; } }
+  body{ font-family:"Apple SD Gothic Neo","Pretendard","Noto Sans KR",-apple-system,"Malgun Gothic",sans-serif; color:#e8ecf3; }
+
+  /* 게임판은 900x600 고정으로 그리고, 화면 크기에 맞춰 통째로 확대·축소한다.
+     (폭을 고정해두면 폰에서 가로로 삐져나간다) */
+  #stage{
+    position:absolute; left:50%; top:50%;
+    width:900px; height:600px;
+    transform-origin:center center;
+  }
+  canvas{ display:block; width:900px; height:600px; border-radius:14px; background:#10141d; touch-action:none; }
+
+  .panel{
+    position:absolute; inset:0; border-radius:14px;
+    background:rgba(8,11,18,.93); display:flex; flex-direction:column;
+    align-items:center; justify-content:center; gap:13px; padding:20px 26px; overflow-y:auto;
+  }
+  .panel.hide{ display:none; }
+  h1{ margin:0; font-size:26px; letter-spacing:-.5px; text-align:center; }
+  h1 small{ display:block; font-size:13px; color:#8c97ab; font-weight:600; margin-top:6px; letter-spacing:0; }
+  .sec{ width:100%; max-width:640px; }
+  .sec .lb{ font-size:13px; color:#8c97ab; font-weight:700; margin-bottom:7px; }
+
+  .row{ display:flex; flex-wrap:wrap; gap:8px; justify-content:center; }
+  .chip{
+    background:#182031; border:2px solid #263148; color:#cfd7e6;
+    border-radius:11px; padding:8px 13px; font-size:14px; font-weight:700; cursor:pointer;
+  }
+  .chip.on{ border-color:#ffb03a; background:#2c2415; color:#ffd88a; }
+  .chip .s{ display:block; font-size:11px; font-weight:600; color:#8c97ab; margin-top:3px; }
+  .chip.on .s{ color:#c9a45f; }
+
+  input[type=range]{ width:100%; accent-color:#ffb03a; }
+  .tval{ text-align:center; font-size:15px; font-weight:800; color:#ffd88a; margin-top:5px; }
+  .opts{ display:flex; flex-direction:column; gap:6px; align-items:flex-start; }
+  .opt{ display:flex; align-items:center; gap:8px; font-size:13px; color:#8c97ab; cursor:pointer; }
+  .opt input{ width:17px; height:17px; accent-color:#ffb03a; }
+
+  .btns{ display:flex; gap:10px; flex-wrap:wrap; justify-content:center; }
+  button.go{
+    background:#ffb03a; border:0; color:#20160a; font-weight:900; font-size:17px;
+    padding:12px 30px; border-radius:12px; cursor:pointer;
+  }
+  button.sub{
+    background:#182031; border:2px solid #263148; color:#cfd7e6; font-weight:800;
+    font-size:14px; padding:10px 20px; border-radius:12px; cursor:pointer;
+  }
+  .hint{ font-size:12.5px; color:#6d7789; text-align:center; line-height:1.7; }
+
+  #res .big{ font-size:44px; font-weight:900; color:#ffd88a; }
+  #res .sm{ font-size:14px; color:#a9b3c4; text-align:center; line-height:1.7; }
+  #nameBox{ display:flex; gap:8px; }
+  #nameBox input{
+    background:#121826; border:2px solid #263148; color:#e8ecf3;
+    border-radius:10px; padding:10px 13px; font-size:15px; width:190px;
+  }
+  #saveMsg{ font-size:13px; color:#8ce99a; min-height:18px; text-align:center; }
+
+  #rank table{ width:100%; max-width:470px; border-collapse:collapse; font-size:13.5px; }
+  #rank th,#rank td{ padding:7px 9px; border-bottom:1px solid #1e2637; text-align:left; }
+  #rank th{ color:#8c97ab; font-size:12px; }
+  #rank td.n{ text-align:right; color:#ffd88a; font-weight:800; font-variant-numeric:tabular-nums; }
+  #rankBody{ max-height:290px; overflow-y:auto; width:100%; display:flex; justify-content:center; }
+</style>
+</head>
+<body>
+
+<div id="rot"><div><span>📱↻</span>폰을 가로로 돌려주세요<br>그래야 게임판이 다 보입니다</div></div>
+
+<div id="stage">
+  <canvas id="cv" width="900" height="600"></canvas>
+
+  <!-- ── 시작 화면 ───────────────────────────────────────── -->
+  <div class="panel" id="title">
+    <h1>미드 무빙 연습장<small>미드 횃불 사각형 안에서 Q·W·E를 피한다. 끝.</small></h1>
+
+    <div class="sec">
+      <div class="lb">내 챔피언</div>
+      <div class="row" id="pickChamp"></div>
+    </div>
+
+    <div class="sec">
+      <div class="lb">난이도 — 몇 명이 올지는 매번 랜덤이고, 나오는 박자도 일정하지 않다</div>
+      <div class="row" id="pickDiff"></div>
+    </div>
+
+    <div class="sec">
+      <div class="lb">시간</div>
+      <input type="range" id="timeR" min="10" max="1200" step="5" value="60">
+      <div class="tval" id="timeV">60초</div>
+    </div>
+
+    <div class="sec">
+      <div class="lb">선택 항목</div>
+      <div class="opts">
+        <label class="opt"><input type="checkbox" id="optAmb">
+          애매한 스킬도 넣기 (알리스타 Q · 흐웨이 EW)</label>
+        <label class="opt"><input type="checkbox" id="optSlow">
+          둔화 넣기 — 맞으면 1.5초 동안 느려진다</label>
+      </div>
+    </div>
+
+    <div class="btns">
+      <button class="go" id="btnStart">시작</button>
+      <button class="sub" id="btnRank1">기록 보기</button>
+    </div>
+    <p class="hint">PC는 <b>방향키 / WASD</b> · 폰은 <b>화면 아무 데나 누르면 조이스틱</b>이 생깁니다<br>
+      체력이 다 떨어지면 <b>아웃</b> · 30초 버틸 때마다 체력이 조금 돌아온다<br>
+      <b>10개 연속으로 피할 때마다 점수 배수</b>가 오른다(최대 ×3) · 한 번 맞으면 처음부터<br>
+      체력·덩치·스킬 속도·시전 시간은 <b>전부 실제 롤 수치</b> · 이동 속도는 신발+유체화 기준</p>
+  </div>
+
+  <!-- ── 결과 화면 ───────────────────────────────────────── -->
+  <div class="panel hide" id="res">
+    <h1 id="resTitle">끝!</h1>
+    <div class="big" id="resScore">0</div>
+    <div class="sm" id="resDetail"></div>
+    <div id="nameBox" class="hide">
+      <input id="nameIn" maxlength="12" placeholder="이름 (12자까지)">
+      <button class="sub" id="btnSave">기록 남기기</button>
+    </div>
+    <div id="saveMsg"></div>
+    <div class="btns">
+      <button class="go" id="btnAgain">다시 하기</button>
+      <button class="sub" id="btnRank2">기록 보기</button>
+    </div>
+  </div>
+
+  <!-- ── 기록(랭킹) ──────────────────────────────────────── -->
+  <div class="panel hide" id="rank">
+    <h1>기록<small>난이도마다 따로 · 사람마다 제일 잘한 판 하나만 올라간다</small></h1>
+    <div class="row" id="rankTabs"></div>
+    <div id="rankBody"></div>
+    <button class="sub" id="btnRankClose">닫기</button>
+  </div>
+</div>
+
+<script>
+/* =====================================================================
+   미드 무빙 연습장 — 5년 뒤 나의 미래 (김선우)
+
+   규칙 한 줄: 미드 횃불 사각형 안에서, 나온 챔피언이 쓰는 스킬을 무빙으로 피한다.
+
+   ★ 거리·속도는 전부 "롤 단위(unit)" 로 적혀 있다. 실제 게임 수치 그대로다.
+     화면에 그릴 때만 U 를 곱해서 픽셀로 바꾼다. 그래서 스킬 속도와 내 이동 속도의
+     비율이 진짜 롤과 똑같다.
+
+   ↓ 숫자는 전부 여기 모아뒀다. 여기만 바꾸면 게임이 바뀐다.
+   ===================================================================== */
+
+var GAME_KEY_BASE = 'kim-game5';   // 랭킹 이름표. 난이도마다 -easy / -normal / -hard 가 붙는다
+
+var BOARD_W  = 900, BOARD_H = 600;             // 게임판 크기(고정, 픽셀)
+var AREA     = { x:211, y:174, w:478, h:272 }; // 횃불 4개로 만든 사각형 = 놀 수 있는 공간(픽셀)
+
+var U        = 0.34;           // 롤 1unit 을 몇 픽셀로 그릴지 → 이 사각형은 약 1400 x 800 unit
+
+// ★ 제일 중요한 숫자 ★
+//   스킬 속도와 시전 시간은 실제 롤 값 그대로 두고, 내 이동 속도만 이만큼 올린다.
+//   롤에서도 신발 신고 유체화 들면 이 정도가 된다(345 → 약 590).
+//   1.0 으로 두면 초가스 Q(반경 250, 0.875초) 같은 건 걸어서는 절대 못 피한다 —
+//   0.875초 동안 315unit 을 가야 하는데 기본 이속으로는 302unit 밖에 못 간다.
+var MOVE_BOOST = 1.7;
+
+var TIME_MIN = 10;             // 시간 최소 10초
+var TIME_MAX = 1200;           // 시간 최대 20분
+
+var SPAWN_MS  = 1150;          // 나오는 기본 간격
+var BEAT_MIN  = 0.55;          // 엇박자 — 실제 간격은 이 배율 사이에서 매번 랜덤
+var BEAT_MAX  = 1.45;
+var SPREAD_MS = 700;           // 같이 나온 애들이 얼마나 시차를 두고 덤비는지
+var LEAVE_MS  = 260;           // 스킬 쓰고 사라지는 데 걸리는 시간
+
+var HEAL_MS   = 30000;         // 몇 초마다 체력을 돌려줄지
+var HEAL_PCT  = 0.08;          // 그때 최대 체력의 몇 %를 돌려줄지
+
+var SLOW_MS   = 1500;          // 둔화 지속 시간 (선택 항목)
+var SLOW_PCT  = 0.35;          // 둔화 세기 (이동 속도 35% 감소)
+
+var COMBO_STEP = 10;           // 몇 개 연속으로 피할 때마다 배수가 1 오르는지
+var COMBO_MAX  = 3;            // 배수 최대치
+var BASE_PT    = 10;           // 하나 피할 때 기본 점수
+
+// 한 번에 나오는 챔피언 수는 min~max 사이에서 매번 랜덤. Hard 는 썰물처럼 몰려온다.
+var DIFFS = [
+  { id:'easy',   name:'Easy',   min:1, max:2, mult:1.0, desc:'1~2명 랜덤' },
+  { id:'normal', name:'Normal', min:2, max:4, mult:1.6, desc:'2~4명 랜덤' },
+  { id:'hard',   name:'Hard',   min:4, max:8, mult:2.4, desc:'4~8명 몰려옴' }
+];
+
+// 내가 고를 챔피언 — 전부 실제 롤 수치.
+//   hp = 레벨 1 기본 체력 / sp = 기본 이동 속도(unit/초) / r = 게임플레이 반지름(unit)
+var PLAYERS = [
+  { id:'teemo',   name:'티모',     sp:330, r:55, hp:615, color:'#8ce99a' },
+  { id:'ezreal',  name:'이즈리얼', sp:325, r:65, hp:600, color:'#ffd166' },
+  { id:'yasuo',   name:'야스오',   sp:345, r:65, hp:590, color:'#5aa9e6' },
+  { id:'leesin',  name:'리 신',    sp:345, r:65, hp:645, color:'#e8834a' },
+  { id:'darius',  name:'다리우스', sp:340, r:65, hp:652, color:'#e05252' },
+  { id:'chogath', name:'초가스',   sp:345, r:80, hp:644, color:'#b06fd8' }
+];
+
+/* ── 스킬 목록 ────────────────────────────────────────────────
+   t    : line=날아옴 / beam=줄로 즉시 / zone=땅에 표시 / cone=부채꼴 / ring=자기 주변 / roll=눈덩이
+   dmg  : 맞았을 때 깎이는 체력 (20~60)
+   wind : 시전 시간 + 착탄 딜레이(ms) — 실제 롤 값. 이 시간 안에 피해야 한다
+   windRand : 충전형 스킬. 위 값에 0~이만큼이 랜덤으로 더 붙는다(언제 터질지 모른다)
+   sp   : 날아가는 속도 (unit/초) — 실제 롤 미사일 속도
+   w    : 날아오는 것의 반지름 (unit)
+   r    : 장판/부채꼴 반지름 (unit)
+   melee: 사각형 안까지 들어와서 쓰는 스킬
+   opt  : 애매해서 시작 화면에서 켜고 끌 수 있는 스킬
+   ──────────────────────────────────────────────────────────── */
+var SKILLS = [
+  // ── 직선 스킬샷 (날아온다) ─────────────────────────────
+  { c:'블리츠크랭크', s:'Q 로켓 손',        t:'line', dmg:40, wind:250,  w:35,  sp:1800 },
+  { c:'쓰레쉬',       s:'Q 사형 선고',      t:'line', dmg:35, wind:500,  w:35,  sp:1900 },
+  { c:'럭스',         s:'Q 빛의 속박',      t:'line', dmg:30, wind:250,  w:50,  sp:1200 },
+  { c:'모르가나',     s:'Q 어둠의 속박',    t:'line', dmg:35, wind:250,  w:40,  sp:1200 },
+  { c:'이즈리얼',     s:'Q 신비한 화살',    t:'line', dmg:23, wind:250,  w:30,  sp:2000 },
+  // 제라스 Q 는 날아가는 게 아니라 충전한 뒤 줄(광선)로 한 방에 꽂힌다. 충전 시간은 매번 다르다
+  { c:'제라스',       s:'Q 마력 구체',      t:'beam', dmg:55, wind:500,  windRand:1000, w:45 },
+  { c:'니달리',       s:'Q 창 투척',        t:'line', dmg:60, wind:250,  w:40,  sp:1300 },
+  { c:'조이',         s:'Q 별동별',         t:'line', dmg:50, wind:800,  w:45,  sp:1700 },
+  { c:'조이',         s:'E 최면 거품',      t:'line', dmg:28, wind:250,  w:55,  sp:700 },
+  { c:'자야',         s:'E 깃털 회수',      t:'line', dmg:35, wind:250,  w:30,  sp:4000, multi:3 },
+  { c:'제드',         s:'Q 그림자 칼날',    t:'line', dmg:33, wind:250,  w:25,  sp:1700, multi:3 },
+  { c:'사이온',       s:'Q 결의의 강타',    t:'line', dmg:50, wind:600, windRand:1400, w:100, sp:3000 },
+  { c:'세나',         s:'W 어둠을 꿰뚫는 빛', t:'line', dmg:30, wind:250, w:35, sp:1800 },
+  { c:'카이사',       s:'W 공허의 추적자',  t:'line', dmg:35, wind:400,  w:40,  sp:1750 },
+  { c:'레오나',       s:'E 여명의 검',      t:'line', dmg:25, wind:250,  w:35,  sp:2000 },
+  { c:'벨코즈',       s:'Q 플라즈마 분열',  t:'line', dmg:30, wind:250,  w:30,  sp:1300 },
+  { c:'올라프',       s:'Q 무자비한 겨울',  t:'line', dmg:38, wind:250,  w:40,  sp:1600 },
+  { c:'리 신',        s:'Q 음파',           t:'line', dmg:28, wind:250,  w:35,  sp:1800 },
+  { c:'바루스',       s:'Q 꿰뚫는 화살',    t:'line', dmg:45, wind:250, windRand:1000, w:40, sp:1900 },
+  { c:'노틸러스',     s:'Q 심해의 닻',      t:'line', dmg:33, wind:250,  w:45,  sp:2000 },
+  { c:'파이크',       s:'Q 물속의 공포',    t:'line', dmg:35, wind:250, windRand:750, w:35, sp:2000 },
+  { c:'라이즈',       s:'Q 룬 감옥',        t:'line', dmg:25, wind:250,  w:30,  sp:1700 },
+  { c:'흐웨이',       s:'QQ 파멸의 불꽃',   t:'line', dmg:38, wind:250,  w:50,  sp:1200 },
+  { c:'야스오',       s:'Q 강철 폭풍',      t:'line', dmg:20, wind:250,  w:40,  sp:3000, melee:true },
+  { c:'요네',         s:'Q 필멸의 검',      t:'line', dmg:23, wind:250,  w:40,  sp:3000, melee:true },
+
+  // ── 직접 굴러온다 ─────────────────────────────────────
+  //   시전자가 몸으로 굴러오면서 내 쪽으로 천천히 커브를 튼다. 점점 빨라진다.
+  { c:'누누',         s:'W 눈덩이 굴리기',  t:'roll', dmg:40, wind:400,
+    w:100, sp:350, spMax:750, acc:260, turn:0.85 },
+
+  // ── 땅에 표시가 뜨는 스킬 ─────────────────────────────
+  { c:'초가스',       s:'Q 파열',           t:'zone', dmg:43, wind:875,  r:250 },
+  { c:'그라가스',     s:'Q 술통 굴리기',    t:'zone', dmg:38, wind:1000, r:275 },
+  { c:'제라스',       s:'W 마력의 룬',      t:'zone', dmg:40, wind:750,  r:300 },
+  { c:'카서스',       s:'Q 황폐',           t:'zone', dmg:25, wind:750,  r:175 },
+  { c:'럭스',         s:'E 빛의 특이점',    t:'zone', dmg:35, wind:1000, r:300 },
+  { c:'베이가',       s:'W 암흑 물질',      t:'zone', dmg:50, wind:1250, r:225 },
+  { c:'신드라',       s:'Q 어둠의 구체',    t:'zone', dmg:33, wind:600,  r:175 },
+  { c:'나미',         s:'Q 아쿠아 프리즌',  t:'zone', dmg:28, wind:1000, r:175 },
+  { c:'미스 포츈',    s:'E 총알 세례',      t:'zone', dmg:35, wind:500,  r:350 },
+  { c:'모데카이저',   s:'E 죽음의 손아귀',  t:'zone', dmg:30, wind:750,  r:325 },
+  { c:'빅토르',       s:'W 중력장',         t:'zone', dmg:25, wind:750,  r:300 },
+  { c:'볼리베어',     s:'E 분노의 낙뢰',    t:'zone', dmg:35, wind:750,  r:275 },
+  { c:'자크',         s:'E 탄력 있는 돌진', t:'zone', dmg:40, wind:900,  r:250 },
+  { c:'직스',         s:'E 헥스 지뢰밭',    t:'zone', dmg:30, wind:600,  r:225 },
+  { c:'멜',           s:'Q 빛의 화살',      t:'zone', dmg:35, wind:750,  r:325 },
+  { c:'멜',           s:'E 태양의 그물',    t:'zone', dmg:30, wind:750,  r:225 },
+  { c:'소라카',       s:'Q 별의 부름',      t:'zone', dmg:28, wind:1000, r:225 },
+  { c:'벨코즈',       s:'E 공허의 붕괴',    t:'zone', dmg:30, wind:750,  r:250 },
+  { c:'카시오페아',   s:'Q 독성 폭발',      t:'zone', dmg:28, wind:750,  r:200 },
+  { c:'탈리야',       s:'W 지형 뒤틀기',    t:'zone', dmg:33, wind:900,  r:250 },
+  { c:'유나라',       s:'W 심판의 호',      t:'zone', dmg:35, wind:900,  r:275 },
+  { c:'흐웨이',       s:'QW 파멸의 섬광',   t:'zone', dmg:40, wind:1000, r:200 },
+
+  // ── 부채꼴 (가까이서 쓸어버린다) ───────────────────────
+  { c:'쓰레쉬',       s:'E 휘몰아치기',     t:'cone', dmg:25, wind:500, r:500, ang:80,  melee:true },
+  { c:'신드라',       s:'E 나약함',         t:'cone', dmg:33, wind:500, r:700, ang:55 },
+  { c:'스웨인',       s:'Q 죽음의 손아귀',  t:'cone', dmg:30, wind:250, r:725, ang:60 },
+  { c:'요네',         s:'W 영혼 가르기',    t:'cone', dmg:28, wind:500, r:550, ang:70,  melee:true },
+  { c:'암베사',       s:'Q 잔혹한 베기',    t:'cone', dmg:35, wind:400, r:450, ang:130, melee:true },
+  { c:'카직스',       s:'W 공허의 가시',    t:'cone', dmg:30, wind:250, r:650, ang:45 },
+  { c:'다리우스',     s:'E 붙잡기',         t:'cone', dmg:28, wind:500, r:535, ang:70,  melee:true },
+  { c:'그레이브즈',   s:'Q 이중 폭발',      t:'cone', dmg:38, wind:250, r:600, ang:40 },
+
+  // ── 자기 주변 (들어와서 터뜨린다) ─────────────────────
+  { c:'다리우스',     s:'Q 대학살',         t:'ring', dmg:43, wind:750, r:425, inner:200, melee:true },
+
+  // ── 애매해서 켜고 끌 수 있는 스킬 ─────────────────────
+  { c:'알리스타',     s:'Q 분쇄',           t:'ring', dmg:35, wind:600,  r:300, inner:0, melee:true, opt:true },
+  { c:'흐웨이',       s:'EW 심연의 응시',   t:'zone', dmg:30, wind:1050, r:200, opt:true }
+];
+
+// 롤 단위를 화면 픽셀로 미리 바꿔둔다 (매 프레임 곱하지 않도록)
+SKILLS.forEach(function(s){
+  s.pw = (s.w || 0) * U;  s.pr  = (s.r || 0) * U;
+  s.pin = (s.inner || 0) * U;
+  s.psp = (s.sp || 0) * U; s.pspMax = (s.spMax || 0) * U; s.pacc = (s.acc || 0) * U;
+});
+PLAYERS.forEach(function(p){ p.pr = p.r * U; p.psp = p.sp * U * MOVE_BOOST; });
+
+/* ===================================================================== */
+
+var cv  = document.getElementById('cv');
+var ctx = cv.getContext('2d');
+
+var pickChamp = 2, pickDiff = 1, pickTime = 60, useOpt = false, useSlow = false;
+var G = null;                                 // 한 판의 모든 상태
+var me = { needsName:true, nickname:null };   // 로그인 여부 (서버에 물어본다)
+
+/* ── 화면 맞추기 ─────────────────────────────────────────── */
+function fit(){
+  var s = Math.min(window.innerWidth / BOARD_W, window.innerHeight / BOARD_H);
+  document.getElementById('stage').style.transform = 'translate(-50%,-50%) scale(' + s + ')';
+}
+window.addEventListener('resize', fit);
+fit();
+
+/* ── 시작 화면 만들기 ────────────────────────────────────── */
+(function buildTitle(){
+  var pc = document.getElementById('pickChamp');
+  PLAYERS.forEach(function(p, i){
+    var b = document.createElement('button');
+    b.className = 'chip' + (i === pickChamp ? ' on' : '');
+    b.innerHTML = p.name + '<span class="s">체력 ' + p.hp + ' · 이속 ' + p.sp + ' · 덩치 ' + p.r + '</span>';
+    b.onclick = function(){
+      pickChamp = i;
+      [].forEach.call(pc.children, function(c, j){ c.classList.toggle('on', j === i); });
+    };
+    pc.appendChild(b);
+  });
+
+  var pd = document.getElementById('pickDiff');
+  DIFFS.forEach(function(d, i){
+    var b = document.createElement('button');
+    b.className = 'chip' + (i === pickDiff ? ' on' : '');
+    b.innerHTML = d.name + '<span class="s">' + d.desc + '</span>';
+    b.onclick = function(){
+      pickDiff = i;
+      [].forEach.call(pd.children, function(c, j){ c.classList.toggle('on', j === i); });
+    };
+    pd.appendChild(b);
+  });
+
+  var tr = document.getElementById('timeR'), tv = document.getElementById('timeV');
+  tr.min = TIME_MIN; tr.max = TIME_MAX;
+  tr.oninput = function(){ pickTime = +tr.value; tv.textContent = fmtTime(pickTime); };
+  document.getElementById('optAmb').onchange  = function(){ useOpt  = this.checked; };
+  document.getElementById('optSlow').onchange = function(){ useSlow = this.checked; };
+})();
+
+function fmtTime(s){
+  return s < 60 ? s + '초' : Math.floor(s/60) + '분' + (s%60 ? ' ' + (s%60) + '초' : '');
+}
+
+/* ── 입력: 방향키 / WASD / 조이스틱 ───────────────────────
+   조이스틱은 화면 아무 데나 손가락을 대면 그 자리에 생긴다(안드로이드·아이폰 둘 다).
+   민 만큼만 빨라지고 최고 속도는 키보드와 똑같다.
+   (손가락을 찍는 곳으로 순간이동시키면 다 피할 수 있어서 게임이 안 된다)
+   마지막에 쓴 입력만 듣는다. */
+var keys = {}, mode = 'key';
+var STICK_DEAD = 7;    // 이 안에서 움직이면 무시 (손 떨림)
+var STICK_FULL = 48;   // 이만큼 밀면 최고 속도
+var stick = { on:false, id:null, ox:0, oy:0, x:0, y:0 };
+
+window.addEventListener('keydown', function(e){
+  if (['ArrowUp','ArrowDown','ArrowLeft','ArrowRight'].indexOf(e.key) >= 0) e.preventDefault();
+  keys[e.key.toLowerCase()] = true; mode = 'key';
+});
+window.addEventListener('keyup', function(e){ keys[e.key.toLowerCase()] = false; });
+
+function toBoard(ev){
+  var r = cv.getBoundingClientRect();
+  return { x:(ev.clientX - r.left) / r.width * BOARD_W, y:(ev.clientY - r.top) / r.height * BOARD_H };
+}
+
+cv.addEventListener('pointerdown', function(ev){
+  ev.preventDefault();
+  if (stick.on) return;                 // 손가락 하나만 듣는다
+  try { cv.setPointerCapture(ev.pointerId); } catch(e){}
+  var p = toBoard(ev);
+  stick.on = true; stick.id = ev.pointerId;
+  stick.ox = stick.x = p.x; stick.oy = stick.y = p.y;
+  mode = 'stick';
+});
+cv.addEventListener('pointermove', function(ev){
+  if (!stick.on || ev.pointerId !== stick.id) return;
+  ev.preventDefault();
+  var p = toBoard(ev);
+  stick.x = p.x; stick.y = p.y;
+  mode = 'stick';
+});
+function stickOff(ev){
+  if (!stick.on || (ev && ev.pointerId !== stick.id)) return;
+  stick.on = false; stick.id = null;
+}
+cv.addEventListener('pointerup', stickOff);
+cv.addEventListener('pointercancel', stickOff);
+cv.addEventListener('pointerleave', stickOff);
+window.addEventListener('blur', function(){ stickOff(); keys = {}; });
+
+// 조이스틱을 얼마나 밀었는지 → 방향과 세기(0~1)
+function stickVec(){
+  var dx = stick.x - stick.ox, dy = stick.y - stick.oy, len = Math.hypot(dx, dy);
+  if (len < STICK_DEAD) return null;
+  var mag = Math.min((len - STICK_DEAD) / (STICK_FULL - STICK_DEAD), 1);
+  return { x: dx / len, y: dy / len, mag: mag };
+}
+
+/* ── 한 판 시작 ──────────────────────────────────────────── */
+function start(){
+  var p = PLAYERS[pickChamp];
+  G = {
+    p: p,
+    pool: SKILLS.filter(function(s){ return useOpt || !s.opt; }),
+    x: AREA.x + AREA.w / 2, y: AREA.y + AREA.h / 2,
+    hp: p.hp, maxHp: p.hp,
+    dodged: 0, hitCount: 0,
+    score: 0, streak: 0, bestStreak: 0,
+    left: pickTime * 1000,
+    spawn: 700,
+    heal: HEAL_MS, healed: 0, healFx: 0,
+    slow: 0, shake: 0,
+    casters: [], over: false
+  };
+  stick.on = false; stick.id = null; mode = 'key'; keys = {};
+  show('title', false); show('res', false); show('rank', false);
+}
+
+function show(id, on){ document.getElementById(id).classList.toggle('hide', !on); }
+function clamp(v, a, b){ return v < a ? a : v > b ? b : v; }
+
+/* ── 한 무리 내보내기 — 몇 명인지도, 박자도 매번 랜덤 ────── */
+function spawnWave(){
+  var d = DIFFS[pickDiff];
+  var n = d.min + ((Math.random() * (d.max - d.min + 1)) | 0);
+  for (var i = 0; i < n; i++) {
+    // 첫 명은 바로, 나머지는 제각각 늦게 덤빈다.
+    // 늦게 오는 애는 "내가 피해서 옮겨간 자리"를 보고 조준하기 때문에 자연스럽게 연계가 된다.
+    spawnCaster(i === 0 ? 0 : Math.random() * SPREAD_MS);
+  }
+}
+
+function spawnCaster(delay){
+  var sk = G.pool[(Math.random() * G.pool.length) | 0];
+  var cx, cy;
+
+  if (sk.melee) {
+    // 사각형 안까지 들어와서 쓴다 — 내 근처지만 딱 붙지는 않게
+    var a = Math.random() * Math.PI * 2, dd = 110 + Math.random() * 80;
+    cx = clamp(G.x + Math.cos(a) * dd, AREA.x + 14, AREA.x + AREA.w - 14);
+    cy = clamp(G.y + Math.sin(a) * dd, AREA.y + 14, AREA.y + AREA.h - 14);
+  } else {
+    // 사각형 바깥(횃불 밖)에서 쏜다
+    var side = (Math.random() * 4) | 0, m = 46;
+    if (side === 0)      { cx = AREA.x + Math.random() * AREA.w; cy = AREA.y - m; }
+    else if (side === 1) { cx = AREA.x + Math.random() * AREA.w; cy = AREA.y + AREA.h + m; }
+    else if (side === 2) { cx = AREA.x - m; cy = AREA.y + Math.random() * AREA.h; }
+    else                 { cx = AREA.x + AREA.w + m; cy = AREA.y + Math.random() * AREA.h; }
+  }
+
+  var c = {
+    sk: sk, x: cx, y: cy, ang: 0, tx: G.x, ty: G.y,
+    // 충전형 스킬은 언제 터질지 매번 다르다
+    wind: sk.wind + (sk.windRand ? Math.random() * sk.windRand : 0),
+    delay: delay || 0,
+    t: 0, phase: (delay > 0 ? -1 : 0),   // -1=아직 안 덤빔 0=준비 1=터짐/날아감 2=사라지는 중
+    hit: false, resolved: false,
+    projs: [], flash: 0, leave: 0
+  };
+  G.casters.push(c);
+  if (!c.delay) aim(c);
+}
+
+// 조준 고정 — 스킬을 쓰기 시작하는 그 순간의 내 위치를 본다
+function aim(c){
+  if (c.sk.melee) {   // 근접 스킬은 늦게 덤빌 때 내 쪽으로 붙어서 나온다
+    var a = Math.random() * Math.PI * 2, dd = 110 + Math.random() * 80;
+    c.x = clamp(G.x + Math.cos(a) * dd, AREA.x + 14, AREA.x + AREA.w - 14);
+    c.y = clamp(G.y + Math.sin(a) * dd, AREA.y + 14, AREA.y + AREA.h - 14);
+  }
+  c.ang = Math.atan2(G.y - c.y, G.x - c.x);
+  c.tx = G.x; c.ty = G.y;
+}
+
+/* ── 스킬이 터진다 ───────────────────────────────────────── */
+function fire(c){
+  var sk = c.sk;
+  c.phase = 1;
+
+  if (sk.t === 'line') {
+    var n = sk.multi || 1;
+    for (var i = 0; i < n; i++) {
+      var off = (i - (n - 1) / 2) * 0.20;   // 여러 갈래는 살짝 부채처럼 퍼진다
+      c.projs.push({ x:c.x, y:c.y, a:c.ang + off, sp:sk.psp, alive:true });
+    }
+  } else if (sk.t === 'roll') {
+    c.projs.push({ x:c.x, y:c.y, a:c.ang, sp:sk.psp, alive:true });
+  } else {
+    c.flash = sk.t === 'beam' ? 260 : 170;  // 나머지는 그 자리에서 바로 터진다
+    resolveHit(c);
+  }
+}
+
+/* ── 맞았는지 본다 ───────────────────────────────────────── */
+function resolveHit(c){
+  var sk = c.sk, hit = false, dx, dy, d;
+
+  if (sk.t === 'beam') {
+    // 시전자에서 조준 방향으로 쭉 뻗은 줄. 줄까지의 거리로 판정한다
+    dx = G.x - c.x; dy = G.y - c.y;
+    if (dx * Math.cos(c.ang) + dy * Math.sin(c.ang) > 0) {
+      hit = Math.abs(-dx * Math.sin(c.ang) + dy * Math.cos(c.ang)) < sk.pw + G.p.pr;
+    }
+  } else if (sk.t === 'zone') {
+    dx = G.x - c.tx; dy = G.y - c.ty;
+    hit = Math.sqrt(dx*dx + dy*dy) < sk.pr + G.p.pr;
+  } else if (sk.t === 'ring') {
+    dx = G.x - c.x; dy = G.y - c.y; d = Math.sqrt(dx*dx + dy*dy);
+    hit = d < sk.pr + G.p.pr && d > sk.pin - G.p.pr;
+  } else if (sk.t === 'cone') {
+    dx = G.x - c.x; dy = G.y - c.y; d = Math.sqrt(dx*dx + dy*dy);
+    if (d < sk.pr + G.p.pr) {
+      hit = Math.abs(angDiff(Math.atan2(dy, dx), c.ang)) < (sk.ang * Math.PI / 180) / 2;
+    }
+  }
+  if (hit) damage(c);
+}
+
+function angDiff(a, b){
+  var d = a - b;
+  while (d > Math.PI)  d -= Math.PI * 2;
+  while (d < -Math.PI) d += Math.PI * 2;
+  return d;
+}
+
+function damage(c){
+  if (c.hit) return;
+  c.hit = true;
+  G.hp -= c.sk.dmg;
+  G.hitCount++;
+  G.streak = 0;                       // 한 번 맞으면 콤보는 처음부터
+  if (useSlow) G.slow = SLOW_MS;      // 선택 항목: 둔화
+  G.shake = 10;
+  if (G.hp <= 0) { G.hp = 0; endGame(false); }
+}
+
+/* ── 한 프레임 ───────────────────────────────────────────── */
+var last = 0;
+function loop(now){
+  requestAnimationFrame(loop);
+  if (!G || G.over) { draw(); return; }
+  var dt = Math.min(now - last, 50) || 16; last = now;
+  step(dt);
+  draw();
+}
+requestAnimationFrame(function(t){ last = t; loop(t); });
+
+function step(dt){
+  G.left -= dt;
+  if (G.left <= 0) { G.left = 0; endGame(true); return; }
+
+  // 내 이동 — 키보드든 손가락이든 속도는 같다
+  if (G.slow > 0) G.slow -= dt;
+  var sp = G.p.psp * (G.slow > 0 ? 1 - SLOW_PCT : 1) * dt / 1000;
+  var mx = 0, my = 0;
+  if (mode === 'key') {
+    if (keys['arrowleft']  || keys['a']) mx -= 1;
+    if (keys['arrowright'] || keys['d']) mx += 1;
+    if (keys['arrowup']    || keys['w']) my -= 1;
+    if (keys['arrowdown']  || keys['s']) my += 1;
+    var len = Math.hypot(mx, my);
+    if (len > 0) { mx = mx / len * sp; my = my / len * sp; }
+  } else if (stick.on) {
+    var v = stickVec();
+    if (v) { mx = v.x * sp * v.mag; my = v.y * sp * v.mag; }
+  }
+  G.x = clamp(G.x + mx, AREA.x + G.p.pr, AREA.x + AREA.w - G.p.pr);
+  G.y = clamp(G.y + my, AREA.y + G.p.pr, AREA.y + AREA.h - G.p.pr);
+
+  // 버틴 만큼 체력을 조금씩 돌려준다 (긴 판도 끝까지 갈 수 있게)
+  G.heal -= dt;
+  if (G.heal <= 0) {
+    G.heal = HEAL_MS;
+    var back = Math.min(G.maxHp * HEAL_PCT, G.maxHp - G.hp);
+    G.hp += back; G.healed += back; G.healFx = 500;
+  }
+  if (G.healFx > 0) G.healFx -= dt;
+
+  // 챔피언 내보내기 — 박자가 일정하지 않다(엇박자)
+  G.spawn -= dt;
+  if (G.spawn <= 0) {
+    G.spawn = SPAWN_MS * (BEAT_MIN + Math.random() * (BEAT_MAX - BEAT_MIN));
+    spawnWave();
+  }
+
+  // 나와 있는 챔피언들
+  for (var ci = G.casters.length - 1; ci >= 0; ci--) {
+    var c = G.casters[ci];
+    c.t += dt;
+
+    if (c.phase === -1) {
+      if (c.t >= c.delay) { aim(c); c.t = 0; c.phase = 0; }
+    } else if (c.phase === 0) {
+      if (c.t >= c.wind) fire(c);
+    } else if (c.phase === 1) {
+      if (c.flash > 0) c.flash -= dt;
+
+      if (c.sk.t === 'line' || c.sk.t === 'roll') {
+        if (!moveProjs(c, dt)) { c.phase = 2; c.leave = LEAVE_MS; finish(c); }
+      } else if (c.flash <= 0) {
+        c.phase = 2; c.leave = LEAVE_MS; finish(c);
+      }
+    } else {
+      c.leave -= dt;
+      if (c.leave <= 0) G.casters.splice(ci, 1);   // 스킬 하나 쓰고 사라진다
+    }
+  }
+
+  if (G.shake > 0) G.shake -= dt * 0.05;
+}
+
+// 날아가는(또는 굴러가는) 것들을 움직인다. 아직 살아 있으면 true
+function moveProjs(c, dt){
+  var sk = c.sk, alive = false;
+  for (var i = 0; i < c.projs.length; i++) {
+    var p = c.projs[i];
+    if (!p.alive) continue;
+
+    if (sk.t === 'roll') {
+      // 누누 눈덩이 — 내 쪽으로 천천히 커브를 틀면서 점점 빨라진다
+      var want = Math.atan2(G.y - p.y, G.x - p.x);
+      var turn = sk.turn * dt / 1000;
+      p.a += clamp(angDiff(want, p.a), -turn, turn);
+      p.sp = Math.min(p.sp + sk.pacc * dt / 1000, sk.pspMax);
+    }
+
+    p.x += Math.cos(p.a) * p.sp * dt / 1000;
+    p.y += Math.sin(p.a) * p.sp * dt / 1000;
+
+    if (Math.hypot(G.x - p.x, G.y - p.y) < sk.pw + G.p.pr) { damage(c); p.alive = false; }
+    else if (p.x < -70 || p.x > BOARD_W + 70 || p.y < -70 || p.y > BOARD_H + 70) p.alive = false;
+    else alive = true;
+  }
+  return alive;
+}
+
+function finish(c){
+  if (c.resolved) return;
+  c.resolved = true;
+  if (c.hit) return;
+  // 안 맞았으면 피한 것. 연속으로 피할수록 배수가 붙는다
+  G.dodged++;
+  G.score += Math.round(BASE_PT * DIFFS[pickDiff].mult * comboMult());
+  G.streak++;
+  if (G.streak > G.bestStreak) G.bestStreak = G.streak;
+}
+
+function comboMult(){ return Math.min(1 + Math.floor(G.streak / COMBO_STEP), COMBO_MAX); }
+
+/* ── 그리기 ──────────────────────────────────────────────── */
+function draw(){
+  ctx.clearRect(0, 0, BOARD_W, BOARD_H);
+  drawMid();
+  if (!G) return;
+
+  ctx.save();
+  if (G.shake > 0) ctx.translate((Math.random()-.5) * G.shake, (Math.random()-.5) * G.shake);
+  G.casters.forEach(drawCaster);
+  drawPlayer();
+  ctx.restore();
+  drawHUD();
+  drawStick();
+}
+
+/* 손가락을 댄 자리에 생기는 조이스틱 */
+function drawStick(){
+  if (!stick.on) return;
+  ctx.beginPath(); ctx.arc(stick.ox, stick.oy, STICK_FULL, 0, 7);
+  ctx.fillStyle = 'rgba(255,255,255,.07)'; ctx.fill();
+  ctx.strokeStyle = 'rgba(255,176,58,.45)'; ctx.lineWidth = 2; ctx.stroke();
+
+  var v = stickVec();
+  var hx = stick.ox, hy = stick.oy;
+  if (v) { hx += v.x * STICK_FULL * v.mag; hy += v.y * STICK_FULL * v.mag; }
+  ctx.beginPath(); ctx.arc(hx, hy, 17, 0, 7);
+  ctx.fillStyle = 'rgba(255,176,58,.75)'; ctx.fill();
+}
+
+/* 미드 라인 + 횃불 4개 */
+function drawMid(){
+  var g = ctx.createLinearGradient(0, 0, BOARD_W, BOARD_H);
+  g.addColorStop(0, '#0f1520'); g.addColorStop(1, '#141b28');
+  ctx.fillStyle = g; ctx.fillRect(0, 0, BOARD_W, BOARD_H);
+
+  ctx.save();
+  ctx.strokeStyle = 'rgba(120,140,180,.10)';
+  ctx.lineWidth = 150;
+  ctx.beginPath(); ctx.moveTo(-40, BOARD_H + 40); ctx.lineTo(BOARD_W + 40, -40); ctx.stroke();
+  ctx.restore();
+
+  ctx.strokeStyle = 'rgba(255,176,58,.30)';
+  ctx.lineWidth = 2; ctx.setLineDash([9, 7]);
+  ctx.strokeRect(AREA.x, AREA.y, AREA.w, AREA.h);
+  ctx.setLineDash([]);
+  ctx.fillStyle = 'rgba(255,176,58,.028)';
+  ctx.fillRect(AREA.x, AREA.y, AREA.w, AREA.h);
+
+  var t = Date.now() / 190;
+  [[AREA.x, AREA.y], [AREA.x + AREA.w, AREA.y],
+   [AREA.x, AREA.y + AREA.h], [AREA.x + AREA.w, AREA.y + AREA.h]].forEach(function(p, i){
+    var fl = 12 + Math.sin(t + i * 1.7) * 3;
+    var rg = ctx.createRadialGradient(p[0], p[1], 2, p[0], p[1], fl * 4.5);
+    rg.addColorStop(0, 'rgba(255,190,90,.55)');
+    rg.addColorStop(1, 'rgba(255,140,40,0)');
+    ctx.fillStyle = rg;
+    ctx.beginPath(); ctx.arc(p[0], p[1], fl * 4.5, 0, 7); ctx.fill();
+    ctx.fillStyle = '#6b4a2a'; ctx.fillRect(p[0] - 3, p[1] - 2, 6, 22);
+    ctx.fillStyle = '#ffce6a';
+    ctx.beginPath(); ctx.arc(p[0], p[1] - 4, fl * .55, 0, 7); ctx.fill();
+  });
+}
+
+function drawCaster(c){
+  var sk = c.sk;
+
+  // 아직 안 덤빈 애 — 흐릿하게만 보인다 (곧 온다는 신호)
+  if (c.phase === -1) {
+    ctx.globalAlpha = 0.32;
+    ctx.fillStyle = '#2b3244';
+    ctx.beginPath(); ctx.arc(c.x, c.y, 15, 0, 7); ctx.fill();
+    ctx.fillStyle = '#8c97ab'; ctx.font = 'bold 11px sans-serif'; ctx.textAlign = 'center';
+    ctx.fillText(sk.c, c.x, c.y - 21);
+    ctx.globalAlpha = 1;
+    return;
+  }
+
+  var prog = c.phase === 0 ? c.t / c.wind : 1;
+
+  ctx.globalAlpha = c.phase === 2 ? Math.max(c.leave / LEAVE_MS, 0) : 1;
+  ctx.fillStyle = '#2b3244';
+  ctx.strokeStyle = 'rgba(255,110,110,.85)'; ctx.lineWidth = 2;
+  ctx.beginPath(); ctx.arc(c.x, c.y, 15, 0, 7); ctx.fill(); ctx.stroke();
+  ctx.fillStyle = '#e8ecf3'; ctx.font = 'bold 11px sans-serif'; ctx.textAlign = 'center';
+  ctx.fillText(sk.c, c.x, c.y - 21);
+  ctx.fillStyle = '#ff9c6e'; ctx.font = 'bold 10px sans-serif';
+  ctx.fillText(sk.s, c.x, c.y + 30);
+  ctx.globalAlpha = 1;
+
+  if (c.phase === 2 && sk.t !== 'line' && sk.t !== 'roll') return;
+
+  if (sk.t === 'roll') {
+    // 누누 눈덩이 — 시전자는 제자리에 있고, 눈덩이가 날아가면서 내 쪽으로 커브를 튼다
+    if (c.phase === 0) aimLine(c, sk.pw, prog);
+    drawSnowball(c);
+  } else if (sk.t === 'beam') {
+    // 제라스 Q — 충전하는 동안 줄이 점점 진해지다가, 다 차면 한 방에 꽂힌다
+    ctx.save();
+    ctx.translate(c.x, c.y); ctx.rotate(c.ang);
+    if (c.flash > 0) {
+      var a = Math.min(c.flash / 260, 1);
+      ctx.fillStyle = 'rgba(200,150,255,' + (0.85 * a) + ')';
+      ctx.fillRect(0, -sk.pw, 1300, sk.pw * 2);
+      ctx.fillStyle = 'rgba(255,255,255,' + (0.9 * a) + ')';
+      ctx.fillRect(0, -sk.pw * 0.35, 1300, sk.pw * 0.7);
+    } else {
+      ctx.fillStyle = 'rgba(190,140,255,.14)';
+      ctx.fillRect(0, -sk.pw, 1300, sk.pw * 2);
+      ctx.fillStyle = 'rgba(210,160,255,' + (0.25 + 0.5 * prog) + ')';
+      ctx.fillRect(0, -sk.pw * prog, 1300, sk.pw * 2 * prog);
+    }
+    ctx.restore();
+  } else if (sk.t === 'line') {
+    if (c.phase === 0) aimLine(c, sk.pw, prog);
+    ctx.fillStyle = '#ffb03a';
+    c.projs.forEach(function(p){
+      if (!p.alive) return;
+      ctx.beginPath(); ctx.arc(p.x, p.y, sk.pw, 0, 7); ctx.fill();
+    });
+  } else if (sk.t === 'zone') {
+    ringShape(c.tx, c.ty, sk.pr, prog, c.flash > 0, 0);
+  } else if (sk.t === 'ring') {
+    ringShape(c.x, c.y, sk.pr, prog, c.flash > 0, sk.pin);
+  } else if (sk.t === 'cone') {
+    var half = (sk.ang * Math.PI / 180) / 2;
+    ctx.beginPath(); ctx.moveTo(c.x, c.y);
+    ctx.arc(c.x, c.y, sk.pr, c.ang - half, c.ang + half); ctx.closePath();
+    ctx.fillStyle = c.flash > 0 ? 'rgba(255,220,120,.75)' : 'rgba(255,90,90,.15)';
+    ctx.fill();
+    if (c.phase === 0) {
+      ctx.beginPath(); ctx.moveTo(c.x, c.y);
+      ctx.arc(c.x, c.y, sk.pr * prog, c.ang - half, c.ang + half); ctx.closePath();
+      ctx.fillStyle = 'rgba(255,120,90,.35)'; ctx.fill();
+    }
+  }
+}
+
+// 날아올 방향을 미리 보여주는 빨간 줄
+function aimLine(c, w, prog){
+  ctx.save();
+  ctx.translate(c.x, c.y); ctx.rotate(c.ang);
+  ctx.fillStyle = 'rgba(255,90,90,.13)';
+  ctx.fillRect(0, -w, 1100, w * 2);
+  ctx.fillStyle = 'rgba(255,120,90,.42)';
+  ctx.fillRect(0, -w, 1100 * prog, w * 2);
+  ctx.restore();
+}
+
+// 누누 눈덩이 — 날아가면서 내 쪽으로 커브를 튼다
+function drawSnowball(c){
+  var p = c.projs[0];
+  if (!p || !p.alive) return;
+  var r = c.sk.pw;
+  ctx.fillStyle = 'rgba(210,235,255,.95)';
+  ctx.beginPath(); ctx.arc(p.x, p.y, r, 0, 7); ctx.fill();
+  ctx.strokeStyle = 'rgba(120,180,230,.9)'; ctx.lineWidth = 3;
+  ctx.beginPath(); ctx.arc(p.x, p.y, r, 0, 7); ctx.stroke();
+  ctx.fillStyle = '#1b2433'; ctx.font = 'bold 10px sans-serif'; ctx.textAlign = 'center';
+  ctx.fillText('누누 W', p.x, p.y + 3);
+}
+
+function ringShape(x, y, r, prog, flash, inner){
+  ctx.beginPath(); ctx.arc(x, y, r, 0, 7);
+  if (inner) ctx.arc(x, y, inner, 0, 7, true);
+  ctx.fillStyle = flash ? 'rgba(255,220,120,.8)' : 'rgba(255,90,90,.14)';
+  ctx.fill();
+  ctx.strokeStyle = 'rgba(255,120,90,.7)'; ctx.lineWidth = 2;
+  ctx.beginPath(); ctx.arc(x, y, r, 0, 7); ctx.stroke();
+  if (!flash) {
+    ctx.beginPath(); ctx.arc(x, y, r * prog, 0, 7);
+    ctx.fillStyle = 'rgba(255,120,90,.33)'; ctx.fill();
+  }
+}
+
+function drawPlayer(){
+  ctx.beginPath(); ctx.arc(G.x, G.y, G.p.pr, 0, 7);
+  ctx.fillStyle = G.p.color; ctx.fill();
+  ctx.strokeStyle = G.slow > 0 ? '#66d9ff' : '#fff';
+  ctx.lineWidth = G.slow > 0 ? 3 : 2; ctx.stroke();
+  ctx.fillStyle = '#e8ecf3'; ctx.font = 'bold 11px sans-serif'; ctx.textAlign = 'center';
+  ctx.fillText(G.p.name + (G.slow > 0 ? ' (둔화)' : ''), G.x, G.y - G.p.pr - 7);
+}
+
+/* 화면에 계속 보이는 숫자는 체력과 점수 둘. 시간은 막대로만 */
+function drawHUD(){
+  ctx.textAlign = 'left';
+  var bw = 230;
+  ctx.fillStyle = 'rgba(0,0,0,.45)'; ctx.fillRect(20, 20, bw, 20);
+  ctx.fillStyle = G.hp / G.maxHp > .35 ? '#5ad07a' : '#e05252';
+  ctx.fillRect(20, 20, bw * Math.max(G.hp, 0) / G.maxHp, 20);
+  ctx.fillStyle = '#fff'; ctx.font = 'bold 13px sans-serif';
+  ctx.fillText('체력 ' + Math.max(Math.ceil(G.hp), 0), 28, 35);
+  if (G.healFx > 0) {
+    ctx.fillStyle = 'rgba(140,233,154,' + Math.min(G.healFx / 500, 1) + ')';
+    ctx.font = 'bold 14px sans-serif';
+    ctx.fillText('+' + Math.round(G.maxHp * HEAL_PCT), 20 + bw + 10, 35);
+  }
+
+  ctx.textAlign = 'right';
+  ctx.fillStyle = '#ffd88a'; ctx.font = 'bold 24px sans-serif';
+  ctx.fillText(G.score, BOARD_W - 20, 39);
+  var m = comboMult();
+  if (m > 1) {
+    ctx.fillStyle = '#ff8a3a'; ctx.font = 'bold 17px sans-serif';
+    ctx.fillText('×' + m + '  ' + G.streak + '연속', BOARD_W - 20, 60);
+  }
+
+  ctx.fillStyle = 'rgba(255,255,255,.10)'; ctx.fillRect(0, 0, BOARD_W, 5);
+  ctx.fillStyle = '#ffb03a';
+  ctx.fillRect(0, 0, BOARD_W * (G.left / (pickTime * 1000)), 5);
+}
+
+/* ── 끝났다 ──────────────────────────────────────────────── */
+function endGame(cleared){
+  G.over = true;
+  var d = DIFFS[pickDiff];
+  // 점수는 피할 때마다 그 자리에서 쌓인다. 완주 보너스는 없다
+  //   (주면 10초짜리로 짧게 여러 번 돌리는 게 이득이 되기 때문)
+  G.finalScore = Math.round(G.score);
+  G.cleared = cleared;
+
+  document.getElementById('resTitle').textContent = cleared ? '끝까지 버텼다!' : '아웃!';
+  document.getElementById('resScore').textContent = G.finalScore;
+  document.getElementById('resDetail').innerHTML =
+    G.p.name + ' · ' + d.name + ' · ' + fmtTime(pickTime) + (useSlow ? ' · 둔화' : '') + '<br>' +
+    '피한 스킬 ' + G.dodged + '개 · 맞은 스킬 ' + G.hitCount + '개 · 최고 연속 ' + G.bestStreak + '개<br>' +
+    '남은 체력 ' + Math.max(Math.ceil(G.hp), 0) +
+    (cleared ? '' : ' · ' + Math.round((pickTime * 1000 - G.left) / 1000) + '초 버팀');
+
+  document.getElementById('saveMsg').textContent = '';
+  document.getElementById('nameBox').classList.add('hide');
+  show('res', true);
+
+  // 로그인한 사람은 이름을 묻지 않는다 (서버 답을 기다렸다가 결정)
+  whoAmI().then(function(){
+    if (me.needsName) document.getElementById('nameBox').classList.remove('hide');
+    else saveScore('');
+  });
+}
+
+/* ── 랭킹 (서버는 이미 만들어져 있다) ────────────────────── */
+function gameKeyOf(i){ return GAME_KEY_BASE + '-' + DIFFS[i].id; }
+function token(){ try { return localStorage.getItem('yw_token') || ''; } catch(e){ return ''; } }
+
+var whoPromise = null;
+function whoAmI(){
+  if (whoPromise) return whoPromise;
+  whoPromise = fetch('/api/game/me', {
+    method:'POST', headers:{'Content-Type':'application/json'},
+    body: JSON.stringify({ token: token() })
+  }).then(function(r){ return r.json(); })
+    .then(function(j){ me = j; return j; })
+    .catch(function(){ me = { needsName:true }; return me; });
+  return whoPromise;
+}
+
+function saveScore(playerName){
+  var d = DIFFS[pickDiff];
+  return fetch('/api/game/score', {
+    method:'POST', headers:{'Content-Type':'application/json'},
+    body: JSON.stringify({
+      gameKey: gameKeyOf(pickDiff),
+      token: token(),
+      playerName: playerName,
+      score: G.finalScore,
+      grade: d.name + ' ' + fmtTime(pickTime),
+      detail: JSON.stringify({
+        champ: G.p.name, dodged: G.dodged, hit: G.hitCount, bestStreak: G.bestStreak,
+        hpLeft: Math.max(Math.ceil(G.hp), 0), cleared: G.cleared,
+        opt: useOpt, slow: useSlow
+      })
+    })
+  }).then(function(r){ return r.json().then(function(j){ return { ok:r.ok, j:j }; }); })
+    .then(function(res){
+      var msg = document.getElementById('saveMsg');
+      if (!res.ok) { msg.style.color = '#ff9c9c'; msg.textContent = res.j.message || '기록에 실패했어요.'; return; }
+      msg.style.color = '#8ce99a';
+      msg.textContent = res.j.playerName + ' — ' + res.j.rank + '등 / ' + res.j.total + '명';
+      document.getElementById('nameBox').classList.add('hide');
+    })
+    .catch(function(){
+      var msg = document.getElementById('saveMsg');
+      msg.style.color = '#ff9c9c';
+      msg.textContent = '기록은 영월드 안에서만 저장돼요 (교실 → 작품 → 이 게임으로 열기).';
+    });
+}
+
+var rankTab = 1;
+function openRank(which){
+  rankTab = (which == null) ? pickDiff : which;
+
+  var tabs = document.getElementById('rankTabs');
+  tabs.innerHTML = '';
+  DIFFS.forEach(function(d, i){
+    var b = document.createElement('button');
+    b.className = 'chip' + (i === rankTab ? ' on' : '');
+    b.textContent = d.name;
+    b.onclick = function(){ openRank(i); };
+    tabs.appendChild(b);
+  });
+
+  var body = document.getElementById('rankBody');
+  body.innerHTML = '<div class="hint">불러오는 중…</div>';
+  show('rank', true);
+  fetch('/api/game/ranking?gameKey=' + gameKeyOf(rankTab) + '&limit=20')
+    .then(function(r){ return r.json(); })
+    .then(function(j){
+      var rows = j.ranking || [];
+      if (!rows.length) { body.innerHTML = '<div class="hint">아직 기록이 없어요. 첫 번째가 되어보세요!</div>'; return; }
+      var html = '<table><tr><th>등수</th><th>이름</th><th>설정</th><th style="text-align:right">점수</th></tr>';
+      rows.forEach(function(r, i){
+        html += '<tr><td>' + (i+1) + '</td><td>' + esc(r.player_name) + '</td><td>' +
+                esc(r.grade || '') + '</td><td class="n">' + r.score + '</td></tr>';
+      });
+      body.innerHTML = html + '</table>';
+    })
+    .catch(function(){
+      body.innerHTML = '<div class="hint">기록은 영월드 안에서만 보여요.<br>교실 → 작품 구역 → 내 이름표 → 🎮 5년 뒤 나의 미래 로 열어주세요.</div>';
+    });
+}
+
+function esc(s){
+  return String(s == null ? '' : s).replace(/[&<>"]/g, function(m){
+    return { '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;' }[m];
+  });
+}
+
+/* ── 버튼 연결 ───────────────────────────────────────────── */
+document.getElementById('btnStart').onclick = start;
+document.getElementById('btnAgain').onclick = function(){ show('res', false); show('title', true); G = null; };
+document.getElementById('btnRank1').onclick = function(){ openRank(); };
+document.getElementById('btnRank2').onclick = function(){ openRank(); };
+document.getElementById('btnRankClose').onclick = function(){ show('rank', false); };
+document.getElementById('btnSave').onclick = function(){
+  var n = document.getElementById('nameIn').value.trim();
+  var msg = document.getElementById('saveMsg');
+  if (!n) { msg.style.color = '#ff9c9c'; msg.textContent = '이름을 써야 기록이 남아요.'; return; }
+  saveScore(n);
+};
+
+whoAmI();   // 시작하자마자 미리 물어봐 둔다
+</script>
+</body>
+</html>
