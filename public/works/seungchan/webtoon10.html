@@ -12,9 +12,11 @@
     /works/seungchan/webtoon10.html 로 열림 (URL 규칙: isSafeDocUrl).
     server/seed.js 의 WORK_FOLDERS 에 seungchan 이 이미 있어, 서버 재시작 시 slot 3 자동 등록.
 
-  ▶ 그림: seungchan/dream/frames/01~05.png (dream 영상용으로 이미 그려진 웹툰풍 일러스트,
+  ▶ 그림: seungchan/img/webtoon10-01~05.jpg (dream 영상 프레임을 JPG로 변환해 옮겨온 웹툰풍 일러스트,
     헤드폰 낀 승찬 캐릭터·보라/주황 톤). 손그림 SVG 대신 이 실제 그림을 컷 배경(full-bleed)으로 쓴다.
       01 밤에 혼자 코딩 · 02 강가 석양 뒷모습 · 03 AI 채팅 · 04 설계+AI+노트 · 05 팀 회의
+    ※ 원본 dream/frames/*.png 는 .gitignore 로 저장소에서 제외되므로(배포 시 없음),
+      추적되는 img/ 폴더에 사본을 두고 그걸 참조한다.
     자막/제목은 그림 위에 오버레이(반투명 내레이션 박스 = dream 포스터 자막과 통일).
 
   ▶ 포맷: 한 페이지 = 한 컷(그림 1장 꽉 차게). 방향키 ← → · 화면 클릭 · 버튼 · 점으로 넘김.
@@ -143,7 +145,7 @@
 
   <!-- ① 표지 -->
   <section class="page active cover">
-    <img class="art" src="/works/seungchan/dream/frames/01.png" alt="헤드폰을 낀 소년이 밤에 스탠드 불빛 아래 컴퓨터로 코딩하는 모습">
+    <img class="art" src="/works/seungchan/img/webtoon10-01.jpg" alt="헤드폰을 낀 소년이 밤에 스탠드 불빛 아래 컴퓨터로 코딩하는 모습">
     <div class="scrim"></div>
     <div class="no">① 표지</div>
     <div class="cover-cap">
@@ -155,7 +157,7 @@
 
   <!-- ② 함께 -->
   <section class="page">
-    <img class="art" src="/works/seungchan/dream/frames/05.png" alt="해질녘 도시가 보이는 사무실에서 여러 사람이 코드 화면 앞에 모여 함께 의논하는 모습">
+    <img class="art" src="/works/seungchan/img/webtoon10-05.jpg" alt="해질녘 도시가 보이는 사무실에서 여러 사람이 코드 화면 앞에 모여 함께 의논하는 모습">
     <div class="scrim"></div>
     <div class="no">② 10년 뒤</div>
     <div class="narr">10년 뒤. 나는 <b>사람들과 함께 코딩하는 개발자</b>가 되어 있었다.</div>
@@ -163,7 +165,7 @@
 
   <!-- ③ 재도전 -->
   <section class="page">
-    <img class="art" src="/works/seungchan/dream/frames/03.png" alt="노트북에서 AI 채팅창에 물음표를 띄우고 코드를 완성해가는 소년">
+    <img class="art" src="/works/seungchan/img/webtoon10-03.jpg" alt="노트북에서 AI 채팅창에 물음표를 띄우고 코드를 완성해가는 소년">
     <div class="scrim"></div>
     <div class="no">③ 사실은</div>
     <div class="narr">사실 난, 한때 코딩을 <b>포기</b>했었다.<br>다시 날 붙잡아준 건 — <b>AI</b>였다.</div>
@@ -171,7 +173,7 @@
 
   <!-- ④ 몰입 -->
   <section class="page">
-    <img class="art" src="/works/seungchan/dream/frames/04.png" alt="AI 채팅과 설계 화면을 띄우고 노트에 메모하며 프로그램을 만드는 소년">
+    <img class="art" src="/works/seungchan/img/webtoon10-04.jpg" alt="AI 채팅과 설계 화면을 띄우고 노트에 메모하며 프로그램을 만드는 소년">
     <div class="scrim"></div>
     <div class="no">④ 지금은</div>
     <div class="narr">이제는 만들고 싶은 걸 <b>마음껏</b> 만든다.<br>어릴 적 그리던 '<b>내 프로그램</b>'을.</div>
@@ -179,7 +181,7 @@
 
   <!-- ⑤ 마무리 -->
   <section class="page closing">
-    <img class="art" src="/works/seungchan/dream/frames/02.png" alt="헤드폰을 낀 소년이 강가에 앉아 노을 지는 도시를 바라보는 뒷모습">
+    <img class="art" src="/works/seungchan/img/webtoon10-02.jpg" alt="헤드폰을 낀 소년이 강가에 앉아 노을 지는 도시를 바라보는 뒷모습">
     <div class="scrim"></div>
     <div class="no">⑤ 그리고</div>
     <div class="narr">
