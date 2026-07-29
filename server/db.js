@@ -105,6 +105,7 @@ const Avatars = {
       db.prepare('DELETE FROM gallery_works WHERE author_id = ?').run(a.id);
       db.prepare('DELETE FROM retro_feedbacks WHERE from_id = ? OR to_id = ?').run(a.id, a.id);
       db.prepare('DELETE FROM retro_papers WHERE author_id = ?').run(a.id);
+      db.prepare('DELETE FROM retro_drafts WHERE author_id = ?').run(a.id);
       db.prepare('DELETE FROM sessions WHERE avatar_id = ?').run(a.id);
 
       // (4) 마지막으로 아바타.
@@ -548,8 +549,44 @@ const Retro = {
            ON CONFLICT(from_id, to_id) DO UPDATE SET body = @body, updated_at = datetime('now')`
         ).run({ from: authorId, to: f.toId, body: f.body });
       }
+
+      // 완성했으니 임시저장본은 지운다.
+      db.prepare('DELETE FROM retro_drafts WHERE author_id = ?').run(authorId);
     });
     tx();
+  },
+
+  // --- 임시저장(쓰다 만 회고) ---
+  // 본인 것만 꺼낸다. feedbacks 는 JSON 문자열로 넣어두었으니 배열로 풀어서 준다.
+  draftOf(authorId) {
+    const row = db
+      .prepare(
+        `SELECT good, bad, next_step AS nextStep, feedbacks, updated_at AS updatedAt
+         FROM retro_drafts WHERE author_id = ?`
+      )
+      .get(authorId);
+    if (!row) return null;
+    let feedbacks = [];
+    try {
+      const parsed = JSON.parse(row.feedbacks);
+      if (Array.isArray(parsed)) feedbacks = parsed;
+    } catch {
+      feedbacks = [];
+    }
+    return { ...row, feedbacks };
+  },
+
+  saveDraft({ authorId, good, bad, nextStep, feedbacks }) {
+    db.prepare(
+      `INSERT INTO retro_drafts (author_id, good, bad, next_step, feedbacks)
+       VALUES (@authorId, @good, @bad, @nextStep, @feedbacks)
+       ON CONFLICT(author_id) DO UPDATE SET
+         good = @good, bad = @bad, next_step = @nextStep,
+         feedbacks = @feedbacks, updated_at = datetime('now')`
+    ).run({
+      authorId, good, bad, nextStep,
+      feedbacks: JSON.stringify(Array.isArray(feedbacks) ? feedbacks : []),
+    });
   },
 };
 

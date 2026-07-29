@@ -105,6 +105,18 @@ CREATE TABLE IF NOT EXISTS retro_feedbacks (
   UNIQUE(from_id, to_id)
 );
 
+-- 쓰다 만 회고(임시저장). 네 칸을 다 못 채워도 여기 잠깐 맡아둔다.
+-- 완성해서 모닥불에 올리면(retro_papers 저장) 이 줄은 지워진다.
+-- 비밀 한마디도 들어 있으므로 서버는 본인에게만 돌려준다.
+CREATE TABLE IF NOT EXISTS retro_drafts (
+  author_id  INTEGER PRIMARY KEY REFERENCES avatars(id),
+  good       TEXT    NOT NULL DEFAULT '',
+  bad        TEXT    NOT NULL DEFAULT '',
+  next_step  TEXT    NOT NULL DEFAULT '',
+  feedbacks  TEXT    NOT NULL DEFAULT '[]',     -- [{ toId, body }] JSON
+  updated_at TEXT    NOT NULL DEFAULT (datetime('now'))
+);
+
 -- 교실 뒷벽 전시(학생 작품 갤러리). 3회차 미니게임 등을 여기에 건다.
 CREATE TABLE IF NOT EXISTS gallery_works (
   id          INTEGER PRIMARY KEY AUTOINCREMENT,
