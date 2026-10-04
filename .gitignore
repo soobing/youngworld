@@ -14,3 +14,6 @@ scratchpad/
 public/works/*/dream/frames/*
 !public/works/*/dream/frames/README.md
 public/works/*/dream/bgm.*
+
+# Claude Code 작업용 git worktree
+.claude/worktrees/
